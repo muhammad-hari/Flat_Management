@@ -1,0 +1,11 @@
+D:\Project\Densus88\new_app\src\MyApp.Core\bin\Debug\net8.0\MyApp.Core.deps.json
+D:\Project\Densus88\new_app\src\MyApp.Core\bin\Debug\net8.0\MyApp.Core.dll
+D:\Project\Densus88\new_app\src\MyApp.Core\bin\Debug\net8.0\MyApp.Core.pdb
+D:\Project\Densus88\new_app\src\MyApp.Core\obj\Debug\net8.0\MyApp.Core.GeneratedMSBuildEditorConfig.editorconfig
+D:\Project\Densus88\new_app\src\MyApp.Core\obj\Debug\net8.0\MyApp.Core.AssemblyInfoInputs.cache
+D:\Project\Densus88\new_app\src\MyApp.Core\obj\Debug\net8.0\MyApp.Core.AssemblyInfo.cs
+D:\Project\Densus88\new_app\src\MyApp.Core\obj\Debug\net8.0\MyApp.Core.csproj.CoreCompileInputs.cache
+D:\Project\Densus88\new_app\src\MyApp.Core\obj\Debug\net8.0\MyApp.Core.dll
+D:\Project\Densus88\new_app\src\MyApp.Core\obj\Debug\net8.0\refint\MyApp.Core.dll
+D:\Project\Densus88\new_app\src\MyApp.Core\obj\Debug\net8.0\MyApp.Core.pdb
+D:\Project\Densus88\new_app\src\MyApp.Core\obj\Debug\net8.0\ref\MyApp.Core.dll

@@ -1,0 +1,153 @@
+﻿@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Forms
+
+<nav class="bg-gradient-to-b from-indigo-900 to-purple-900 text-white h-full md:w-64 p-4">
+    <!-- Logo / Brand -->
+    @* <div class="flex items-center justify-between md:justify-center mb-6">
+        <span class="text-xl font-bold">Flat Management System</span>
+        <!-- Hamburger button (mobile only) -->
+        <button class="md:hidden text-gray-200 focus:outline-none" @onclick="ToggleMenu">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+    </div> *@
+    <div class="flex flex-col items-center mb-6">
+        <label class="flex flex-col items-center cursor-pointer">
+            <!-- Avatar -->
+            <img src="@avatarUrl" alt="App Logo"
+                class="w-20 h-20 rounded-full border-2 border-white shadow-md mb-3 object-cover" />
+
+            <!-- InputFile tersembunyi; klik label memicu input ini -->
+            <InputFile OnChange="HandleSelected" class="hidden" />
+
+            <!-- Nama App -->
+
+        </label>
+        <span class="text-md font-semibold">Flat Management System</span>
+    </div>
+
+    <!-- Menu Items -->
+    <ul class="@MenuCss">
+        <li>
+            <NavLink
+                class="flex items-center gap-2 px-3 py-2 rounded text-white hover:bg-gray-500 hover:bg-opacity-50 transition-colors duration-200"
+                ActiveClass="bg-gray-700 bg-opacity-70 font-bold text-white" href="" Match="NavLinkMatch.All">
+                <Icon Name="dashboard" CssClass="w-5 h-5 text-white" />
+                @* <img src="assets/icons/dashboard.svg" class="w-6 h-6" /> *@
+                Dashboard
+            </NavLink>
+        </li>
+        <li>
+            <NavLink
+                class="flex items-center gap-2 px-3 py-2 rounded text-white hover:bg-gray-500 hover:bg-opacity-50 transition-colors duration-200"
+                ActiveClass="bg-gray-700 bg-opacity-70 font-bold text-white" href="users">
+                <Icon Name="user" CssClass="w-5 h-5 text-white" />
+                Users
+            </NavLink>
+        </li>
+        <li>
+            <NavLink
+                class="flex items-center gap-2 px-3 py-2 rounded text-white hover:bg-gray-500 hover:bg-opacity-50 transition-colors duration-200"
+                ActiveClass="bg-gray-700 bg-opacity-70 font-bold text-white" href="fetchdata">
+                <img src="assets/icons/occoupant.svg" class="w-6 h-6" />
+                Occupants
+            </NavLink>
+        </li>
+        <li>
+            <NavLink
+                class="flex items-center gap-2 px-3 py-2 rounded text-white hover:bg-gray-500 hover:bg-opacity-50 transition-colors duration-200"
+                ActiveClass="bg-gray-700 bg-opacity-70 font-bold text-white" href="visitors">
+                <img src="assets/icons/visitor.svg" class="w-6 h-6" />
+                Visitors
+            </NavLink>
+        </li>
+        <li>
+            <NavLink
+                class="flex items-center gap-2 px-3 py-2 rounded text-white hover:bg-gray-500 hover:bg-opacity-50 transition-colors duration-200"
+                ActiveClass="bg-gray-700 bg-opacity-70 font-bold text-white" href="fetchdata">
+                <img src="assets/icons/employees.svg" class="w-6 h-6" />
+                Employees
+            </NavLink>
+        </li>
+        <li>
+            <NavLink
+                class="flex items-center gap-2 px-3 py-2 rounded text-white hover:bg-gray-500 hover:bg-opacity-50 transition-colors duration-200"
+                ActiveClass="bg-gray-700 bg-opacity-70 font-bold text-white" href="fetchdata">
+                <img src="assets/icons/manage-room.svg" class="w-6 h-6" />
+                Management Rooms
+            </NavLink>
+        </li>
+        <li>
+            <NavLink
+                class="flex items-center gap-2 px-3 py-2 rounded text-white hover:bg-gray-500 hover:bg-opacity-50 transition-colors duration-200"
+                ActiveClass="bg-gray-700 bg-opacity-70 font-bold text-white" href="fetchdata">
+                <img src="assets/icons/maintenence.svg" class="w-6 h-6" />
+                Building Maintenences
+            </NavLink>
+        </li>
+        <li>
+            <NavLink
+                class="flex items-center gap-2 px-3 py-2 rounded text-white hover:bg-gray-500 hover:bg-opacity-50 transition-colors duration-200"
+                ActiveClass="bg-gray-700 bg-opacity-70 font-bold text-white" href="fetchdata">
+                @* <Icon Name="weapons" CssClass="w-5 h-5 text-white" /> *@
+                <img src="assets/icons/weapons.svg" class="w-6 h-6" />
+                Weapon and Alsus
+            </NavLink>
+        </li>
+        <li>
+            <NavLink
+                class="flex items-center gap-2 px-3 py-2 rounded text-white hover:bg-gray-500 hover:bg-opacity-50 transition-colors duration-200"
+                ActiveClass="bg-gray-700 bg-opacity-70 font-bold text-white" href="fetchdata">
+                <Icon Name="inventory" CssClass="w-5 h-5 text-white" />
+                Inventory
+            </NavLink>
+        </li>
+        <li>
+            <NavLink
+                class="flex items-center gap-2 px-3 py-2 rounded text-white hover:bg-gray-500 hover:bg-opacity-50 transition-colors duration-200"
+                ActiveClass="bg-gray-700 bg-opacity-70 font-bold text-white" href="fetchdata">
+                @* <Icon Name="access_control" CssClass="w-5 h-5 text-white" /> *@
+                <img src="assets/icons/access.svg" class="w-6 h-6" />
+                Access Control
+            </NavLink>
+        </li>
+        <li>
+            <NavLink
+                class="flex items-center gap-2 px-3 py-2 rounded text-white hover:bg-gray-500 hover:bg-opacity-50 transition-colors duration-200"
+                ActiveClass="bg-gray-700 bg-opacity-70 font-bold text-white" href="fetchdata">
+                <Icon Name="master_data" CssClass="w-5 h-5 text-white" />
+                Master Data
+            </NavLink>
+        </li>
+    </ul>
+</nav>
+
+@code {
+    private bool isMenuOpen = false;
+    private string avatarUrl = "/assets/images/default-avatar.jpg";
+    private InputFile? fileInput;
+
+
+    private string MenuCss =>
+    (isMenuOpen ? "block" : "hidden") + " space-y-2 md:block";
+
+    private void ToggleMenu()
+    {
+        isMenuOpen = !isMenuOpen;
+    }
+
+    private async Task HandleSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: 1024 * 1024 * 2);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var bytes = ms.ToArray();
+            avatarUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(bytes)}";
+        }
+    }
+}

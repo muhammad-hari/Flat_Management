@@ -1,0 +1,258 @@
+@page "/users"
+
+@using System.Globalization
+
+<div class="p-6 space-y-6">
+
+    <!-- Card Summary -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-gray-800 text-white p-4 rounded-2xl shadow-md">
+            <h2 class="text-lg font-semibold">Total Users</h2>
+            <p class="text-2xl font-bold">@Users.Count</p>
+        </div>
+        <div class="bg-green-600 text-white p-4 rounded-2xl shadow-md">
+            <h2 class="text-lg font-semibold">Active</h2>
+            <p class="text-2xl font-bold">@Users.Count(u => u.IsActive)</p>
+        </div>
+        <div class="bg-red-600 text-white p-4 rounded-2xl shadow-md">
+            <h2 class="text-lg font-semibold">Inactive</h2>
+            <p class="text-2xl font-bold">@Users.Count(u => !u.IsActive)</p>
+        </div>
+        <div class="bg-blue-600 text-white p-4 rounded-2xl shadow-md">
+            <h2 class="text-lg font-semibold">Total Roles</h2>
+            <p class="text-2xl font-bold">@Users.Select(u => u.Role).Distinct().Count()</p>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="flex justify-between items-center">
+        <input type="text" placeholder="Search user..." @bind="SearchTerm"
+            class="px-4 py-2 w-1/3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500" />
+        <button @onclick="AddUser" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition">
+            + Add User
+        </button>
+    </div>
+
+    <!-- User Table -->
+    <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+        <thead class="bg-gray-100">
+            <tr>
+                @* <th class="px-4 py-2 cursor-pointer" @onclick="() => SortBy(nameof(User.Id))">ID</th> *@
+                <th class="px-4 py-2 cursor-pointer" @onclick="() => SortBy(nameof(User.Name))">Username</th>
+                <th class="px-4 py-2 cursor-pointer" @onclick="() => SortBy(nameof(User.Email))">Email</th>
+                <th class="px-4 py-2">Phone</th>
+                <th class="px-4 py-2 cursor-pointer" @onclick="() => SortBy(nameof(User.Role))">Role</th>
+                <th class="px-4 py-2">Status</th>
+                <th class="px-4 py-2">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in FilteredUsers)
+            {
+                <tr class="border-b hover:bg-gray-50">
+                    @* <td class="px-4 py-2">@user.Id</td> *@
+                    <td class="px-4 py-2">@user.Name</td>
+                    <td class="px-4 py-2">@user.Email</td>
+                    <td class="px-4 py-2">@user.Role</td>
+                    <td class="px-4 py-2">
+                        @if (user.IsActive)
+                        {
+                            <span class="px-2 py-1 text-xs bg-green-200 text-green-800 rounded-full">Active</span>
+                        }
+                        else
+                        {
+                            <span class="px-2 py-1 text-xs bg-red-200 text-red-800 rounded-full">Inactive</span>
+                        }
+                    </td>
+                    <td class="px-4 py-2 space-x-2">
+                        <button class="text-blue-600 hover:underline" @onclick="() => ShowDetail(user)">Detail</button>
+                        <button class="text-yellow-600 hover:underline" @onclick="() => EditUser(user)">Edit</button>
+                        <button class="text-red-600 hover:underline" @onclick="() => DeleteUser(user.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Popup -->
+@if (ShowModal)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <div class="bg-white rounded-lg p-6 w-96 shadow-lg">
+            <h2 class="text-xl font-bold mb-4">@ModalTitle</h2>
+
+            @if (ModalMode == "Detail")
+            {
+                <p><strong>ID:</strong> @SelectedUser?.Id</p>
+                <p><strong>Name:</strong> @SelectedUser?.Name</p>
+                <p><strong>Email:</strong> @SelectedUser?.Email</p>
+                <p><strong>Role:</strong> @SelectedUser?.Role</p>
+                <p><strong>Status:</strong> @(SelectedUser?.IsActive == true ? "Active" : "Inactive")</p>
+            }
+            else
+            {
+                <input class="w-full mb-2 px-3 py-2 border rounded" placeholder="Name" @bind="SelectedUser.Name" />
+                <input class="w-full mb-2 px-3 py-2 border rounded" placeholder="Email" @bind="SelectedUser.Email" />
+                <input class="w-full mb-2 px-3 py-2 border rounded" placeholder="Role" @bind="SelectedUser.Role" />
+                <label class="flex items-center space-x-2 mb-4">
+                    <input type="checkbox" @bind="SelectedUser.IsActive" />
+                    <span>Active</span>
+                </label>
+            }
+
+            <div class="flex justify-end space-x-2">
+                <button class="px-4 py-2 bg-gray-300 rounded" @onclick="CloseModal">Close</button>
+                @if (ModalMode != "Detail")
+                {
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded" @onclick="SaveUser">Save</button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<User> Users = new();
+    private string SearchTerm = "";
+    private bool SortAscending = true;
+    private string SortColumn = nameof(User.Id);
+
+    private bool ShowModal = false;
+    private string ModalTitle = "";
+    private string ModalMode = "";
+    private User SelectedUser = new();
+
+    protected override void OnInitialized()
+    {
+        Users = new List<User>
+{
+new User{ Id=1, Name="John Doe", Email="john@example.com", Role="Admin", IsActive=true},
+new User{ Id=2, Name="Jane Smith", Email="jane@example.com", Role="User", IsActive=true},
+new User{ Id=3, Name="Alex Lee", Email="alex@example.com", Role="User", IsActive=false},
+new User{ Id=4, Name="Michael Chan", Email="michael@example.com", Role="Moderator", IsActive=true},
+new User{ Id=5, Name="Sophia Kim", Email="sophia@example.com", Role="User", IsActive=false},
+new User{ Id=6, Name="David Park", Email="david@example.com", Role="Admin", IsActive=true},
+new User{ Id=7, Name="Emily Wang", Email="emily@example.com", Role="User", IsActive=true},
+new User{ Id=8, Name="Chris Evans", Email="chris@example.com", Role="Moderator", IsActive=false},
+new User{ Id=9, Name="Linda Brown", Email="linda@example.com", Role="User", IsActive=true},
+new User{ Id=10, Name="Tom Hardy", Email="tom@example.com", Role="User", IsActive=false},
+};
+    }
+
+    private IEnumerable<User> FilteredUsers
+    {
+        get
+        {
+            var query = Users.Where(u =>
+            string.IsNullOrWhiteSpace(SearchTerm) ||
+            u.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase));
+
+            query = SortColumn switch
+            {
+                nameof(User.Id) => SortAscending ? query.OrderBy(u => u.Id) : query.OrderByDescending(u => u.Id),
+                nameof(User.Name) => SortAscending ? query.OrderBy(u => u.Name) : query.OrderByDescending(u => u.Name),
+                nameof(User.Email) => SortAscending ? query.OrderBy(u => u.Email) : query.OrderByDescending(u => u.Email),
+                nameof(User.Role) => SortAscending ? query.OrderBy(u => u.Role) : query.OrderByDescending(u => u.Role),
+                _ => query
+            };
+
+            return query;
+        }
+    }
+
+    private void SortBy(string column)
+    {
+        if (SortColumn == column)
+            SortAscending = !SortAscending;
+        else
+        {
+            SortColumn = column;
+            SortAscending = true;
+        }
+
+        Users = SortAscending
+        ? Users.OrderBy(u => u.GetType().GetProperty(column)?.GetValue(u)).ToList()
+        : Users.OrderByDescending(u => u.GetType().GetProperty(column)?.GetValue(u)).ToList();
+    }
+
+    private void ShowDetail(User user)
+    {
+        SelectedUser = new User
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            Role = user.Role,
+            IsActive = user.IsActive
+        };
+        ModalTitle = "User Detail";
+        ModalMode = "Detail";
+        ShowModal = true;
+    }
+
+    private void AddUser()
+    {
+        SelectedUser = new User();
+        ModalTitle = "Add User";
+        ModalMode = "Add";
+        ShowModal = true;
+    }
+
+    private void EditUser(User user)
+    {
+        SelectedUser = new User
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            Role = user.Role,
+            IsActive = user.IsActive
+        };
+        ModalTitle = "Edit User";
+        ModalMode = "Edit";
+        ShowModal = true;
+    }
+
+    private void SaveUser()
+    {
+        if (ModalMode == "Add")
+        {
+            SelectedUser.Id = Users.Max(u => u.Id) + 1;
+            Users.Add(SelectedUser);
+        }
+        else if (ModalMode == "Edit")
+        {
+            var existing = Users.FirstOrDefault(u => u.Id == SelectedUser.Id);
+            if (existing != null)
+            {
+                existing.Name = SelectedUser.Name;
+                existing.Email = SelectedUser.Email;
+                existing.Role = SelectedUser.Role;
+                existing.IsActive = SelectedUser.IsActive;
+            }
+        }
+        CloseModal();
+    }
+
+    private void DeleteUser(int id)
+    {
+        var user = Users.FirstOrDefault(u => u.Id == id);
+        if (user != null)
+        {
+            Users.Remove(user);
+        }
+    }
+
+    private void CloseModal() => ShowModal = false;
+
+    public class User
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Phone { get; set; } = "";
+        public string Role { get; set; } = "";
+        public bool IsActive { get; set; }
+    }
+}

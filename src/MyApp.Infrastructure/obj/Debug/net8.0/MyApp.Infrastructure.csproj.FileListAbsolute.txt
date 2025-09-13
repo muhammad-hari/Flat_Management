@@ -1,0 +1,17 @@
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\bin\Debug\net8.0\MyApp.Infrastructure.deps.json
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\bin\Debug\net8.0\MyApp.Infrastructure.runtimeconfig.json
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\bin\Debug\net8.0\MyApp.Infrastructure.dll
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\bin\Debug\net8.0\MyApp.Infrastructure.pdb
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\bin\Debug\net8.0\MyApp.Core.dll
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\bin\Debug\net8.0\MyApp.Core.pdb
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\obj\Debug\net8.0\MyApp.Infrastructure.csproj.AssemblyReference.cache
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\obj\Debug\net8.0\MyApp.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\obj\Debug\net8.0\MyApp.Infrastructure.AssemblyInfoInputs.cache
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\obj\Debug\net8.0\MyApp.Infrastructure.AssemblyInfo.cs
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\obj\Debug\net8.0\MyApp.Infrastructure.csproj.CoreCompileInputs.cache
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\obj\Debug\net8.0\MyApp.In.4513676F.Up2Date
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\obj\Debug\net8.0\MyApp.Infrastructure.dll
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\obj\Debug\net8.0\refint\MyApp.Infrastructure.dll
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\obj\Debug\net8.0\MyApp.Infrastructure.pdb
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\obj\Debug\net8.0\MyApp.Infrastructure.genruntimeconfig.cache
+D:\Project\Densus88\new_app\src\MyApp.Infrastructure\obj\Debug\net8.0\ref\MyApp.Infrastructure.dll

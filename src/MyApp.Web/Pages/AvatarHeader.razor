@@ -1,0 +1,32 @@
+@page "/avatar-header"
+@using Microsoft.AspNetCore.Components.Forms
+
+<div class="flex flex-col items-center justify-center mb-6">
+    <!-- Avatar (klik gambar langsung buka file dialog) -->
+    <label class="relative cursor-pointer">
+        <img src="@avatarUrl" class="w-24 h-24 rounded-full object-cover border-4 border-gray-300" />
+
+        <!-- Hidden InputFile -->
+        <InputFile OnChange="HandleSelected" class="hidden" />
+    </label>
+
+    <!-- App Name -->
+    <span class="mt-4 text-xl font-bold">Flat Management System</span>
+</div>
+
+@code {
+    private string avatarUrl = "/images/default-avatar.png"; // default logo/avatar
+
+    private async Task HandleSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: 1024 * 1024 * 2); // max 2MB
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var bytes = ms.ToArray();
+            avatarUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(bytes)}";
+        }
+    }
+}
