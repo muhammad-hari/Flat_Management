@@ -134,3 +134,4 @@ D:\Project\Densus88\new_app\src\MyApp.Web\bin\Debug\net8.0\Microsoft.AspNetCore.
 D:\Project\Densus88\new_app\src\MyApp.Web\bin\Debug\net8.0\Microsoft.AspNetCore.Metadata.dll
 D:\Project\Densus88\new_app\src\MyApp.Web\bin\Debug\net8.0\Microsoft.JSInterop.dll
 D:\Project\Densus88\new_app\src\MyApp.Web\bin\Debug\net8.0\BCrypt.Net-Next.dll
+D:\Project\Densus88\new_app\src\MyApp.Web\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
