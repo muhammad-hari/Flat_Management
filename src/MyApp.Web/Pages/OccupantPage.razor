@@ -7,6 +7,13 @@
 @inject IEmployeeRepository EmployeeService
 @inject IRoomRepository RoomService
 
+<div class="bg-white rounded-lg shadow-sm p-6">
+    <div class="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
+        <h2 class="text-2xl font-semibold text-gray-800">Occupants Management</h2>
+        <p class="text-gray-600 mt-1">Manage Occupants , CheckIn and CheckOut</p>
+    </div>
+</div>
+
 <div class="p-6 space-y-6">
 
     <!-- Card Summary -->
@@ -150,15 +157,15 @@
                            @bind="SelectedOccupant.Employee.Gender"
                            disabled="@(!IsEmployeeLoaded)" />
 
-                    <input class="w-full px-3 py-2 border rounded bg-gray-100"
+                    @* <input class="w-full px-3 py-2 border rounded bg-gray-100"
                            type="date"
                            @bind="SelectedOccupant.Employee.DateOfBirth"
-                           disabled="@(!IsEmployeeLoaded)" />
+                           disabled="@(!IsEmployeeLoaded)" /> *@
 
-                    <input class="w-full px-3 py-2 border rounded bg-gray-100"
+                    @* <input class="w-full px-3 py-2 border rounded bg-gray-100"
                            placeholder="Email"
                            @bind="SelectedOccupant.Employee.Email"
-                           disabled="@(!IsEmployeeLoaded)" />
+                           disabled="@(!IsEmployeeLoaded)" /> *@
 
                     <input class="w-full px-3 py-2 border rounded bg-gray-100"
                            placeholder="Phone"
@@ -175,12 +182,12 @@
                            @bind="SelectedOccupant.Employee.Address"
                            disabled="@(!IsEmployeeLoaded)" />
 
-                    <div class="flex items-center space-x-2">
+                    @* <div class="flex items-center space-x-2">
                         <div class="font-semibold">Active</div>
                         <input type="checkbox"
                                @bind="SelectedOccupant.Employee.IsActive"
                                disabled="@(!IsEmployeeLoaded)" />
-                    </div>
+                    </div> *@
 
                     <div class="font-semibold">Room</div>
                 <select class="w-full mb-2 px-3 py-2 border rounded" @bind="SelectedOccupant.RoomId">
@@ -191,9 +198,27 @@
                     }
                 </select>
 
-                    <!-- Multi-file Upload -->
-                    <div class="font-semibold">Document Attachment</div>
-                    <InputFile OnChange="OnFilesChange" multiple class="w-full" />
+                <!-- Upload Photo -->
+                <div class="mb-3">
+                    <label class="font-semibold">Photo (image only)</label>
+                    <InputFile OnChange="UploadPhoto" accept="image/*" />
+                    @if (SelectedOccupant.PhotoData != null)
+                    {
+                        <img src="data:image/png;base64,@Convert.ToBase64String(SelectedOccupant.PhotoData)"
+                            class="w-40 h-40 rounded-full mt-2" />
+                    }
+                </div>
+
+                <!-- Upload Document -->
+                <div class="mb-3">
+                    <label class="font-semibold">Document (pdf/doc/docx)</label>
+                    <InputFile OnChange="UploadDocument" accept=".pdf,.doc,.docx" />
+                    @if (!string.IsNullOrEmpty(SelectedOccupant.DocumentName))
+                    {
+                        <p class="text-sm mt-1">Uploaded: @SelectedOccupant.DocumentName</p>
+                    }
+                </div>
+
                 </div>
 
                 <div class="flex justify-end space-x-2 mt-4">
@@ -378,6 +403,37 @@ private void EditOccupant(Occupant occupant)
         }
 
         return $"{years} tahun {months} bulan {days} hari";
+    }
+
+    private async Task UploadPhoto(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            using var ms = new MemoryStream();
+            await file.OpenReadStream(10_000_000).CopyToAsync(ms);
+            SelectedOccupant.PhotoData = ms.ToArray();
+        }
+    }
+
+    private async Task UploadDocument(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            var ext = Path.GetExtension(file.Name).ToLower();
+            if (ext is ".pdf" or ".doc" or ".docx")
+            {
+                using var ms = new MemoryStream();
+                await file.OpenReadStream(20_000_000).CopyToAsync(ms);
+                SelectedOccupant.DocumentData = ms.ToArray();
+                SelectedOccupant.DocumentName = file.Name;
+            }
+            else
+            {
+                toastContainer?.ShowToast($"Error: File harus pdf/doc/docx", "error");
+            }
+        }
     }
 
     private async Task SaveOccupant()

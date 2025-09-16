@@ -50,6 +50,9 @@ builder.Services.AddScoped<IUserTypeRepository, UserTypeRepository>();
 builder.Services.AddScoped<IRankRepository, RankRepository>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<IRoomRepository, RoomRepository>();
+builder.Services.AddScoped<IRoomCategoryRepository, RoomCategoryRepository>();
+builder.Services.AddScoped<IRoomStatusRepository, RoomStatusRepository>();
+builder.Services.AddScoped<IRoomConditionRepository, RoomConditionRepository>();
 builder.Services.AddScoped<IOccupantRepository, OccupantRepository>();
 
 builder.Services.AddSingleton<RedisService>();

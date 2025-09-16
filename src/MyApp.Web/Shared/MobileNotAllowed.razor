@@ -1,0 +1,19 @@
+@page "/MobileNotAllowed"
+@layout MinimalLayout
+@inject NavigationManager Navigation
+
+<div
+    class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-red-50 to-red-100 px-4 text-center">
+    <!-- Gambar ilustrasi -->
+    <img src="assets/images/mobile-block.svg" alt="Mobile Not Allowed" class="w-64 md:w-96 mb-8 animate-bounce" />
+
+    <!-- Judul -->
+    <h1 class="text-4xl md:text-5xl font-bold text-red-700 mb-4">Oops!</h1>
+
+    <!-- Deskripsi -->
+    <p class="text-lg md:text-xl text-red-600 mb-6">
+        Access from mobile devices is not allowed. <br />
+        Please use a desktop or laptop to continue.
+    </p>
+
+</div>

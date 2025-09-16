@@ -60,6 +60,18 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcUm9sZVBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/RoomCategoryPage.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcUm9vbUNhdGVnb3J5UGFnZS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/RoomConditionPage.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcUm9vbUNvbmRpdGlvblBhZ2UucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/RoomStatusPage.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcUm9vbVN0YXR1c1BhZ2UucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/Project/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/UserTypePage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcVXNlclR5cGVQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
@@ -70,6 +82,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [D:/Project/Densus88/new_app/src/MyApp.Web/Pages/Register.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUmVnaXN0ZXIucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/RoomPage.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUm9vbVBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/Project/Densus88/new_app/src/MyApp.Web/Pages/UserPage.razor]
@@ -88,8 +104,24 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXENvbXBvbmVudHNcU2lkZWJhci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/Project/Densus88/new_app/src/MyApp.Web/Shared/FeatureOnProgressPage.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXEZlYXR1cmVPblByb2dyZXNzUGFnZS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/Project/Densus88/new_app/src/MyApp.Web/Shared/Icon.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXEljb24ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Project/Densus88/new_app/src/MyApp.Web/Shared/MinimalLayout.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXE1pbmltYWxMYXlvdXQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Project/Densus88/new_app/src/MyApp.Web/Shared/MobileNotAllowed.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXE1vYmlsZU5vdEFsbG93ZWQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Project/Densus88/new_app/src/MyApp.Web/Shared/RedirectToFeatureOnProgress.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXFJlZGlyZWN0VG9GZWF0dXJlT25Qcm9ncmVzcy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/Project/Densus88/new_app/src/MyApp.Web/Shared/SurveyPrompt.razor]

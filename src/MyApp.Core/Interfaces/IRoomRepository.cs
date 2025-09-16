@@ -9,4 +9,5 @@ public interface IRoomRepository
     Task AddAsync(Room Room);
     Task UpdateAsync(Room Room);
     Task DeleteAsync(int id);
+    Task<List<Room>> GetAllWithRelationsAsync();
 }

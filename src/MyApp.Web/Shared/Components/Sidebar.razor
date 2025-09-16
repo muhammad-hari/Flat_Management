@@ -46,13 +46,24 @@
         new() { Id = "dashboard", Label = "Dashboard", IconName = "layout-dashboard", Color = "text-green-400" ,Url = "/"  },
         new() { Id = "users", Label = "Users", IconName = "users", Color = "text-blue-400" , Url= "/users" },
         new() { Id = "occupants", Label = "Occupants", IconName = "home", Color = "text-orange-400", Url= "/occupants" },
-        new() { Id = "visitors", Label = "Visitors", IconName = "user-check", Color = "text-purple-400" },
+        new() { Id = "visitors", Label = "Visitors", IconName = "user-check", Color = "text-purple-400", Url= "/visitors" },
         new() { Id = "employees", Label = "Employees", IconName = "briefcase", Color = "text-cyan-400", Url= "/employees" },
-        new() { Id = "management-rooms", Label = "Management Rooms", IconName = "settings", Color = "text-pink-400" },
-        new() { Id = "building-maintenance", Label = "Building Maintenances", IconName = "building", Color = "text-yellow-400" },
-        new() { Id = "weapon-alus", Label = "Weapon and Alus", IconName = "shield", Color = "text-red-400" },
-        new() { Id = "inventory", Label = "Inventory", IconName = "package", Color = "text-indigo-400" },
-        new() { Id = "access-control", Label = "Access Control", IconName = "key", Color = "text-emerald-400" },
+        new() { Id = "rooms management", Label = "Rooms Management", IconName = "settings", Color = "text-pink-400", Url= "/rooms" },
+        new() { 
+            Id = "building-maintenance", 
+            Label = "Building Maintenances", 
+            IconName = "building", 
+            Color = "text-yellow-400",
+            Submenu = new()
+            {
+                new() { Id = "maintenance-requests", Label = "Maintenance Requests", IconName = "clipboard-list", Color = "text-teal-400", Url = "/maintenance-requests"},
+                new() { Id = "schedules", Label = "Schedules", IconName = "calendar", Color = "text-teal-400", Url = "/schedules"},
+                new() { Id = "vendors", Label = "Vendors", IconName = "truck", Color = "text-teal-400", Url = "/vendors" },
+            }
+        },
+        new() { Id = "weapon-alus", Label = "Weapon and Alus", IconName = "shield", Color = "text-red-400", Url= "/weapon-alsus" },
+        new() { Id = "inventory", Label = "Inventory", IconName = "package", Color = "text-indigo-400", Url= "/inventory" },
+        new() { Id = "access-control", Label = "Access Control", IconName = "key", Color = "text-emerald-400", Url= "/access-control" },
         new() { 
             Id = "master-data", 
             Label = "Master Data", 
@@ -63,7 +74,10 @@
                 new() { Id = "position", Label = "Position", IconName = "briefcase", Color = "text-teal-400", Url = "/master-data/position"},
                 new() { Id = "role", Label = "Role", IconName = "shield", Color = "text-teal-400", Url = "/master-data/role"},
                 new() { Id = "user-type", Label = "User Type", IconName = "user-circle", Color = "text-teal-400", Url = "/master-data/user-type" },
-                 new() { Id = "rank", Label = "Rank", IconName = "rank", Color = "text-teal-400", Url = "/master-data/rank" },
+                new() { Id = "rank", Label = "Rank", IconName = "rank", Color = "text-teal-400", Url = "/master-data/rank" },
+                new() { Id = "room-category", Label = "Room Category", IconName = "building", Color = "text-teal-400", Url = "/master-data/room-category" },
+                new() { Id = "room-status", Label = "Room Status", IconName = "building", Color = "text-teal-400", Url = "/master-data/room-status" },
+                new() { Id = "room-condition", Label = "Room Condition", IconName = "building", Color = "text-teal-400", Url = "/master-data/room-condition" },
             
             }
         }

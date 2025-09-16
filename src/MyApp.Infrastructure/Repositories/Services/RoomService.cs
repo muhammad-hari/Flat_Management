@@ -39,4 +39,16 @@ public class RoomRepository : IRoomRepository
             await _context.SaveChangesAsync();
         }
     }
+
+    public async Task<List<Room>> GetAllWithRelationsAsync()
+    {
+        return await _context.Rooms
+            .Include(r => r.Category)   // relasi ke RoomCategory
+            .Include(r => r.Status)     // relasi ke RoomStatus
+            .Include(r => r.Condition)  // relasi ke RoomCondition
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+
 }

@@ -37,6 +37,19 @@ public class OccupantRepository : IOccupantRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task UpdateDocumentAsync(int id, byte[] docData, string docName, string contentType)
+    {
+        var occ = await _context.Occupants.FindAsync(id);
+        if (occ == null) return;
+
+        occ.DocumentData = docData;
+        occ.DocumentName = docName;
+        occ.DocumentContentType = contentType;
+        occ.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+    }
+
     public async Task DeleteAsync(int id)
     {
         var Occupant = await _context.Occupants.FindAsync(id);

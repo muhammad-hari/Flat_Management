@@ -6,7 +6,12 @@
 @inject IPositionRepository PositionService
 @inject IRankRepository RankService
 
-
+<div class="bg-white rounded-lg shadow-sm p-6">
+    <div class="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
+        <h2 class="text-2xl font-semibold text-gray-800">Employees Management</h2>
+        <p class="text-gray-600 mt-1">Manage Employee , Add Employee and Edit Employee Data</p>
+    </div>
+</div>
 
 <div class="p-6 space-y-6">
 
@@ -100,7 +105,7 @@
 @if (ShowModal)
 {
     <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-lg">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-3xl shadow-lg">
             <h2 class="text-xl font-bold mb-4">@ModalTitle</h2>
 
             @if (ModalMode == "Detail")
@@ -165,66 +170,83 @@
             }
             else
             {
-                <!-- Add / Edit Form -->
-                <div class="space-y-2">
-                    <input class="w-full px-3 py-2 border rounded" placeholder="Employee Name" @bind="SelectedEmployee.Name" />
+                <!-- Grid 2 kolom untuk form -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <input class="w-full px-3 py-2 border rounded" placeholder="Employee Name"
+                               @bind="SelectedEmployee.Name" />
 
-                    <input class="w-full px-3 py-2 border rounded" placeholder="NRP" @bind="SelectedEmployee.NRP" />
+                        <input class="w-full px-3 py-2 border rounded" placeholder="NRP"
+                               @bind="SelectedEmployee.NRP" />
 
-                    <div class="font-semibold">Gender</div>
-                    <select class="w-full px-3 py-2 border rounded" @bind="SelectedEmployee.Gender">
-                        <option value="">Select Gender</option>
-                        <option value="Pria">Pria</option>
-                        <option value="Wanita">Wanita</option>
-                    </select>
+                        <div class="font-semibold">Gender</div>
+                        <select class="w-full px-3 py-2 border rounded"
+                                @bind="SelectedEmployee.Gender">
+                            <option value="">Select Gender</option>
+                            <option value="Pria">Pria</option>
+                            <option value="Wanita">Wanita</option>
+                        </select>
 
-                    <div class="font-semibold">Date of Birth</div>
-                    <input class="w-full px-3 py-2 border rounded" type="date" @bind="SelectedEmployee.DateOfBirth" />
+                        <div class="font-semibold">Date of Birth</div>
+                        <input class="w-full px-3 py-2 border rounded" type="date"
+                               @bind="SelectedEmployee.DateOfBirth" />
 
-                    <input class="w-full px-3 py-2 border rounded" placeholder="Email" @bind="SelectedEmployee.Email" />
+                        <input class="w-full px-3 py-2 border rounded" placeholder="Email"
+                               @bind="SelectedEmployee.Email" />
 
-                    <input class="w-full px-3 py-2 border rounded" placeholder="Phone" @bind="SelectedEmployee.Phone" />
+                        <input class="w-full px-3 py-2 border rounded" placeholder="Phone"
+                               @bind="SelectedEmployee.Phone" />
+                    </div>
 
-                    <div class="font-semibold">Position</div>
-                    <select class="w-full mb-2 px-3 py-2 border rounded" @bind="SelectedEmployee.PositionId">
-                    <option value="">Select Position</option>
-                    @foreach (var pos in Positions)
-                    {
-                        <option value="@pos.Id">@pos.Name</option>
-                    }
-                </select>
+                    <div class="space-y-2">
+                        <div class="font-semibold">Position</div>
+                        <select class="w-full px-3 py-2 border rounded"
+                                @bind="SelectedEmployee.PositionId">
+                            <option value="">Select Position</option>
+                            @foreach (var pos in Positions)
+                            {
+                                <option value="@pos.Id">@pos.Name</option>
+                            }
+                        </select>
 
-                    <div class="font-semibold">Status</div>
-                    <select class="w-full px-3 py-2 border rounded" @bind="SelectedEmployee.Status">
-                        <option value="">Select Status</option>
-                        <option value="Anggota Polri">Anggota Polri</option>
-                        <option value="Tenaga Ahli">Tenaga Ahli</option>
-                        <option value="Sipil">Sipil</option>
-                    </select>
+                        <div class="font-semibold">Status</div>
+                        <select class="w-full px-3 py-2 border rounded"
+                                @bind="SelectedEmployee.Status">
+                            <option value="">Select Status</option>
+                            <option value="Anggota Polri">Anggota Polri</option>
+                            <option value="Tenaga Ahli">Tenaga Ahli</option>
+                            <option value="Sipil">Sipil</option>
+                        </select>
 
-                    <div class="font-semibold">Rank</div>
-                    <select class="w-full px-3 py-2 border rounded" @bind="SelectedEmployee.RankId">
-                        <option value="">Select Rank</option>
-                        @foreach (var rank in Ranks)
-                        {
-                            <option value="@rank.Id">@rank.Name</option>
-                        }
-                    </select>
+                        <div class="font-semibold">Rank</div>
+                        <select class="w-full px-3 py-2 border rounded"
+                                @bind="SelectedEmployee.RankId">
+                            <option value="">Select Rank</option>
+                            @foreach (var rank in Ranks)
+                            {
+                                <option value="@rank.Id">@rank.Name</option>
+                            }
+                        </select>
 
-                    <input class="w-full px-3 py-2 border rounded" placeholder="Address" @bind="SelectedEmployee.Address" />
+                        <input class="w-full px-3 py-2 border rounded" placeholder="Address"
+                               @bind="SelectedEmployee.Address" />
 
-                    <div class="font-semibold">Join Date</div>
-                    <input class="w-full px-3 py-2 border rounded" type="date" @bind="SelectedEmployee.JoinDate" />
+                        <div class="font-semibold">Join Date</div>
+                        <input class="w-full px-3 py-2 border rounded" type="date"
+                               @bind="SelectedEmployee.JoinDate" />
 
-                    <div class="font-semibold">Active</div>
-                    <label class="flex items-center space-x-2 mb-2">
-                        <input type="checkbox" @bind="SelectedEmployee.IsActive" />
-                        <span>Active</span>
-                    </label>
-                    <div class="font-semibold">Photo</div>
-                    <InputFile OnChange="OnFileChange" class="w-full" />
+                        <div class="font-semibold">Active</div>
+                        <label class="flex items-center space-x-2 mb-2">
+                            <input type="checkbox" @bind="SelectedEmployee.IsActive" />
+                            <span>Active</span>
+                        </label>
+
+                        <div class="font-semibold">Photo</div>
+                        <InputFile OnChange="OnFileChange" class="w-full" />
+                    </div>
                 </div>
             }
+
 
             <div class="flex justify-end space-x-2 mt-4">
                 <button class="px-4 py-2 bg-red-600 text-white rounded" @onclick="CloseModal">Close</button>
