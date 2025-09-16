@@ -10,6 +10,7 @@ RUN dotnet restore "MyApp.Web/MyApp.Web.csproj"
 COPY . .
 WORKDIR "/src/MyApp.Web"
 
+# Publish dengan Linux runtime
 RUN dotnet publish -c Release -o /app/publish -r linux-x64 --self-contained false /p:UseAppHost=false
 
 # Runtime stage
