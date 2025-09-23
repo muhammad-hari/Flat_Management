@@ -7,6 +7,7 @@ using MyApp.Core.Interfaces;
 using MyApp.Infrastructure.Data;
 using MyApp.Infrastructure.Identity;
 using MyApp.Web.Data;
+using MyApp.Web.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +55,10 @@ builder.Services.AddScoped<IRoomCategoryRepository, RoomCategoryRepository>();
 builder.Services.AddScoped<IRoomStatusRepository, RoomStatusRepository>();
 builder.Services.AddScoped<IRoomConditionRepository, RoomConditionRepository>();
 builder.Services.AddScoped<IOccupantRepository, OccupantRepository>();
+builder.Services.AddScoped<IBuildingRepository, BuildingRepository>();
+builder.Services.AddScoped<UploadService>();
+builder.Services.AddScoped<IFileService, FileService>();
+
 
 builder.Services.AddSingleton<RedisService>();
 builder.Services.AddBlazoredToast();
@@ -92,5 +97,26 @@ app.UseRouting();
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
+
+// app.MapGet("/secure-files/{file}", async (string file, HttpContext ctx) =>
+// {
+//     // Contoh cek login
+//     if (!ctx.User.Identity?.IsAuthenticated ?? true)
+//         return Results.Unauthorized();
+
+//     // Optional: cek role/claim
+//     // if (!ctx.User.IsInRole("Admin")) return Results.Forbid();
+
+//     var path = Path.Combine(ctx.RequestServices
+//         .GetRequiredService<IWebHostEnvironment>()
+//         .ContentRootPath, "PrivateUploads", file);
+
+//     if (!System.IO.File.Exists(path))
+//         return Results.NotFound();
+
+//     var contentType = "application/octet-stream";
+//     return Results.File(path, contentType);
+// });
+
 
 app.Run();

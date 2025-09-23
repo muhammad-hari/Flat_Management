@@ -6,6 +6,8 @@ public class Room
     public string Name { get; set; } = string.Empty;
     public string RoomNo { get; set; } = string.Empty;
     public string RoomCode { get; set; } = string.Empty;
+    public int BuildingId { get; set; }
+    public Building Building { get; set; } = null!;
     public int CategoryId { get; set; }
     public RoomCategory Category { get; set; } = null!;
     public int StatusId { get; set; }

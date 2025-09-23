@@ -10,11 +10,14 @@ namespace MyApp.Infrastructure.Data
 
         public DbSet<User> Users { get; set; }
 
+
+        public DbSet<FileUpload> Files { get; set; } = default!;
         public DbSet<Position> Positions { get; set; } = default!;
         public DbSet<Role> Roles { get; set; } = default!;
         public DbSet<UserType> UserTypes { get; set; } = default!;
         public DbSet<Rank> Ranks { get; set; } = default!;
         public DbSet<Employee> Employees { get; set; } = default!;
+        public DbSet<Building> Buildings { get; set; } = default!;
         public DbSet<Room> Rooms { get; set; } = default!;
         public DbSet<RoomCategory> RoomCategories { get; set; } = default!;
         public DbSet<RoomStatus> RoomStatus { get; set; } = default!;

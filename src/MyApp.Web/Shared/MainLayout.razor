@@ -1,17 +1,29 @@
 ﻿@inherits LayoutComponentBase
 @using MyApp.Web.Shared.Components
-
-
-
+@using MyApp.Web.Shared.IdleScreen
 @inject NavigationManager NavManager
 
 <div class="min-h-screen flex bg-gray-50">
     <Sidebar />
 
     <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col">
 
-    <div class="flex-1 p-8">
-        @Body
+        <!-- Top Bar -->
+        <div class="flex items-center justify-end bg-white shadow px-6 py-3">
+            <!-- Bell Icon -->
+            <NotificationDropdown />
+
+            <!-- Avatar Circle -->
+            <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer">
+                <img src="assets/images/avatar.png" alt="User Avatar" class="w-full h-full object-cover" />
+            </div>
+        </div>
+
+        <!-- Body Content -->
+        <div class="flex-1 p-8">
+            <IdleOverlay />
+            @Body
+        </div>
     </div>
-
 </div>

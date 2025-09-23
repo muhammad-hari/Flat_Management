@@ -48,6 +48,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTG9naW4ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/BuildingPage.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcQnVpbGRpbmdQYWdlLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/Project/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/PositionPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcUG9zaXRpb25QYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
@@ -100,6 +104,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXEF1dGhMYXlvdXQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/Project/Densus88/new_app/src/MyApp.Web/Shared/Components/NotificationDropdown.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXENvbXBvbmVudHNcTm90aWZpY2F0aW9uRHJvcGRvd24ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/Project/Densus88/new_app/src/MyApp.Web/Shared/Components/Sidebar.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXENvbXBvbmVudHNcU2lkZWJhci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
@@ -110,6 +118,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [D:/Project/Densus88/new_app/src/MyApp.Web/Shared/Icon.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXEljb24ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Project/Densus88/new_app/src/MyApp.Web/Shared/IdleScreen/IdleOverlay.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXElkbGVTY3JlZW5cSWRsZU92ZXJsYXkucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/Project/Densus88/new_app/src/MyApp.Web/Shared/MinimalLayout.razor]
