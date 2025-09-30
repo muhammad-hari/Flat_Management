@@ -30,6 +30,10 @@ namespace MyApp.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -214,6 +218,57 @@ namespace MyApp.Infrastructure.Migrations
                     b.HasIndex("RoomId");
 
                     b.ToTable("Occupants");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.OccupantHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("DocumentContentType")
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("DocumentData")
+                        .HasColumnType("longblob");
+
+                    b.Property<string>("DocumentName")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("OccupantId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("PhotoData")
+                        .HasColumnType("longblob");
+
+                    b.Property<int>("RoomId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OccupantId");
+
+                    b.HasIndex("RoomId");
+
+                    b.ToTable("OccupantHistories");
                 });
 
             modelBuilder.Entity("MyApp.Core.Entities.Position", b =>
@@ -615,6 +670,81 @@ namespace MyApp.Infrastructure.Migrations
                     b.ToTable("UserTypes");
                 });
 
+            modelBuilder.Entity("MyApp.Core.Entities.Visitor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("ArrivedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DepartedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("DocumentContentType")
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("DocumentData")
+                        .HasColumnType("longblob");
+
+                    b.Property<string>("DocumentName")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("NIK")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("OccupantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("PhotoData")
+                        .HasColumnType("longblob");
+
+                    b.Property<string>("Purpose")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Relation")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("RoomId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OccupantId");
+
+                    b.HasIndex("RoomId");
+
+                    b.ToTable("Visitors");
+                });
+
             modelBuilder.Entity("MyApp.Core.Entities.Employee", b =>
                 {
                     b.HasOne("MyApp.Core.Entities.Position", "Position")
@@ -649,6 +779,25 @@ namespace MyApp.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Employee");
+
+                    b.Navigation("Room");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.OccupantHistory", b =>
+                {
+                    b.HasOne("MyApp.Core.Entities.Occupant", "Occupant")
+                        .WithMany()
+                        .HasForeignKey("OccupantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MyApp.Core.Entities.Room", "Room")
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Occupant");
 
                     b.Navigation("Room");
                 });
@@ -713,6 +862,21 @@ namespace MyApp.Infrastructure.Migrations
                     b.Navigation("Role");
 
                     b.Navigation("UserType");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.Visitor", b =>
+                {
+                    b.HasOne("MyApp.Core.Entities.Occupant", "Occupant")
+                        .WithMany()
+                        .HasForeignKey("OccupantId");
+
+                    b.HasOne("MyApp.Core.Entities.Room", "Room")
+                        .WithMany()
+                        .HasForeignKey("RoomId");
+
+                    b.Navigation("Occupant");
+
+                    b.Navigation("Room");
                 });
 #pragma warning restore 612, 618
         }

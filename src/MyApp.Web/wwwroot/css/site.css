@@ -66,3 +66,36 @@ a, .btn-link {
     .blazor-error-boundary::after {
         content: "An error has occurred."
     }
+.owl-container {
+    position: relative;
+}
+
+.eye {
+    position: absolute;
+    width: 28px;          /* ukuran pupil */
+    height: 28px;
+    background: radial-gradient(circle, #ffeb3b 40%, #000 41% 100%); /* kuning + pupil hitam */
+    border-radius: 50%;
+    pointer-events: none;
+    transition: transform 0.05s linear;
+}
+
+/* Sesuaikan posisi agar tepat di mata logo */
+#eye-left  { top: 42%; left: 31%; }
+#eye-right { top: 42%; right: 31%; }
+
+.owl-anim {
+    width: 240px;
+    height: 240px;
+    background-size: cover;
+    background-position: center;
+    animation: owlBlink 4s steps(4) infinite;
+}
+
+@keyframes owlBlink {
+    0%   { background-image: url('/assets/images/idle-1.png'); }
+    25%  { background-image: url('/assets/images/idle-2.png'); }
+    50%  { background-image: url('/assets/images/idle-3.png'); }
+    75%  { background-image: url('/assets/images/idle-4.png'); }
+    100% { background-image: url('/assets/images/idle-1.png'); } /* balik ke melek */
+}

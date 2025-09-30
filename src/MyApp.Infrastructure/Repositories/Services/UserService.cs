@@ -12,6 +12,14 @@ public class UserRepository : IUserRepository
         _context = context;
     }
 
+    public async Task<User?> GetByUserNameAsync(string username)
+    {
+        return await _context.Users
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.UserName == username && u.IsActive);
+    }
+
+
     public async Task<User?> GetByIdAsync(int id) =>
         await _context.Users.FindAsync(id);
 

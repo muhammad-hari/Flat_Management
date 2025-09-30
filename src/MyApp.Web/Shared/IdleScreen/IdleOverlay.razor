@@ -1,0 +1,57 @@
+@using Microsoft.AspNetCore.Components.Web
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<div class="@OverlayClass" @onclick="HideOverlay" @onkeydown="HandleKey">
+    <div class="flex flex-col items-center justify-center w-full h-full relative">
+        <div class="relative w-60 h-60 mb-6">
+            <div class="owl-anim"></div>
+        </div>
+
+        <h1 class="text-4xl md:text-6xl font-bold text-white mb-6">Idle Mode ON</h1>
+        <p class="text-lg text-gray-200 mb-10">
+            Press <kbd class="px-2 py-1 bg-gray-700 rounded">Enter</kbd> or click anywhere to return.
+        </p>
+        <button class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-lg rounded-xl shadow-lg
+                       transition-transform transform hover:scale-105" @onclick="HideOverlay">
+            Return to Application
+        </button>
+    </div>
+</div>
+
+@code {
+    private bool _isIdle;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("IdleDetector.start",
+            DotNetObjectReference.Create(this),
+            5 * 60 * 1000);
+        }
+    }
+
+    [JSInvokable]
+    public void OnUserIdle()
+    {
+        _isIdle = true;
+        StateHasChanged();
+    }
+
+    private void HideOverlay()
+    {
+        _isIdle = false;
+        StateHasChanged();
+    }
+
+    private void HandleKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") HideOverlay();
+    }
+
+    private string OverlayClass =>
+    _isIdle
+    ? @"fixed inset-0 bg-gradient-to-b from-red-700 to-black
+bg-opacity-95 z-50 flex items-center justify-center transition-opacity duration-500"
+    : "hidden";
+}

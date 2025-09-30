@@ -1,75 +1,86 @@
 ﻿@page "/"
 @page "/dashboard"
-
+@using System.Security.Claims
+@inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
 @inject NavigationManager Navigation
 @inject IHttpContextAccessor HttpContextAccessor
 
-<div class="bg-white rounded-lg shadow-sm p-6">
-    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Welcome to Flat Management System</h2>
-    <p class="text-gray-600 mb-6">
-        Select an option from the sidebar to get started. The sidebar features colorful icons on hover
-        and includes a Master Data submenu with Position management.
-    </p>
+@if (!IsAuthorized)
+{
+    <p>Checking access...</p>
+}
+else
+{
+    <div class="bg-white rounded-lg shadow-sm p-6">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Welcome to Flat Management System</h2>
+        <p class="text-gray-600 mb-6">
+            Select an option from the sidebar to get started. The sidebar features colorful icons on hover
+            and includes a Master Data submenu with Position management.
+        </p>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div class="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
-            <div class="text-green-600 mb-2">
-                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd"
-                        d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                        clip-rule="evenodd" />
-                </svg>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
+                <div class="text-green-600 mb-2">
+                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <h3 class="font-semibold text-gray-800 mb-2">Dashboard Overview</h3>
+                <p class="text-gray-600 text-sm">Monitor all building activities and get real-time insights.</p>
             </div>
-            <h3 class="font-semibold text-gray-800 mb-2">Dashboard Overview</h3>
-            <p class="text-gray-600 text-sm">Monitor all building activities and get real-time insights.</p>
+            <!-- user management & security sections sama seperti sebelumnya -->
         </div>
 
-        <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-lg border border-blue-200">
-            <div class="text-blue-600 mb-2">
-                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                        d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                </svg>
-            </div>
-            <h3 class="font-semibold text-gray-800 mb-2">User Management</h3>
-            <p class="text-gray-600 text-sm">Manage users, occupants, visitors, and employees efficiently.</p>
-        </div>
-
-        <div class="bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg border border-purple-200">
-            <div class="text-purple-600 mb-2">
-                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd"
-                        d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                        clip-rule="evenodd" />
-                </svg>
-            </div>
-            <h3 class="font-semibold text-gray-800 mb-2">Security & Access</h3>
-            <p class="text-gray-600 text-sm">Control building access and manage security protocols.</p>
+        <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+            <h4 class="font-semibold text-gray-800 mb-2">Features:</h4>
+            <ul class="text-gray-600 text-sm space-y-1">
+                <li>• Hover over sidebar items to see colorful icons</li>
+                <li>• Click on "Master Data" to expand and see "Position" submenu</li>
+                <li>• Responsive design with smooth transitions</li>
+                <li>• Organized navigation structure</li>
+            </ul>
         </div>
     </div>
-
-    <div class="mt-8 p-4 bg-gray-50 rounded-lg">
-        <h4 class="font-semibold text-gray-800 mb-2">Features:</h4>
-        <ul class="text-gray-600 text-sm space-y-1">
-            <li>• Hover over sidebar items to see colorful icons</li>
-            <li>• Click on "Master Data" to expand and see "Position" submenu</li>
-            <li>• Responsive design with smooth transitions</li>
-            <li>• Organized navigation structure</li>
-        </ul>
-    </div>
-</div>
+}
 
 @code {
-    protected override void OnInitialized()
+    private bool IsAuthorized = false;
+    private bool isFirstRender = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var userAgent = HttpContextAccessor.HttpContext?.Request.Headers["User-Agent"].ToString() ?? "";
-
-        if (IsMobile(userAgent))
+        if (isFirstRender)
         {
-            Navigation.NavigateTo("/MobileNotAllowed");
-            return;
-        }
+            isFirstRender = false;
 
+            // cek device
+            var userAgent = HttpContextAccessor.HttpContext?.Request.Headers["User-Agent"].ToString() ?? "";
+            if (IsMobile(userAgent))
+            {
+                Navigation.NavigateTo("/MobileNotAllowed");
+                return;
+            }
+
+            // cek role admin
+            var claimsResult = await SessionStorage.GetAsync<Dictionary<string, string>>("claims");
+            var claimsDict = claimsResult.Value;
+            Console.WriteLine("claims :" + claimsDict);
+            if (claimsDict != null)
+            {
+                Console.WriteLine("claims: " + System.Text.Json.JsonSerializer.Serialize(claimsDict));
+            }
+
+            if (claimsDict == null || !claimsDict.TryGetValue(ClaimTypes.Role, out var role) || role != "admin")
+            {
+                Navigation.NavigateTo("/AccessDenied");
+                return;
+            }
+
+            IsAuthorized = true;
+            StateHasChanged();
+        }
     }
 
     private bool IsMobile(string userAgent)

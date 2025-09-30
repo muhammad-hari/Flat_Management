@@ -15,12 +15,31 @@ public class OccupantRepository : IOccupantRepository
     public async Task<Occupant?> GetByIdAsync(int id) =>
         await _context.Occupants.FindAsync(id);
 
+    public async Task<Occupant?> GetByEmployeeIdAsync(int employeeId)
+    {
+        return await _context.Occupants
+            .Include(o => o.Employee)
+                .ThenInclude(e => e.Position)
+            .Include(o => o.Employee)
+                .ThenInclude(e => e.Rank)
+            .Include(o => o.Room)
+                .ThenInclude(r => r.Building)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.EmployeeId == employeeId);
+    }
+
+
+    // OccupantRepository.cs
     public async Task<List<Occupant>> GetAllAsync()
     {
         return await _context.Occupants
             .Include(o => o.Employee)
+                .ThenInclude(e => e.Position)
+            .Include(o => o.Employee)
+                .ThenInclude(e => e.Rank)
             .Include(o => o.Room)
-            .AsNoTracking()  // <-- ini penting
+                .ThenInclude(e => e.Building)
+            .AsNoTracking()
             .ToListAsync();
     }
 

@@ -1,0 +1,140 @@
+@* @inject IFileService FileService
+
+<!-- form -->
+<div class="mb-4">
+    <label class="block font-semibold mb-1">Photo</label>
+    <InputFile OnChange="OnPhotoSelected" accept="image/*" />
+    <p class="text-xs text-gray-500 text-red-500">Max 2 MB,Image *.jpg,.jpeg,.png </p>
+</div>
+
+<!-- Upload Dokumen PDF -->
+<div class="mb-4">
+    <label class="block font-semibold mb-1">Documents (.PDF) (Optional)</label>
+    <InputFile OnChange="OnDocsSelected" multiple accept="application/pdf" />
+    <p class="text-xs text-gray-500 text-red-500">Max 10 MB ,PDF Only</p>
+</div>
+
+<!-- Photo -->
+<div class="flex flex-col items-center mb-4">
+    @if (PhotoByEmployee.TryGetValue(SelectedEmployee.Id, out var photos) && photos.Any())
+    {
+        <img src="@($"/secure-files/{photos.First().Path}")" class="w-40 h-40 rounded-full mx-auto mb-4 object-cover" />
+    }
+    else
+    {
+        <div class="w-40 h-40 rounded-full bg-gray-200 mx-auto mb-4 flex items-center justify-center text-gray-500">
+            No Photo
+        </div>
+    }
+</div>
+
+<!-- Dokumen PDF -->
+@if (DocsByEmployee.TryGetValue(SelectedEmployee.Id, out var docs) && docs.Any())
+{
+    <div class="mt-4">
+        <h4 class="font-semibold mb-2">Documents</h4>
+        <ul class="list-disc ml-5 space-y-1">
+            @foreach (var d in docs)
+            {
+                <li>
+                    <a href="@($"/secure-files/{d.Path}")" target="_blank" class="text-blue-600 hover:underline">@d.FileName</a>
+                </li>
+            }
+        </ul>
+    </div>
+}
+<ToastContainer @ref="toastContainer" />
+@code {
+    //toaster
+    private ToastContainer? toastContainer;
+    // Upload buffer
+    private IReadOnlyList<IBrowserFile>? PendingUploads;
+    private IBrowserFile? PendingPhoto;
+    private IReadOnlyList<IBrowserFile>? PendingDocs;
+
+    // Dictionaries untuk file
+    private Dictionary<int, List<FileUpload>> PhotoByEmployee = new();
+    private Dictionary<int, List<FileUpload>> DocsByEmployee = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Employees = await EmployeeService.GetAllAsync();
+        Positions = await PositionService.GetAllAsync();
+        Ranks = await RankService.GetAllAsync();
+
+        // Load photo
+        var allPhotos = await FileService.GetFilesByCategoryAsync("EmployeePhoto");
+        PhotoByEmployee = allPhotos
+        .GroupBy(f => f.OwnerId)
+        .ToDictionary(g => g.Key, g => g.ToList());
+
+        // Load documents
+        var allDocs = await FileService.GetFilesByCategoryAsync("EmployeeDocs");
+        DocsByEmployee = allDocs
+        .GroupBy(f => f.OwnerId)
+        .ToDictionary(g => g.Key, g => g.ToList());
+    }
+
+    private void OnPhotoSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file.ContentType.StartsWith("image/"))
+            PendingPhoto = file;
+        else
+            toastContainer?.ShowToast("Photo File Ext. Not Allowed!", "Error");
+    }
+
+    private void OnDocsSelected(InputFileChangeEventArgs e)
+    {
+        var files = e.GetMultipleFiles()
+        .Where(f => f.ContentType == "application/pdf")
+        .ToList();
+        if (files.Any())
+            PendingDocs = files;
+        else
+            toastContainer?.ShowToast("Only PDF Allowed!", "Error");
+    }
+
+    
+
+    private async Task SaveEmployee()
+    {
+        try
+        {
+            if (ModalMode == "Add")
+                await EmployeeService.AddAsync(SelectedEmployee);
+            else if (ModalMode == "Edit")
+                await EmployeeService.UpdateAsync(SelectedEmployee);
+
+            // Simpan foto
+            if (PendingPhoto != null)
+                await FileService.SaveFileAsync(PendingPhoto, "EmployeePhoto", SelectedEmployee.Id);
+
+            // Simpan dokumen
+            if (PendingDocs?.Count > 0)
+            {
+                foreach (var doc in PendingDocs)
+                    await FileService.SaveFileAsync(doc, "EmployeeDocs", SelectedEmployee.Id);
+            }
+
+            Employees = await EmployeeService.GetAllAsync();
+
+            // refresh file dictionary
+            var allPhotos = await FileService.GetFilesByCategoryAsync("EmployeePhoto");
+            PhotoByEmployee = allPhotos
+            .GroupBy(f => f.OwnerId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+            var allDocs = await FileService.GetFilesByCategoryAsync("EmployeeDocs");
+            DocsByEmployee = allDocs
+            .GroupBy(f => f.OwnerId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+            CloseModal();
+            toastContainer?.ShowToast("Employee tersimpan!", "success");
+        }
+        catch (Exception ex)
+        {
+            toastContainer?.ShowToast($"Error: {ex.Message}", "error");
+        }
+    }
+} *@

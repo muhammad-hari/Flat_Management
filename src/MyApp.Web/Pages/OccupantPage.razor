@@ -2,257 +2,359 @@
 @using MyApp.Core.Entities
 @using MyApp.Core.Interfaces
 @inject IOccupantRepository OccupantService
-@inject IPositionRepository PositionService
-@inject IRankRepository RankService
 @inject IEmployeeRepository EmployeeService
 @inject IRoomRepository RoomService
+@inject IFileService FileService
+@inject IOccupantHistoryRepository HistoryService
 
-<div class="bg-white rounded-lg shadow-sm p-6">
+
+<div class="bg-gradient-to-b from-red-700 to-black rounded-lg shadow-sm p-6">
     <div class="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
-        <h2 class="text-2xl font-semibold text-gray-800">Occupants Management</h2>
-        <p class="text-gray-600 mt-1">Manage Occupants , CheckIn and CheckOut</p>
+        <h2 class="text-2xl font-semibold text-gray-800">
+            Occupant Records Management
+        </h2>
+        <p class="text-gray-600 mt-1">
+            Efficiently manage and track occupant check-in, check-out, and transfer operations.
+        </p>
     </div>
 </div>
 
 <div class="p-6 space-y-6">
-
-    <!-- Card Summary -->
-    <div class="grid grid-cols-1 md:grid-cols-6 gap-6">
-        <div class="bg-purple-800 text-white p-6 rounded-2xl shadow-md">
+    <!-- Summary Card -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-blue-800 text-white p-4 rounded-2xl shadow-md">
             <h2 class="text-lg font-semibold">Total Occupants</h2>
-            <p class="text-2xl font-bold">@TotalOccupants</p>
+            <p class="text-2xl font-bold">@Occupants?.Count()</p>
         </div>
-        <div class="bg-green-400 text-white p-6 rounded-2xl shadow-md">
-            <h2 class="text-lg font-semibold">New Occupant</h2>
-            <p class="text-2xl font-bold">@NewOccupants</p>
+        <div class="bg-green-800 text-white p-4 rounded-2xl shadow-md">
+            <h2 class="text-lg font-semibold">Active</h2>
+            <p class="text-2xl font-bold">@Occupants?.Count(u => u.DepartedAt == null)</p>
         </div>
-        <div class="bg-yellow-500 text-white p-6 rounded-2xl shadow-md">
-            <h2 class="text-lg font-semibold">Occupant / Years</h2>
-            <p class="text-2xl font-bold">@TotalYearsWorked</p>
+        <div class="bg-red-800 text-white p-4 rounded-2xl shadow-md">
+            <h2 class="text-lg font-semibold">Inactive</h2>
+            <p class="text-2xl font-bold">@Occupants?.Count(u => u.DepartedAt != null)</p>
         </div>
-        <div class="bg-blue-600 text-white p-6 rounded-2xl shadow-md">
-            <h2 class="text-lg font-semibold">Average Years</h2>
-            <p class="text-2xl font-bold">@AverageYears.ToString("F1")</p>
+        <div class="bg-purple-800 text-white p-4 rounded-2xl shadow-md">
+            <h2 class="text-lg font-semibold">Total Transfer</h2>
+            <p class="text-2xl font-bold">2</p>
         </div>
     </div>
+</div>
 
-    <!-- Search & Add -->
+<div class="p-6 space-y-6">
     <div class="flex justify-between items-center">
-        <input type="text" placeholder="Search Occupant..." @bind="SearchTerm"
+        <input type="text" placeholder="Search Occupant,NRP,Position,Rank,Building,Room..." @bind="SearchTerm"
                class="px-4 py-2 w-1/3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500" />
-        <button @onclick="AddOccupant" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition">
+        <button @onclick="()=>ShowAddModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-blue-800">
             + Add Occupant
         </button>
     </div>
 
-    <!-- Occupant Table -->
+    <!-- Table Occupants -->
     <div class="overflow-x-auto mt-4">
         <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
-            <thead class="bg-gray-100">
+            <thead class="bg-gradient-to-b from-red-700 to-black">
                 <tr>
-                    <th class="px-4 py-2">Employee name</th>
-                    <th class="px-4 py-2">NRP</th>
-                    <th class="px-4 py-2">Phone</th>
-                    <th class="px-4 py-2">Position</th>
-                    <th class="px-4 py-2">Arrived Date</th>
-                    <th class="px-4 py-2">Departed Date</th>
-                    <th class="px-4 py-2">Room</th>
-                    <th class="px-4 py-2">Status</th>
-                    <th class="px-4 py-2">Actions</th>
+                    <th class="px-4 py-2 text-white">Employee name</th>
+                    <th class="px-4 py-2 text-white">NRP</th>
+                    <th class="px-4 py-2 text-white">Phone</th>
+                    <th class="px-4 py-2 text-white">Position</th>
+                    <th class="px-4 py-2 text-white">Rank</th>
+                    <th class="px-4 py-2 text-white">Arrived Date</th>
+                    <th class="px-4 py-2 text-white">Departed Date</th>
+                    <th class="px-4 py-2 text-white">Building</th>
+                    <th class="px-4 py-2 text-white">Floor</th>
+                    <th class="px-4 py-2 text-white">Room</th>
+                    <th class="px-4 py-2 text-white">Status</th>
+                    <th class="px-4 py-2 text-white">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @if (FilteredOccupants != null)
+                @if (FilteredOccupants != null && FilteredOccupants.Any())
                 {
-                    @foreach (var Occupant in FilteredOccupants)
+                    @foreach (var occupant in FilteredOccupants)
                     {
                         <tr class="border-b hover:bg-gray-50">
-                            <td class="px-4 py-2">@Occupant.Employee?.Name</td>
-                            <td class="px-4 py-2">@Occupant.Employee?.NRP</td>
-                            <td class="px-4 py-2">@Occupant.Employee?.Phone</td>
-                            <td class="px-4 py-2">@Occupant.Employee?.Position?.Name</td>
-                            <td class="px-4 py-2">@Occupant.ArrivedAt.ToString("dd MMM yyyy")</td>
-                            <td class="px-4 py-2">@Occupant.DepartedAt?.ToString("dd MMM yyyy")</td>
-                            <td class="px-4 py-2">@Occupant.Room?.RoomNo</td>
+                            <td class="px-4 py-2">@occupant.Employee?.Name</td>
+                            <td class="px-4 py-2">@occupant.Employee?.NRP</td>
+                            <td class="px-4 py-2">@occupant.Employee?.Phone</td>
+                            <td class="px-4 py-2">@occupant.Employee?.Position?.Name</td>
+                            <td class="px-4 py-2">@occupant.Employee?.Rank?.Name</td>
+                            <td class="px-4 py-2">@occupant.ArrivedAt.ToString("dd MMM yyyy")</td>
+                            <td class="px-4 py-2">@occupant.DepartedAt?.ToString("dd MMM yyyy")</td>
+                            <td class="px-4 py-2">@occupant.Room?.Building.Name</td>
+                            <td class="px-4 py-2">@occupant.Room?.Floor</td>
+                            <td class="px-4 py-2">@occupant.Room?.Name</td>
                             <td class="px-4 py-2">
-                                <span class="@GetStatusClass(Occupant.DepartedAt == null)">
-                                    @(Occupant.DepartedAt == null ? "Active" : "Inactive")
+                                <span class="@GetStatusClass(occupant.DepartedAt == null)">
+                                    @(occupant.DepartedAt == null ? "Active" : "Inactive")
                                 </span>
                             </td>
-                            <td class="px-4 py-2 whitespace-nowrap space-x-2">
-                                <button class="px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-sm" @onclick="() => ShowDetail(Occupant)">Detail</button>
-                                <button class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm" @onclick="() => EditOccupant(Occupant)">Edit</button>
-                                <button class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm" @onclick="() => ConfirmDelete(Occupant.Id, Occupant.Employee?.Name)">Delete</button>
+                            <td class="px-4 py-2 space-x-2">
+                                <button class="px-2 py-1 bg-blue-500 text-white rounded" @onclick="async () => await ShowDetail(occupant)">Detail</button>
+                                <button class=@($"px-2 py-1 text-white rounded {(occupant.DepartedAt == null ? "bg-red-500 hover:bg-red-600" : "bg-gray-400 cursor-not-allowed")}")
+                                        @onclick="()=>ShowCheckoutModal(occupant.Id)"
+                                        disabled="@(occupant.DepartedAt != null)">
+                                    Checkout
+                                </button>
+                                <button class=@($"px-2 py-1 text-white rounded {(occupant.DepartedAt == null ? "bg-yellow-500 hover:bg-yellow-600" : "bg-gray-400 cursor-not-allowed")}")
+                                        @onclick="()=>ShowTransferModal(occupant.Id)"
+                                        disabled="@(occupant.DepartedAt != null)">
+                                    Transfer
+                                </button>
+
                             </td>
                         </tr>
                     }
                 }
-                else{
-                    <tr>
-                        <td colspan="9" class="py-12">
-                            <div class="flex flex-col items-center text-gray-400">
-                                <object data="/assets/images/no-data.svg"
-                                        type="image/svg+xml"
-                                        class="h-32 w-32 mb-4"></object>
-                                <div>No Data</div>
-                            </div>
-                        </td>
-                    </tr>
+                else
+                {
+                    <tr><td colspan="9" class="py-12 text-center text-gray-400">No Data</td></tr>
                 }
             </tbody>
         </table>
     </div>
 </div>
 
-<!-- Modal Add/Edit/Detail -->
+@* Modal Add/Edit Occupant *@
 @if (ShowModal)
 {
     <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-lg overflow-y-auto max-h-screen">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md overflow-y-auto max-h-screen">
             <h2 class="text-xl font-bold mb-4">@ModalTitle</h2>
 
-            @if (ModalMode == "Detail")
+            @if (AddStep == 1)
             {
-                <!-- Detail View -->
+                <div>
+                    <label class="block mb-1">Enter NRP</label>
+                    <div class="flex items-center gap-2">
+                        <input class="flex-1 px-3 py-2 border rounded mt-1 disabled:bg-gray-100"
+                            placeholder="NRP"
+                            @bind="NRPInput"
+                            @onkeyup="OnNRPEnter"
+                            disabled="@isLoading" />
+
+                        @if (isLoading)
+                        {
+                            <!-- Spinner -->
+                            <div class="animate-spin border-2 border-t-transparent border-blue-500 rounded-full w-5 h-5"></div>
+                        }
+                        else
+                        {
+                            <button class="px-2" @onclick="SearchNRP">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+
+            else if (AddStep == 2)
+            {
                 <div class="flex flex-col items-center mb-4">
-                    @if (SelectedOccupant.Employee?.PhotoData != null)
+                    @* Photo *@
+                    @if (PhotoByEmployee.TryGetValue(SelectedOccupant.EmployeeId, out var photos) && photos.Any())
                     {
-                        var base64 = Convert.ToBase64String(SelectedOccupant.Employee.PhotoData);
-                        <img src="data:image/png;base64,@base64" class="w-40 h-40 rounded-full mb-4" />
+                        <img src="@($"/secure-files/{photos.First().Path}")"
+                            class="w-40 h-40 rounded-full mx-auto mb-4 object-cover" />
                     }
                     else
                     {
-                        <div class="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-                            <span class="text-gray-500">No Photo</span>
+                        <div class="w-40 h-40 rounded-full bg-gray-200 mx-auto mb-4 flex items-center justify-center text-gray-500">
+                            No Photo
                         </div>
                     }
                 </div>
-
-                <div class="grid grid-cols-2 gap-2 text-gray-700">
-                    <div class="font-semibold">Occupant Name</div><div>@SelectedOccupant.Employee?.Name</div>
-                    <div class="font-semibold">NRP</div><div>@SelectedOccupant.Employee?.NRP</div>
-                    <div class="font-semibold">Gender</div><div>@SelectedOccupant.Employee?.Gender</div>
-                    <div class="font-semibold">Date of Birth</div><div>@SelectedOccupant.Employee?.DateOfBirth.ToString("dd MMM yyyy")</div>
-                    <div class="font-semibold">Email</div><div>@SelectedOccupant.Employee?.Email</div>
-                    <div class="font-semibold">Phone</div><div>@SelectedOccupant.Employee?.Phone</div>
-                    <div class="font-semibold">Position</div><div>@SelectedOccupant.Employee?.Position?.Name</div>
-                    <div class="font-semibold">Address</div><div>@SelectedOccupant.Employee?.Address</div>
-                    <div class="font-semibold">Rank</div><div>@SelectedOccupant.Employee?.Rank?.Name</div>
-                    <div class="font-semibold">Arrived Date</div><div>@SelectedOccupant.ArrivedAt.ToString("dd MMM yyyy")</div>
-                    <div class="font-semibold">Status</div>
-                    <div>
-                        <span class="@GetStatusClass(SelectedOccupant.DepartedAt == null)">
-                            @(SelectedOccupant.DepartedAt == null ? "Active" : "Inactive")
-                        </span>
-                    </div>
-                    <div class="font-semibold">Period</div><div>@GetPeriod(SelectedOccupant.ArrivedAt)</div>
-                </div>
-            }
-            else
-            {
-                <!-- Add / Edit Form -->
                 <div class="space-y-2">
-                    <!-- NRP Input -->
-                    <input class="w-full px-3 py-2 border rounded"
-                           placeholder="NRP"
-                           @bind="NRPInput"
-                           @onkeydown="OnNRPEnter" />
-
-                    <!-- Employee Details (disabled until Employee ditemukan) -->
-                    <input class="w-full px-3 py-2 border rounded bg-gray-100"
-                           placeholder="Occupant Name"
-                           @bind="SelectedOccupant.Employee.Name"
-                           disabled="@(!IsEmployeeLoaded)" />
-
-                    <input class="w-full px-3 py-2 border rounded bg-gray-100"
-                           placeholder="Gender"
-                           @bind="SelectedOccupant.Employee.Gender"
-                           disabled="@(!IsEmployeeLoaded)" />
-
-                    @* <input class="w-full px-3 py-2 border rounded bg-gray-100"
-                           type="date"
-                           @bind="SelectedOccupant.Employee.DateOfBirth"
-                           disabled="@(!IsEmployeeLoaded)" /> *@
-
-                    @* <input class="w-full px-3 py-2 border rounded bg-gray-100"
-                           placeholder="Email"
-                           @bind="SelectedOccupant.Employee.Email"
-                           disabled="@(!IsEmployeeLoaded)" /> *@
-
-                    <input class="w-full px-3 py-2 border rounded bg-gray-100"
-                           placeholder="Phone"
-                           @bind="SelectedOccupant.Employee.Phone"
-                           disabled="@(!IsEmployeeLoaded)" />
-
-                    <input class="w-full px-3 py-2 border rounded bg-gray-100"
-                           placeholder="Position"
-                           @bind="SelectedOccupant.Employee.Position.Name"
-                           disabled="@(!IsEmployeeLoaded)" />
-
-                    <input class="w-full px-3 py-2 border rounded bg-gray-100"
-                           placeholder="Address"
-                           @bind="SelectedOccupant.Employee.Address"
-                           disabled="@(!IsEmployeeLoaded)" />
-
-                    @* <div class="flex items-center space-x-2">
-                        <div class="font-semibold">Active</div>
-                        <input type="checkbox"
-                               @bind="SelectedOccupant.Employee.IsActive"
-                               disabled="@(!IsEmployeeLoaded)" />
-                    </div> *@
-
-                    <div class="font-semibold">Room</div>
-                <select class="w-full mb-2 px-3 py-2 border rounded" @bind="SelectedOccupant.RoomId">
-                    <option value="">Select Room</option>
-                    @foreach (var room in Rooms)
-                    {
-                        <option value="@room.Id">@room.RoomNo</option>
-                    }
-                </select>
-
-                <!-- Upload Photo -->
-                <div class="mb-3">
-                    <label class="font-semibold">Photo (image only)</label>
-                    <InputFile OnChange="UploadPhoto" accept="image/*" />
-                    @if (SelectedOccupant.PhotoData != null)
-                    {
-                        <img src="data:image/png;base64,@Convert.ToBase64String(SelectedOccupant.PhotoData)"
-                            class="w-40 h-40 rounded-full mt-2" />
-                    }
-                </div>
-
-                <!-- Upload Document -->
-                <div class="mb-3">
-                    <label class="font-semibold">Document (pdf/doc/docx)</label>
-                    <InputFile OnChange="UploadDocument" accept=".pdf,.doc,.docx" />
-                    @if (!string.IsNullOrEmpty(SelectedOccupant.DocumentName))
-                    {
-                        <p class="text-sm mt-1">Uploaded: @SelectedOccupant.DocumentName</p>
-                    }
-                </div>
-
-                </div>
-
-                <div class="flex justify-end space-x-2 mt-4">
-                    <button class="px-4 py-2 bg-red-600 text-white rounded" @onclick="CloseModal">Close</button>
-                    <button class="px-4 py-2 bg-blue-600 text-white rounded" @onclick="SaveOccupant" disabled="@(!IsEmployeeLoaded)">Save</button>
+                    <div><b>NRP: @SelectedOccupant.Employee?.NRP</b</div>
+                    <div>Name: @SelectedOccupant.Employee?.Name</div>
+                    <div>Gender: @SelectedOccupant.Employee?.Gender</div>
+                    <div>Phone: @SelectedOccupant.Employee?.Phone</div>
+                    <div>Position: @SelectedOccupant.Employee?.Position?.Name</div>
+                    <div>Rank: @SelectedOccupant.Employee?.Rank?.Name</div>
                 </div>
             }
+            else if (AddStep == 3)
+            {
+                <div class="space-y-2">
+                    <label>Select Room</label>
+                    <select class="w-full border rounded px-2 py-1" @bind="SelectedOccupant.RoomId">
+                        <option value="">Select Room</option>
+                        @foreach(var room in Rooms)
+                        {
+                            <option value="@room.Id">@room.RoomNo</option>
+                        }
+                    </select>
+
+                    @* <label>Upload Photo</label>
+                    <InputFile OnChange="OnPhotoSelected" accept="image/*" />
+
+                    <label>Upload Document</label>
+                    <InputFile OnChange="OnDocumentSelected" accept=".pdf,.doc,.docx" /> *@
+                </div>
+                <div class="mb-4">
+                    <label class="block font-semibold mb-1">Photo</label>
+                    <InputFile OnChange="OnPhotoSelected" accept="image/*" />
+                    <p class="text-xs text-gray-500 text-red-500">Max 2 MB,Image *.jpg,.jpeg,.png </p>
+                </div>
+
+                <!-- Upload Dokumen PDF -->
+                <div class="mb-4">
+                    <label class="block font-semibold mb-1">Documents (.PDF) (Optional)</label>
+                    <InputFile OnChange="OnDocsSelected" multiple accept="application/pdf" />
+                    <p class="text-xs text-gray-500 text-red-500">Max 10 MB ,PDF Only</p>
+                </div>
+            }
+
+            <div class="flex justify-end space-x-2 mt-4">
+                @if(AddStep > 1)
+                {
+                    <button class="px-3 py-1 bg-gray-300 rounded" @onclick="()=>AddStep--">Back</button>
+                }
+                @if(AddStep == 2)
+                {
+                    <button class="px-3 py-1 bg-blue-600 text-white rounded" @onclick="NextStep">Next</button>
+                }
+                @if(AddStep == 3)
+                {
+                    <button class="px-3 py-1 bg-green-600 text-white rounded" @onclick="SaveOccupant">Save</button>
+                }
+                <button class="px-3 py-1 bg-red-500 text-white rounded" @onclick="()=>ShowModal=false">Close</button>
+            </div>
         </div>
     </div>
 }
 
-
-<!-- Confirm Delete Modal -->
-@if (ShowConfirmModal)
+@* Modal Detail Occupant *@
+@if (ShowDetailModal && SelectedOccupant != null)
 {
-    <div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h3 class="text-xl font-semibold text-gray-800 mb-4">Confirm Delete</h3>
-            <p class="text-gray-700 mb-6">@ConfirmMessage</p>
-            <div class="flex justify-end space-x-3">
-                <button class="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-lg" @onclick="CancelDelete">Cancel</button>
-                <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg" @onclick="DeleteConfirmed">Delete</button>
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-3xl max-h-screen overflow-y-auto">
+            <div class="absolute inset-0 flex justify-center items-center pointer-events-none">
+                <img src="assets/images/mock.png" 
+                    class="max-w-[30%] max-h-[30%] opacity-30" 
+                    alt="watermark">
+            </div>
+            <h2 class="text-xl font-bold mb-4">Occupant Detail</h2>
+            <div class="flex flex-col items-center mb-4">
+                    @* Photo *@
+                    @if (PhotoByEmployee.TryGetValue(SelectedOccupant.EmployeeId, out var photos) && photos.Any())
+                    {
+                        <img src="@($"/secure-files/{photos.First().Path}")"
+                            class="w-40 h-40 rounded-full mx-auto mb-4 object-cover" />
+                    }
+                    else
+                    {
+                        <div class="w-40 h-40 rounded-full bg-gray-200 mx-auto mb-4 flex items-center justify-center text-gray-500">
+                            No Photo
+                        </div>
+                    }
+                </div>
+            <div class="space-y-2">
+                <div class="mt-4">
+                    <h4 class="font-semibold mb-2">Occupant Info</h4>
+                    <ul class="list-disc ml-5 space-y-1">
+                        <div>NRP: @SelectedOccupant.Employee?.NRP</div>
+                        <div>Name: @SelectedOccupant.Employee?.Name</div>
+                        <div>Gender: @SelectedOccupant.Employee?.Gender</div>
+                        <div>Phone: @SelectedOccupant.Employee?.Phone</div>
+                        <div>Position: @SelectedOccupant.Employee?.Position?.Name</div>
+                        <div>Rank: @SelectedOccupant.Employee?.Rank?.Name</div>
+                        <div>Status:
+                         <span class="@GetStatusClass(SelectedOccupant.DepartedAt == null)">
+                                    @(SelectedOccupant.DepartedAt == null ? "Active" : "Inactive")
+                                </span>
+                        </div>
+                    </ul>
+                </div>
+                <div class="mt-4">
+                    <h4 class="font-semibold mb-2">Building Info</h4>
+                    <ul class="list-disc ml-5 space-y-1">
+                        <div>Building / Floor: @SelectedOccupant.Room?.Building?.Name | @SelectedOccupant.Room?.Floor</div>
+                        <div>Room: @SelectedOccupant.Room?.Name | @SelectedOccupant.Room?.RoomNo</div>
+                        <div>Arrived: @SelectedOccupant.ArrivedAt.ToString("dd MMM yyyy")</div>
+                        <div>Departed: @SelectedOccupant.DepartedAt?.ToString("dd MMM yyyy")</div>
+                    </ul>
+                </div>
+                
+                @if (PhotoByOccupant.TryGetValue(SelectedOccupant.Id, out var photoOcc) && photoOcc.Any())
+                {
+                    <div class="mt-4">
+                        <h4 class="font-semibold mb-2">Photo Attachment</h4>
+                        <ul class="list-disc ml-5 space-y-1">
+                            <div class="relative w-full flex justify-center">
+                                <img src="@($"/secure-files/{photoOcc.First().Path}")"
+                                    class="w-full h-48 rounded-md object-contain border" />
+                                    <a href="@($"/secure-files/{photoOcc.First().Path}")" 
+                                    download
+                                    class="absolute top-2 right-2 bg-blue-600 text-white p-2 rounded-full shadow hover:bg-blue-700">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                                    </svg>
+                                </a>
+                            </div>
+                        </ul>
+                    </div>
+                }
+                @if (DocsByOccupant.TryGetValue(SelectedOccupant.Id, out var docs) && docs.Any())
+                {
+                    <div class="mt-4">
+                        <h4 class="font-semibold mb-2">Documents Attachment</h4>
+                        <ul class="list-disc ml-5 space-y-1">
+                            @foreach (var d in docs)
+                            {
+                                <li>
+                                    <a href="@($"/secure-files/{d.Path}")" target="_blank" class="text-blue-600 hover:underline">@d.FileName</a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </div>
+            <div class="flex justify-end mt-4">
+                <button class="px-3 py-1 bg-red-500 text-white rounded" @onclick="()=>ShowDetailModal=false">Close</button>
+            </div>
+        </div>
+    </div>
+}
+
+@* Modal Checkout *@
+@if (ShowCheckoutModalFlag)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <h2 class="text-xl font-bold mb-4">Checkout Occupant</h2>
+            <label>Checkout Date:</label>
+            <InputDate @bind-Value="CheckoutDate" class="w-full border rounded px-2 py-1 mb-4" />
+
+            <div class="flex justify-end space-x-2">
+                <button class="px-3 py-1 bg-gray-300 rounded" @onclick="()=>ShowCheckoutModalFlag=false">Cancel</button>
+                <button class="px-3 py-1 bg-red-600 text-white rounded" @onclick="CheckoutOccupant">Checkout</button>
+            </div>
+        </div>
+    </div>
+}
+
+@* Modal Transfer *@
+@if (ShowTransferModalFlag)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <h2 class="text-xl font-bold mb-4">Transfer Occupant</h2>
+            <label>Select New Room:</label>
+            <select class="w-full border rounded px-2 py-1 mb-4" @bind="TransferRoomId">
+                <option value="">Select Room</option>
+                @foreach(var room in Rooms)
+                {
+                    <option value="@room.Id">@room.RoomNo</option>
+                }
+            </select>
+
+            <div class="flex justify-end space-x-2">
+                <button class="px-3 py-1 bg-gray-300 rounded" @onclick="()=>ShowTransferModalFlag=false">Cancel</button>
+                <button class="px-3 py-1 bg-yellow-600 text-white rounded" @onclick="TransferOccupant">Transfer</button>
             </div>
         </div>
     </div>
@@ -261,245 +363,282 @@
 <ToastContainer @ref="toastContainer" />
 
 @code {
-    private string NRPInput = "";
-    private List<IBrowserFile> UploadedFiles = new();
+    private bool isLoading = false;
     private ToastContainer? toastContainer;
-
-    private List<Occupant> Occupants = new();
+    private string SearchTerm { get; set; } = "";
+    private List<Occupant> Occupants;
     private List<Position> Positions = new();
-    private List<Room> Rooms = new();
     private List<Rank> Ranks = new();
-    private string SearchTerm = "";
-    private bool ShowModal = false;
-    private string ModalTitle = "";
-    private string ModalMode = "";
-    private Occupant SelectedOccupant = new();
-    private bool ShowConfirmModal = false;
-    private string ConfirmMessage = "";
-    private int OccupantIdToDelete;
-    private bool IsEmployeeLoaded = false;
+    private List<Occupant> FilteredOccupants => string.IsNullOrEmpty(SearchTerm) 
+        ? Occupants 
+        : Occupants.Where(o => 
+            (o.Employee?.Name?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true) ||
+            (o.Employee?.Position?.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true)  ||
+            (o.Employee?.NRP?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true)  ||
+            (o.Employee?.Rank?.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true) ||
+            (o.Room?.Name?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true) ||
+            (o.Room?.Building?.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true) 
+        ).ToList();
 
-    @* private bool IsEmployeeLoaded => SelectedOccupant.Employee != null && !string.IsNullOrWhiteSpace(SelectedOccupant.Employee.NRP); *@
+    private bool ShowModal = false;
+    private string ModalTitle = "Add Occupant";
+    private int AddStep = 1;
+    private string NRPInput;
+    private Occupant SelectedOccupant = new();
+
+    private List<Room> Rooms;
+
+    // Checkout
+    private bool ShowCheckoutModalFlag = false;
+    private int CheckoutOccupantId;
+    private DateTime? CheckoutDate = DateTime.Today;
+
+    // Transfer
+    private bool ShowTransferModalFlag = false;
+    private int TransferOccupantId;
+    private int? TransferRoomId;
+
+    // Detail
+    private bool ShowDetailModal = false;
+
+    private IReadOnlyList<IBrowserFile>? PendingUploads;
+    private IBrowserFile? PendingPhoto;
+    private IReadOnlyList<IBrowserFile>? PendingDocs;
+
+    // Dictionaries untuk file
+    private Dictionary<int, List<FileUpload>> PhotoByEmployee = new();
+    private Dictionary<int, List<FileUpload>> DocsByOccupant = new();
+    private Dictionary<int, List<FileUpload>> PhotoByOccupant = new();
 
     protected override async Task OnInitializedAsync()
     {
         Occupants = await OccupantService.GetAllAsync();
-        Positions = await PositionService.GetAllAsync();
-        Ranks = await RankService.GetAllAsync();
+        Rooms = await RoomService.GetAllAsync();
+        var allPhotos = await FileService.GetFilesByCategoryAsync("EmployeePhoto");
+        PhotoByEmployee = allPhotos
+            .GroupBy(f => f.OwnerId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        // Load photo
+        var allPhotos2 = await FileService.GetFilesByCategoryAsync("OccupantPhoto");
+        PhotoByOccupant = allPhotos2
+        .GroupBy(f => f.OwnerId)
+        .ToDictionary(g => g.Key, g => g.ToList());
+
+        // Load documents
+        var allDocs = await FileService.GetFilesByCategoryAsync("OccupantDocs");
+        DocsByOccupant = allDocs
+        .GroupBy(f => f.OwnerId)
+        .ToDictionary(g => g.Key, g => g.ToList());
+
     }
 
-    private IEnumerable<Occupant> FilteredOccupants => Occupants
-        .Where(u => string.IsNullOrWhiteSpace(SearchTerm) || u.Employee.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase));
-
-    private string GetStatusClass(bool active) =>
-        active ? "px-2 py-1 text-xs bg-green-200 text-green-800 rounded-full" : "px-2 py-1 text-xs bg-red-200 text-red-800 rounded-full";
-
-    private void ShowDetail(Occupant Occupant)
+    private void ShowAddModal()
     {
-        SelectedOccupant = Occupant ?? new Occupant { Employee = new Employee() };
-        ModalTitle = "Occupant Detail";
-        ModalMode = "Detail";
+        ModalTitle = "Add Occupant";
         ShowModal = true;
+        AddStep = 1;
+        SelectedOccupant = new();
+        NRPInput = "";
     }
-
-    private void AddOccupant()
-{
-    SelectedOccupant = new Occupant
-    {
-        Employee = new Employee { IsActive = true, JoinDate = DateOnly.FromDateTime(DateTime.Now), Position = new Position(), Rank = new Rank() },
-        ArrivedAt = DateTime.Now
-    };
-    NRPInput = "";
-    ModalTitle = "Add Occupant";
-    ModalMode = "Add";
-    IsEmployeeLoaded = false;
-    ShowModal = true;
-}
-
-private void EditOccupant(Occupant occupant)
-{
-    SelectedOccupant = occupant ?? new Occupant { Employee = new Employee { Position = new Position(), Rank = new Rank() } };
-    NRPInput = SelectedOccupant.Employee?.NRP ?? "";
-    ModalTitle = "Edit Occupant";
-    ModalMode = "Edit";
-    IsEmployeeLoaded = !string.IsNullOrWhiteSpace(NRPInput);
-    ShowModal = true;
-}
-
-
-    private void CloseModal() => ShowModal = false;
 
     private async Task OnNRPEnter(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(NRPInput))
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(NRPInput) && !isLoading)
         {
-            var employee = await EmployeeService.GetByNRPAsync(NRPInput);
-            if (employee != null)
+            
+            try
             {
-                SelectedOccupant.Employee = employee;
-            }
-            else
-            {
-                SelectedOccupant.Employee = new Employee
+                isLoading = true;
+
+                var emp = await EmployeeService.GetByNRPAsync(NRPInput);
+                
+
+                if (emp != null)
                 {
-                    NRP = NRPInput,
-                    IsActive = true
-                };
+                    var occ = await OccupantService.GetByEmployeeIdAsync(emp.Id);
+                    if(occ != null && occ?.DepartedAt == null)
+                    {
+                        toastContainer?.ShowToast("Employee is Occupant Active!", "warning");
+                        return;
+                    }
+                    SelectedOccupant.EmployeeId = emp.Id;
+                    SelectedOccupant.Employee = emp;
+                    AddStep = 2;
+                }
+                else
+                {
+                    toastContainer?.ShowToast("NRP not found!", "error");
+                }
             }
-
-            IsEmployeeLoaded = true;
-            StateHasChanged();
-        }
-    }
-
-    private async Task LoadEmployeeByNRPAsync(string nrp)
-    {
-        if (string.IsNullOrWhiteSpace(nrp))
-            return;
-
-        var employee = await EmployeeService.GetByNRPAsync(nrp);
-        if (employee != null)
-            SelectedOccupant.Employee = employee;
-        else
-            SelectedOccupant.Employee = new Employee { NRP = nrp, IsActive = true };
-
-        StateHasChanged();
-    }
-
-    private async Task OnFilesChange(InputFileChangeEventArgs e)
-    {
-        UploadedFiles.Clear();
-        foreach (var file in e.GetMultipleFiles())
-        {
-            UploadedFiles.Add(file);
-            var buffer = new byte[file.Size];
-            await file.OpenReadStream(10_000_000).ReadAsync(buffer);
-            // Simpan buffer ke entity atau storage
-        }
-    }
-
-    private int TotalOccupants => Occupants?.Count() ?? 0;
-    private int NewOccupants => Occupants?.Count(u => u.Employee.JoinDate >= DateOnly.FromDateTime(DateTime.Now.AddYears(-1))) ?? 0;
-
-    private int TotalYearsWorked => Occupants?.Sum(u =>
-    {
-        var join = u.Employee.JoinDate.ToDateTime(TimeOnly.MinValue);
-        var now = DateTime.Now;
-        int years = now.Year - join.Year;
-        if (now.Month < join.Month || (now.Month == join.Month && now.Day < join.Day))
-            years--;
-        return years;
-    }) ?? 0;
-
-    private double AverageYears => TotalOccupants > 0 ? (double)TotalYearsWorked / TotalOccupants : 0;
-
-    private string GetPeriod(DateTime joinDate)
-    {
-        var start = joinDate;
-        var end = DateTime.Now;
-
-        int years = end.Year - start.Year;
-        int months = end.Month - start.Month;
-        int days = end.Day - start.Day;
-
-        if (days < 0)
-        {
-            months--;
-            days += DateTime.DaysInMonth(start.Year, start.Month);
-        }
-
-        if (months < 0)
-        {
-            years--;
-            months += 12;
-        }
-
-        return $"{years} tahun {months} bulan {days} hari";
-    }
-
-    private async Task UploadPhoto(InputFileChangeEventArgs e)
-    {
-        var file = e.File;
-        if (file != null)
-        {
-            using var ms = new MemoryStream();
-            await file.OpenReadStream(10_000_000).CopyToAsync(ms);
-            SelectedOccupant.PhotoData = ms.ToArray();
-        }
-    }
-
-    private async Task UploadDocument(InputFileChangeEventArgs e)
-    {
-        var file = e.File;
-        if (file != null)
-        {
-            var ext = Path.GetExtension(file.Name).ToLower();
-            if (ext is ".pdf" or ".doc" or ".docx")
+            catch (Exception ex)
             {
-                using var ms = new MemoryStream();
-                await file.OpenReadStream(20_000_000).CopyToAsync(ms);
-                SelectedOccupant.DocumentData = ms.ToArray();
-                SelectedOccupant.DocumentName = file.Name;
+                toastContainer?.ShowToast($"Error: {ex.Message}", "error");
             }
-            else
+            finally
             {
-                toastContainer?.ShowToast($"Error: File harus pdf/doc/docx", "error");
+                isLoading = false;
             }
         }
+    }
+
+    private async Task SearchNRP()
+    {
+        if (!string.IsNullOrWhiteSpace(NRPInput) && !isLoading)
+        {
+            await OnNRPEnter(new KeyboardEventArgs { Key = "Enter" });
+        }
+    }
+
+    private void NextStep()
+    {
+        if(AddStep < 3) AddStep++;
     }
 
     private async Task SaveOccupant()
     {
-        try
+        
+        await OccupantService.AddAsync(SelectedOccupant);
+        if (PendingPhoto != null)
+            await FileService.SaveFileAsync(PendingPhoto, "OccupantPhoto", SelectedOccupant.Id);
+
+        // Simpan dokumen
+        if (PendingDocs?.Count > 0)
         {
-            if (!IsEmployeeLoaded) return;
-
-            if (ModalMode == "Add")
-            {
-                await OccupantService.AddAsync(SelectedOccupant);
-                toastContainer?.ShowToast("Occupant berhasil ditambahkan!", "success");
-            }
-            else if (ModalMode == "Edit")
-            {
-                await OccupantService.UpdateAsync(SelectedOccupant);
-                toastContainer?.ShowToast("Occupant berhasil diperbarui!", "success");
-            }
-
-            Occupants = await OccupantService.GetAllAsync();
-            CloseModal();
+            foreach (var doc in PendingDocs)
+                await FileService.SaveFileAsync(doc, "OccupantDocs", SelectedOccupant.Id);
         }
-        catch (Exception ex)
-        {
-            toastContainer?.ShowToast($"Error: {ex.Message}", "error");
-        }
-    }
 
-    private void ConfirmDelete(int id, string name)
-    {
-        OccupantIdToDelete = id;
-        ConfirmMessage = $"Are you sure you want to delete Occupant \"{name}\"?";
-        ShowConfirmModal = true;
-    }
+        // Load photo
+        var allPhotos2 = await FileService.GetFilesByCategoryAsync("OccupantPhoto");
+        PhotoByOccupant = allPhotos2
+        .GroupBy(f => f.OwnerId)
+        .ToDictionary(g => g.Key, g => g.ToList());
 
-    private void CancelDelete() => ShowConfirmModal = false;
+        // Load documents
+        var allDocs = await FileService.GetFilesByCategoryAsync("OccupantDocs");
+        DocsByOccupant = allDocs
+        .GroupBy(f => f.OwnerId)
+        .ToDictionary(g => g.Key, g => g.ToList());
 
-    private async Task DeleteConfirmed()
-    {
-        await OccupantService.DeleteAsync(OccupantIdToDelete);
+        var history = new OccupantHistory
+            {
+                OccupantId = SelectedOccupant.Id,
+                Action = "CheckIn",
+                RoomId = SelectedOccupant.RoomId,
+                Notes = $"CheckIn room {SelectedOccupant.Room?.Name}"
+            };
+            await HistoryService.AddAsync(history);
+
+        toastContainer?.ShowToast("Occupant saved!", "success");
         Occupants = await OccupantService.GetAllAsync();
-        ShowConfirmModal = false;
-        toastContainer?.ShowToast("Occupant berhasil dihapus!", "success");
+        ShowModal = false;
     }
 
-    private string NRPInputValue
+    private async Task ShowDetail(Occupant occ)
     {
-        get => SelectedOccupant.Employee?.NRP ?? "";
-        set
-        {
-            NRPInput = value;
-            _ = LoadEmployeeByNRPAsync(value);
-        }
+        SelectedOccupant = occ;
+
+        var allPhotos2 = await FileService.GetFilesByCategoryAsync("OccupantPhoto");
+        PhotoByOccupant = allPhotos2.GroupBy(f => f.OwnerId)
+                                    .ToDictionary(g => g.Key, g => g.ToList());
+
+        var allDocs = await FileService.GetFilesByCategoryAsync("OccupantDocs");
+        DocsByOccupant = allDocs.GroupBy(f => f.OwnerId)
+                                .ToDictionary(g => g.Key, g => g.ToList());
+
+        ShowDetailModal = true;
     }
 
-    
+
+    private void ShowCheckoutModal(int id)
+    {
+        CheckoutOccupantId = id;
+        CheckoutDate = DateTime.Today;
+        ShowCheckoutModalFlag = true;
+    }
+
+    private async Task CheckoutOccupant()
+    {
+        if (CheckoutOccupantId == 0 || CheckoutDate == null)
+        return;
+
+        // ambil fresh dari DbContext
+        var occ = await OccupantService.GetByIdAsync(CheckoutOccupantId);
+        if(occ?.DepartedAt != null )
+        {
+            toastContainer?.ShowToast("Occupant InActive!", "warning");
+            return;
+        }
+        if (occ != null)
+        {
+            occ.DepartedAt = CheckoutDate.Value;
+            await OccupantService.UpdateAsync(occ);
+            var history = new OccupantHistory
+            {
+                OccupantId = occ.Id,
+                Action = "Checkout",
+                RoomId = occ.RoomId,
+                Notes = $"Checkout from room {occ.Room?.Name}"
+            };
+            await HistoryService.AddAsync(history);
+            toastContainer?.ShowToast("Occupant checked out!", "success");
+            Occupants = await OccupantService.GetAllAsync(); // refresh
+        }
+        ShowCheckoutModalFlag = false;
+    }
+
+    private void ShowTransferModal(int id)
+    {
+        TransferOccupantId = id;
+        TransferRoomId = null;
+        ShowTransferModalFlag = true;
+    }
+
+    private async Task TransferOccupant()
+    {
+        if(TransferRoomId != null)
+        {
+            var occ = await OccupantService.GetByIdAsync(SelectedOccupant.Id);
+            if(occ != null)
+            {
+                occ.RoomId = TransferRoomId.Value;
+                occ.ArrivedAt = DateTime.Now;
+                await OccupantService.UpdateAsync(occ); // aman karena instance baru
+                var history = new OccupantHistory
+                {
+                    OccupantId = occ.Id,
+                    Action = "Transfer",
+                    RoomId = occ.RoomId,
+                    Notes = $"Transfer from room {SelectedOccupant.Room.Name}"
+                };
+                await HistoryService.AddAsync(history);
+                toastContainer?.ShowToast("Occupant transferred!", "success");
+                Occupants = await OccupantService.GetAllAsync(); // refresh UI
+            }
+        }
+        ShowTransferModalFlag = false;
+    }
+
+    private void OnPhotoSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file.ContentType.StartsWith("image/"))
+            PendingPhoto = file;
+        else
+            toastContainer?.ShowToast("Photo File Ext. Not Allowed!", "Error");
+    }
+
+    private void OnDocsSelected(InputFileChangeEventArgs e)
+    {
+        var files = e.GetMultipleFiles()
+        .Where(f => f.ContentType == "application/pdf")
+        .ToList();
+        if (files.Any())
+            PendingDocs = files;
+        else
+            toastContainer?.ShowToast("Only PDF Allowed!", "Error");
+    }
+
+    private string GetStatusClass(bool isActive) => isActive ? "text-green-600 font-semibold" : "text-red-600 font-semibold";
 }

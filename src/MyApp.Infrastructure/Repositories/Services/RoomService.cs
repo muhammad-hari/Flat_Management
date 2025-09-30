@@ -26,8 +26,9 @@ public class RoomRepository : IRoomRepository
 
     public async Task UpdateAsync(Room Room)
     {
-        _context.Rooms.Update(Room);
-        await _context.SaveChangesAsync();
+        _context.Entry(Room).State = EntityState.Detached; // lepaskan tracking lama
+        _context.Update(Room);
+        await _context.SaveChangesAsync(); ;
     }
 
     public async Task DeleteAsync(int id)

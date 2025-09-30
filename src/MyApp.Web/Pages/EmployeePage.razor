@@ -5,8 +5,9 @@
 @inject IEmployeeRepository EmployeeService
 @inject IPositionRepository PositionService
 @inject IRankRepository RankService
+@inject IFileService FileService
 
-<div class="bg-white rounded-lg shadow-sm p-6">
+<div class="bg-gradient-to-b from-red-700 to-black rounded-lg shadow-sm p-6">
     <div class="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
         <h2 class="text-2xl font-semibold text-gray-800">Employees Management</h2>
         <p class="text-gray-600 mt-1">Manage Employee , Add Employee and Edit Employee Data</p>
@@ -59,16 +60,16 @@
     <!-- Employee Table -->
     <div class="overflow-x-auto mt-4">
         <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
-            <thead class="bg-gray-100">
+            <thead class="bg-gradient-to-b from-red-700  to-black">
                 <tr>
-                    <th class="px-4 py-2">Employee name</th>
-                    <th class="px-4 py-2">Rank</th>
-                    <th class="px-4 py-2">Phone</th>
-                    <th class="px-4 py-2">Email</th>
-                    <th class="px-4 py-2">Position</th>
-                    <th class="px-4 py-2">Active / InActive</th>
-                    <th class="px-4 py-2">Status</th>
-                    <th class="px-4 py-2">Actions</th>
+                    <th class="px-4 py-2 text-white">Employee name</th>
+                    <th class="px-4 py-2 text-white">Rank</th>
+                    <th class="px-4 py-2 text-white">Phone</th>
+                    <th class="px-4 py-2 text-white">Email</th>
+                    <th class="px-4 py-2 text-white">Position</th>
+                    <th class="px-4 py-2 text-white">Active / InActive</th>
+                    <th class="px-4 py-2 text-white">Status</th>
+                    <th class="px-4 py-2 text-white">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -98,11 +99,9 @@
                 }
                 else {
                     <tr>
-                        <td colspan="9" class="py-12">
-                            <div class="flex flex-col items-center text-gray-400">
-                                <object data="/assets/images/no-data.svg"
-                                        type="image/svg+xml"
-                                        class="h-32 w-32 mb-4"></object>
+                        <td colspan="8" class="p-8">
+                            <div class="flex flex-col items-center justify-center text-gray-400">
+                                <img src="assets/images/empty-data.png" alt="No data" class="h-32 w-32 mb-4" />
                                 <div>No Data</div>
                             </div>
                         </td>
@@ -124,15 +123,16 @@
             {
                 <!-- Detail View -->
                 <div class="flex flex-col items-center mb-4">
-                    @if (SelectedEmployee.PhotoData != null)
+                    @* Photo *@
+                    @if (PhotoByEmployee.TryGetValue(SelectedEmployee.Id, out var photos) && photos.Any())
                     {
-                        var base64 = Convert.ToBase64String(SelectedEmployee.PhotoData);
-                        <img src="data:image/png;base64,@base64" class="w-40 h-40 rounded-full mb-4" />
+                        <img src="@($"/secure-files/{photos.First().Path}")"
+                            class="w-40 h-40 rounded-full mx-auto mb-4 object-cover" />
                     }
                     else
                     {
-                        <div class="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-                            <span class="text-gray-500">No Photo</span>
+                        <div class="w-40 h-40 rounded-full bg-gray-200 mx-auto mb-4 flex items-center justify-center text-gray-500">
+                            No Photo
                         </div>
                     }
                 </div>
@@ -178,6 +178,23 @@
 
                     <div class="font-semibold">Period</div>
                     <div>@GetPeriod(SelectedEmployee.JoinDate)</div>
+
+                    @* Documents *@
+                    @if (DocsByEmployee.TryGetValue(SelectedEmployee.Id, out var docs) && docs.Any())
+                    {
+                        <div class="mt-4">
+                            <h4 class="font-semibold mb-2">Documents</h4>
+                            <ul class="list-disc ml-5 space-y-1">
+                                @foreach (var d in docs)
+                                {
+                                    <li>
+                                        <a href="@($"/secure-files/{d.Path}")" target="_blank"
+                                        class="text-blue-600 hover:underline">@d.FileName</a>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
                 </div>
             }
             else
@@ -208,9 +225,7 @@
 
                         <input class="w-full px-3 py-2 border rounded" placeholder="Phone"
                                @bind="SelectedEmployee.Phone" />
-                    </div>
 
-                    <div class="space-y-2">
                         <div class="font-semibold">Position</div>
                         <select class="w-full px-3 py-2 border rounded"
                                 @bind="SelectedEmployee.PositionId">
@@ -239,9 +254,12 @@
                                 <option value="@rank.Id">@rank.Name</option>
                             }
                         </select>
+                    </div>
 
-                        <input class="w-full px-3 py-2 border rounded" placeholder="Address"
-                               @bind="SelectedEmployee.Address" />
+                    <div class="space-y-2">
+                        <InputTextArea @bind-Value="SelectedEmployee.Address"
+                                    class="w-full px-3 py-2 border rounded"
+                                    placeholder="Address" />
 
                         <div class="font-semibold">Join Date</div>
                         <input class="w-full px-3 py-2 border rounded" type="date"
@@ -253,8 +271,19 @@
                             <span>Active</span>
                         </label>
 
-                        <div class="font-semibold">Photo</div>
-                        <InputFile OnChange="OnFileChange" class="w-full" />
+                        <!-- Upload Photo -->
+                        <div class="mb-4">
+                            <label class="block font-semibold mb-1">Photo</label>
+                            <InputFile OnChange="OnPhotoSelected" accept="image/*" />
+                            <p class="text-xs text-gray-500 text-red-500">Max 2 MB,Image *.jpg,.jpeg,.png </p>
+                        </div>
+
+                         <!-- Upload Dokumen PDF -->
+                        <div class="mb-4">
+                            <label class="block font-semibold mb-1">Documents (.PDF) (Optional)</label>
+                            <InputFile OnChange="OnDocsSelected" multiple accept="application/pdf" />
+                            <p class="text-xs text-gray-500 text-red-500">Max 10 MB ,PDF Only</p>
+                        </div>
                     </div>
                 </div>
             }
@@ -291,11 +320,8 @@
 
 @code {
 
-    Employee SelectedDateEmployee = new Employee
-    {
-        DateOfBirth = new DateOnly(2000, 1, 1),
-        JoinDate = new DateOnly(2000, 1, 1)
-    };
+    private IReadOnlyList<IBrowserFile>? PendingUploads;
+    @* private void OnFilesSelected(InputFileChangeEventArgs e) => PendingUploads = e.GetMultipleFiles(); *@
     private ToastContainer? toastContainer;
     private List<Employee> Employees = new();
     private List<Position> Positions = new();
@@ -306,10 +332,33 @@
     private string ModalMode = "";
     private Employee SelectedEmployee = new();
     private string Password = "";
-
     private bool ShowConfirmModal = false;
     private string ConfirmMessage = "";
     private int EmployeeIdToDelete;
+
+    // list file milik employee
+    private Dictionary<int, List<FileUpload>> FilesByEmployee = new();
+
+    // untuk preview image
+    private bool ShowImagePreview = false;
+    private string PreviewImagePath = "";
+
+    // Upload buffer
+    private IBrowserFile? PendingPhoto;
+    private IReadOnlyList<IBrowserFile>? PendingDocs;
+
+    // Dictionaries untuk file
+    private Dictionary<int, List<FileUpload>> PhotoByEmployee = new();
+    private Dictionary<int, List<FileUpload>> DocsByEmployee = new();
+
+    private void OnFilesSelected(InputFileChangeEventArgs e)
+    {
+        // hanya image/pdf
+        PendingUploads = e.GetMultipleFiles()
+                          .Where(f => f.ContentType.StartsWith("image/")
+                                   || f.ContentType == "application/pdf")
+                          .ToList();
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -317,8 +366,39 @@
         Positions = await PositionService.GetAllAsync();
         Ranks = await RankService.GetAllAsync();
 
+        // Load photo
+        var allPhotos = await FileService.GetFilesByCategoryAsync("EmployeePhoto");
+        PhotoByEmployee = allPhotos
+            .GroupBy(f => f.OwnerId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        // Load documents
+        var allDocs = await FileService.GetFilesByCategoryAsync("EmployeeDocs");
+        DocsByEmployee = allDocs
+            .GroupBy(f => f.OwnerId)
+            .ToDictionary(g => g.Key, g => g.ToList());
     }
 
+    private void OnPhotoSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file.ContentType.StartsWith("image/"))
+            PendingPhoto = file;
+        else
+            toastContainer?.ShowToast("Photo File Ext. Not Allowed!", "Error");
+    }
+
+    private void OnDocsSelected(InputFileChangeEventArgs e)
+    {
+        var files = e.GetMultipleFiles()
+                     .Where(f => f.ContentType == "application/pdf")
+                     .ToList();
+        if (files.Any())
+            PendingDocs = files;
+        else
+            toastContainer?.ShowToast("Only PDF Allowed!", "Error");
+    }
+    
     private IEnumerable<Employee> FilteredEmployees => Employees
         .Where(u => string.IsNullOrWhiteSpace(SearchTerm) || u.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase));
 
@@ -332,7 +412,6 @@
         ModalMode = "Detail";
         ShowModal = true;
     }
-
     private void AddEmployee()
     {
         SelectedEmployee = new Employee
@@ -345,10 +424,8 @@
         ShowModal = true;
     }
 
-     private int TotalEmployees => Employees?.Count() ?? 0;
-
+    private int TotalEmployees => Employees?.Count() ?? 0;
     private int NewEmployees => Employees?.Count(u => u.JoinDate >= DateOnly.FromDateTime(DateTime.Now.AddYears(-1))) ?? 0;
-
     private int TotalYearsWorked => Employees?.Sum(u => 
         {
             var join = u.JoinDate.ToDateTime(TimeOnly.MinValue);
@@ -360,8 +437,6 @@
         }) ?? 0;
 
     private double AverageYears => TotalEmployees > 0 ? (double)TotalYearsWorked / TotalEmployees : 0;
-
-
     private void EditEmployee(Employee Employee)
     {
         SelectedEmployee = Employee;
@@ -369,17 +444,7 @@
         ModalMode = "Edit";
         ShowModal = true;
     }
-
     private void CloseModal() => ShowModal = false;
-
-    private async Task OnFileChange(InputFileChangeEventArgs e)
-    {
-        var file = e.File;
-        var buffer = new byte[file.Size];
-        await file.OpenReadStream(10_000_000).ReadAsync(buffer);
-        SelectedEmployee.PhotoData = buffer;
-    }
-
     private void ConfirmDelete(int id, string name)
     {
         EmployeeIdToDelete = id;
@@ -396,7 +461,6 @@
         ShowConfirmModal = false;
         toastContainer?.ShowToast("Employee berhasil dihapus!", "success");
     }
-
     private string GetPeriod(DateOnly joinDate)
     {
         var start = joinDate.ToDateTime(TimeOnly.MinValue);
@@ -423,26 +487,40 @@
         return $"{years} tahun {months} bulan {days} hari";
     }
 
-    
-
     private async Task SaveEmployee()
     {
         try
         {
-
             if (ModalMode == "Add")
-            {
                 await EmployeeService.AddAsync(SelectedEmployee);
-                toastContainer?.ShowToast("Employee berhasil ditambahkan!", "success");
-            }
             else if (ModalMode == "Edit")
-            {
                 await EmployeeService.UpdateAsync(SelectedEmployee);
-                toastContainer?.ShowToast("Employee berhasil diperbarui!", "success");
-            }
+
+             // Simpan foto
+        if (PendingPhoto != null)
+            await FileService.SaveFileAsync(PendingPhoto, "EmployeePhoto", SelectedEmployee.Id);
+
+        // Simpan dokumen
+        if (PendingDocs?.Count > 0)
+        {
+            foreach (var doc in PendingDocs)
+                await FileService.SaveFileAsync(doc, "EmployeeDocs", SelectedEmployee.Id);
+        }
 
             Employees = await EmployeeService.GetAllAsync();
+
+            // refresh file dictionary
+            var allPhotos = await FileService.GetFilesByCategoryAsync("EmployeePhoto");
+            PhotoByEmployee = allPhotos
+                .GroupBy(f => f.OwnerId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var allDocs = await FileService.GetFilesByCategoryAsync("EmployeeDocs");
+            DocsByEmployee = allDocs
+                .GroupBy(f => f.OwnerId)
+                .ToDictionary(g => g.Key, g => g.ToList());
             CloseModal();
+            toastContainer?.ShowToast("Employee tersimpan!", "success");
         }
         catch (Exception ex)
         {

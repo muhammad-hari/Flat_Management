@@ -24,28 +24,24 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = QXBwLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/AvatarHeader.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXZhdGFySGVhZGVyLnJhem9y
+[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/Account/Login.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWNjb3VudFxMb2dpbi5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/Counter.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ291bnRlci5yYXpvcg==
+[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/AvatarHeader.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXZhdGFySGVhZGVyLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/Project/Densus88/new_app/src/MyApp.Web/Pages/EmployeePage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRW1wbG95ZWVQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/FetchData.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRmV0Y2hEYXRhLnJhem9y
+[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/Helper.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSGVscGVyLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/Project/Densus88/new_app/src/MyApp.Web/Pages/Index.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW5kZXgucmF6b3I=
-build_metadata.AdditionalFiles.CssScope = 
-
-[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/Login.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTG9naW4ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/Project/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/BuildingPage.razor]
@@ -80,12 +76,16 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcVXNlclR5cGVQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/OccupantHistoriesPage.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcT2NjdXBhbnRIaXN0b3JpZXNQYWdlLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/Project/Densus88/new_app/src/MyApp.Web/Pages/OccupantPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcT2NjdXBhbnRQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/Register.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUmVnaXN0ZXIucmF6b3I=
+[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/Report.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUmVwb3J0LnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/Project/Densus88/new_app/src/MyApp.Web/Pages/RoomPage.razor]
@@ -96,8 +96,8 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcVXNlclBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/Visitors.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcVmlzaXRvcnMucmF6b3I=
+[D:/Project/Densus88/new_app/src/MyApp.Web/Pages/VisitorPage.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcVmlzaXRvclBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/Project/Densus88/new_app/src/MyApp.Web/Shared/AuthLayout.razor]

@@ -225,5 +225,19 @@ dotnet run --project .\src\MyApp.Web\MyApp.Web.csproj
 Mau saya bikinkan script npm run dev yang otomatis jalanin Tailwind watch + dotnet run bareng sekaligus (pakai concurrently)? 🔥
 
 
- dotnet ef migrations add AddAuditFieldsToRole -s ..\MyApp.Web
+ dotnet ef migrations add InitialMigrate -s ..\MyApp.Web
+ dotnet ef database update -s ..\MyApp.Web -- --environment Development
+
+dotnet ef migrations add InitialMigrate --context AppDbContext -s ..\MyApp.Web
+ dotnet ef migrations add InitIdentity --context ApplicationIdentityDbContext -s ..\MyApp.Web
+
+ dotnet ef database update --context AppDbContext -s ..\MyApp.Web -- --environment Development
+dotnet ef database update --context ApplicationIdentityDbContext -s ..\MyApp.Web -- --environment Development
+
+
+
  dotnet ef database update -s ..\MyApp.Web  
+
+ dotnet run --environment "Development"
+dotnet watch --environment "Development"
+

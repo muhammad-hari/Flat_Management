@@ -15,3 +15,54 @@
 .animate-fade-out {
   animation: fade-out 0.3s ease-out forwards;
 }
+
+/* Posisi perkiraan area mata – sesuaikan agar tepat */
+.eye {
+    position: absolute;
+    background: #000;      /* warna menutup mata */
+    width: 28%;
+    height: 28%;
+    top: 36%;
+    border-radius: 50%;
+    opacity: 0.9;
+    transition: transform 0.3s;
+}
+.eye-left  { left: 22%; }
+.eye-right { right: 22%; }
+
+/* Zzz animasi tidur */
+.zzz {
+    top: -10%;
+    right: -5%;
+    animation: floatZ 2s ease-in-out infinite;
+}
+@keyframes floatZ {
+    0%, 100% { transform: translateY(0) rotate(-10deg); opacity: 0.8; }
+    50%      { transform: translateY(-10px) rotate(10deg); opacity: 0.4; }
+}
+
+/* Animasi kedip */
+@keyframes blinkAnim {
+    0%, 20%, 22%, 100% { transform: scaleY(0); } /* mata terbuka */
+    21% { transform: scaleY(1); }               /* tutup sekejap */
+}
+.blink {
+    animation: blinkAnim 4s infinite;
+    transform-origin: center;
+}
+
+.owl-anim {
+    width: 240px;
+    height: 240px;
+    background-size: cover;
+    background-position: center;
+    animation: owlBlink 4s steps(4) infinite;
+}
+
+@keyframes owlBlink {
+    0%   { background-image: url('/assets/images/idle-1.png'); }
+    25%  { background-image: url('/assets/images/idle-2.png'); }
+    50%  { background-image: url('/assets/images/idle-3.png'); }
+    75%  { background-image: url('/assets/images/idle-4.png'); }
+    100% { background-image: url('/assets/images/idle-1.png'); } /* balik ke melek */
+}

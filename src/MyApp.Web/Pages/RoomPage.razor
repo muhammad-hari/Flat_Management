@@ -1,346 +1,273 @@
 @page "/rooms"
+@using Microsoft.AspNetCore.Components.Forms
 @using MyApp.Core.Entities
 @using MyApp.Core.Interfaces
 @inject IRoomRepository RoomService
 @inject IRoomStatusRepository RoomStatusService
 @inject IRoomCategoryRepository RoomCategoryService
 @inject IRoomConditionRepository RoomConditionService
+@inject IBuildingRepository BuildingService
+@inject IFileService FileService
 @inject Blazored.Toast.Services.IToastService ToastService
 
-
 <div class="bg-white rounded-lg shadow-sm p-6">
-    <div class="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
-        <h2 class="text-2xl font-semibold text-gray-800">Room Category Management</h2>
-        <p class="text-gray-600 mt-1">Manage User Room Condition,Category and Status</p>
-    </div>
-</div>
-<div class="p-4 space-y-4">
-    <!-- Card Summary -->
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-    <div class="bg-purple-800 text-white p-4 rounded-2xl shadow-md">
-        <h2 class="text-lg font-semibold">Total Rooms</h2>
-        <p class="text-2xl font-bold">@Rooms.Count</p>
-    </div>
 
-    <div class="bg-green-600 text-white p-4 rounded-2xl shadow-md">
-        <h2 class="text-lg font-semibold">Available Rooms</h2>
-        <p class="text-2xl font-bold">@Rooms.Count(r => r.IsAvailable)</p>
-    </div>
-
-    <div class="bg-yellow-600 text-white p-4 rounded-2xl shadow-md">
-        <h2 class="text-lg font-semibold">Reserved Rooms</h2>
-        <p class="text-2xl font-bold">@Rooms.Count(r => r.Status?.Name == "Reserved")</p>
-    </div>
-
-    <div class="bg-red-600 text-white p-4 rounded-2xl shadow-md">
-        <h2 class="text-lg font-semibold">Maintenance Rooms</h2>
-        <p class="text-2xl font-bold">@Rooms.Count(r => r.Status?.Name == "Maintenance")</p>
-    </div>
-</div>
-
-</div>
-
-
-<div class="p-6 space-y-6">
-    <!-- Search & Add -->
-    <div class="flex justify-between items-center mb-4">
-        <input type="text" placeholder="Search Room..." @bind="SearchTerm"
-               class="px-4 py-2 w-1/3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500" />
-        <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition" @onclick="AddRoom">
+    <!-- HEADER -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-2xl font-semibold text-gray-800">Room Management</h2>
+            <p class="text-gray-600 mt-1">Manage Room Category, Status & Condition</p>
+        </div>
+        <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg" @onclick="AddRoom">
             + Add Room
         </button>
     </div>
 
-    <!-- Card Grid -->
-    @if (FilteredRooms.Any())
-    {
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            @foreach (var room in PagedRooms)
-            {
-                <div class="bg-white rounded-2xl shadow-lg p-4 flex flex-col gap-1">
-                    @if (room.PhotoData != null)
-                    {
-                        var base64 = Convert.ToBase64String(room.PhotoData);
-                        <img src="data:image/png;base64,@base64"   class="w-full aspect-[4/3] object-cover rounded-lg mb-2" />
-                    }
-                    else
-                    {
-                        <div class="w-full h-32 bg-gray-200 flex items-center justify-center rounded-lg mb-2">
-                            <span class="text-gray-400 text-sm">No Photo</span>
-                        </div>
-                    }
-
-                    <h3 class="text-lg font-semibold mb-1">@room.Name (@room.RoomNo)</h3>
-                    <p class="text-sm text-gray-600">@room.Category?.Name</p>
-                    <p class="text-sm text-gray-600">@room.Status?.Name</p>
-                    <p class="text-sm text-gray-600">Floor: @room.Floor | Capacity: @room.Size </p>
-                    <p class="text-sm">
-                        <span class="@GetAvailabilityClass(room.IsAvailable)">
-                            @(room.IsAvailable ? "Available" : "Not Available")
-                        </span>
-                    </p>
-
-                    <div class="flex justify-end space-x-2 mt-4">
-                        <button class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm" @onclick="() => EditRoom(room)">Edit</button>
-                        <button class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"  @onclick="() => ConfirmDelete(room.Id,room.Name)">Delete</button>
-
-                    </div>
-                </div>
-            }
-
-        </div>
-    }
-    else
-    {
-       <div class="flex justify-center items-center mt-16 flex-col text-gray-400">
-            <object data="assets/images/no-data.svg" type="image/svg+xml" class="h-32 w-32 mb-4"></object>
-            <div>No Data</div>
-        </div>
-
-    }
-</div>
-<!-- Pagination -->
-@if (TotalPages > 1)
-{
-    <div class="flex justify-center mt-4 space-x-2">
-        <button class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                @onclick="() => ChangePage(CurrentPage - 1)" disabled="@(CurrentPage == 1)">Prev</button>
-
-        @for (int i = 1; i <= TotalPages; i++)
+    <!-- ROOM GRID -->
+    <div class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(14rem,1fr));">
+        @foreach (var r in FilteredRooms)
         {
-            <button class="px-3 py-1 rounded @(CurrentPage == i ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300")"
-                    @onclick="() => ChangePage(i)">@i</button>
+            <div class="relative bg-gradient-to-b from-red-200 to-black rounded-lg shadow p-3 flex flex-col">
+                <span class="absolute top-2 right-2 bg-red-700 text-white text-xs font-bold px-2 py-1 rounded-full">
+                    @r.Floor F
+                </span>
+
+                @if (FilesByRoom.TryGetValue(r.Id, out var files) && files.Any())
+                {
+                    <img src="@($"/secure-files/{files.First().Path}")"
+                        class="w-full h-40 object-cover rounded mb-2 cursor-pointer hover:scale-105 transition-transform"
+                        @onclick="@(() => ShowPreview(files.First().Path))" />
+                }
+                else
+                {
+                    <div class="w-full h-40 bg-gray-200 rounded flex items-center justify-center text-gray-500">
+                        No Image
+                    </div>
+                }
+
+                <h3 class="text-md font-semibold text-white truncate">@r.Name (@r.RoomNo)</h3>
+                <p class="text-gray-300 text-sm">@r.Category?.Name</p>
+                <p class="text-gray-400 text-xs">@r.Status?.Name</p>
+
+                <div class="mt-3 flex justify-end gap-2">
+                    <button class="px-2 py-1 bg-blue-500 text-white rounded" @onclick="@(() => EditRoom(r))">Edit</button>
+                    <button class="px-2 py-1 bg-red-500 text-white rounded"
+                        @onclick="@(() => ConfirmDelete(r.Id, r.Name))">Delete</button>
+                </div>
+            </div>
         }
-
-        <button class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                @onclick="() => ChangePage(CurrentPage + 1)" disabled="@(CurrentPage == TotalPages)">Next</button>
     </div>
-}
 
-<!-- Modal Add/Edit Room -->
-@if (ShowModal)
-{
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-3xl shadow-lg">
-            <h2 class="text-xl font-bold mb-4">@ModalTitle</h2>
+    <!-- MODAL ADD/EDIT -->
+    @if (ShowModal)
+    {
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl p-6 w-full max-w-xl">
+                <h2 class="text-xl font-bold mb-4">@ModalTitle</h2>
 
-            <EditForm Model="SelectedRoom" OnValidSubmit="SaveRoom">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
+                <EditForm Model="@Selected" OnValidSubmit="SaveRoom">
+                    <DataAnnotationsValidator />
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="space-y-2">
-                        <input class="w-full px-3 py-2 border rounded" placeholder="Room Name"
-                               @bind="SelectedRoom.Name" />
-                        <input class="w-full px-3 py-2 border rounded" placeholder="Room No"
-                               @bind="SelectedRoom.RoomNo" />
-                        <div class="font-semibold">Category</div>
-                        <select class="w-full px-3 py-2 border rounded" @bind="SelectedRoom.CategoryId">
-                            <option value="0">Select Category</option>
-                            @foreach (var c in Categories)
-                            {
-                                <option value="@c.Id">@c.Name</option>
-                            }
-                        </select>
-                        <div class="font-semibold">Status</div>
-                        <select class="w-full px-3 py-2 border rounded" @bind="SelectedRoom.StatusId">
-                            <option value="0">Select Status</option>
-                            @foreach (var s in Statuses)
-                            {
-                                <option value="@s.Id">@s.Name</option>
-                            }
-                        </select>
-                        <div class="font-semibold">Condition</div>
-                        <select class="w-full px-3 py-2 border rounded" @bind="SelectedRoom.ConditionId">
-                            <option value="0">Select Condition</option>
-                            @foreach (var c in Conditions)
-                            {
-                                <option value="@c.Id">@c.Name</option>
-                            }
-                        </select>
-                        <div class="font-semibold">Floor</div>
-                        <InputNumber @bind-Value="SelectedRoom.Floor" class="w-full px-3 py-2 border rounded" />
-                        <div class="font-semibold">Size</div>
-                        <InputNumber @bind-Value="SelectedRoom.Size" class="w-full px-3 py-2 border rounded" />
-                        <div class="font-semibold">Available</div>
-                        <InputCheckbox @bind-Value="SelectedRoom.IsAvailable" />
+                    <div class="grid gap-2">
+                        <InputText class="border rounded px-3 py-2" @bind-Value="Selected.Name" placeholder="Room Name" />
+                        <InputText class="border rounded px-3 py-2" @bind-Value="Selected.RoomNo" placeholder="Room No" />
+
+                        <!-- Building Dropdown -->
+                        <label>Building
+                            <select class="border rounded px-3 py-2" @bind="Selected.BuildingId"
+                                @bind:after="OnBuildingChanged">
+                                <option value="0">-- Select Building --</option>
+                                @foreach (var b in Buildings)
+                                {
+                                    <option value="@b.Id">@b.Name</option>
+                                }
+                            </select>
+                        </label>
+
+                        <!-- Floor Dropdown (auto 1..TotalFloors) -->
+                        <label>Floor
+                            <select class="border rounded px-3 py-2" @bind="Selected.Floor">
+                                <option value="0">-- Select Floor --</option>
+                                @foreach (var f in FloorOptions)
+                                {
+                                    <option value="@f">@f</option>
+                                }
+                            </select>
+                        </label>
+
+                        <InputNumber TValue="int" @bind-Value="Selected.Size" class="border rounded px-3 py-2"
+                            placeholder="Size (m²)" />
+
+                        <label>Category
+                            <select class="border rounded px-3 py-2" @bind="Selected.CategoryId">
+                                <option value="0">-- Select --</option>
+                                @foreach (var c in Categories)
+                                {
+                                    <option value="@c.Id">@c.Name</option>
+                                }
+                            </select>
+                        </label>
+
+                        <label>Status
+                            <select class="border rounded px-3 py-2" @bind="Selected.StatusId">
+                                <option value="0">-- Select --</option>
+                                @foreach (var s in Statuses)
+                                {
+                                    <option value="@s.Id">@s.Name</option>
+                                }
+                            </select>
+                        </label>
+
+                        <label>Condition
+                            <select class="border rounded px-3 py-2" @bind="Selected.ConditionId">
+                                <option value="0">-- Select --</option>
+                                @foreach (var c in Conditions)
+                                {
+                                    <option value="@c.Id">@c.Name</option>
+                                }
+                            </select>
+                        </label>
+
+                        <label class="block mt-2">
+                            Upload Image
+                            <InputFile OnChange="HandleFileSelected" />
+                        </label>
+
+
+                        <label class="flex items-center gap-2">
+                            <InputCheckbox @bind-Value="Selected.IsAvailable" /> Available
+                        </label>
                     </div>
 
-                    <div class="space-y-2">
-                        <div class="font-semibold">Photo</div>
-                        <InputFile OnChange="OnPhotoChange" accept="image/*" />
-
-                        <div class="font-semibold">Document</div>
-                        <InputFile OnChange="OnDocumentChange" accept=".pdf,.doc,.docx" />
+                    <div class="mt-4 flex justify-end gap-2">
+                        <button type="button" class="bg-gray-300 px-4 py-2 rounded" @onclick="CloseModal">Cancel</button>
+                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Save</button>
                     </div>
-                </div>
-
-                <div class="flex justify-end space-x-2 mt-4">
-                    <button type="button" class="px-4 py-2 bg-red-600 text-white rounded" @onclick="CloseModal">Close</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
-                </div>
-            </EditForm>
-        </div>
-    </div>
-}
-
-@if (ShowConfirmModal)
-{
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-lg">
-            <h2 class="text-lg font-bold mb-4">Confirm Delete</h2>
-            <p class="mb-6">@ConfirmMessage</p>
-            <div class="flex justify-end space-x-2">
-                <button class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" @onclick="CancelDelete">Cancel</button>
-                <button class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700" @onclick="DeleteConfirmed">Delete</button>
+                </EditForm>
             </div>
         </div>
-    </div>
-}
-
+    }
+</div>
 
 <ToastContainer @ref="toastContainer" />
 
 @code {
     private ToastContainer? toastContainer;
-    private int CurrentPage = 1;
-    private int PageSize = 5; 
-    private int TotalPages => (int)Math.Ceiling((double)FilteredRooms.Count() / PageSize);
-
     private List<Room> Rooms = new();
+    private List<Building> Buildings = new(); // <--- Tambahan
+    private List<int> FloorOptions = new(); // <--- Tambahan
     private List<RoomCategory> Categories = new();
     private List<RoomStatus> Statuses = new();
-    private List<RoomCondition> Conditions = new(); // <- baru
-    private string SearchTerm = "";
-    private bool ShowModal = false;
+    private List<RoomCondition> Conditions = new();
+    private string? PreviewPath;
+    private void ShowPreview(string path) => PreviewPath = path;
+
+    private Dictionary<int, List<FileUpload>> FilesByRoom = new();
+    private bool ShowModal;
     private string ModalTitle = "";
-    private Room SelectedRoom = new();
-
+    private Room Selected = new();
     private bool ShowConfirmModal = false;
-    private string ConfirmMessage = "";
     private int RoomIdToDelete;
+    private MarkupString ConfirmMessage;
+    private IBrowserFile? uploadedFile;
 
-    private IEnumerable<Room> PagedRooms => FilteredRooms
-    .Skip((CurrentPage - 1) * PageSize)
-    .Take(PageSize);
-
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        uploadedFile = e.File;
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        Rooms = await RoomService.GetAllAsync();
-        Categories = await RoomCategoryService.GetAllAsync();
-        Statuses = await RoomStatusService.GetAllAsync();
-        Conditions = await RoomConditionService.GetAllAsync(); // <- baru
+        await LoadData();
+        Buildings = (await BuildingService.GetAllAsync())?.ToList() ?? new();
     }
 
-    private void ChangePage(int page)
+
+
+    private async Task LoadData()
     {
-        if (page < 1) page = 1;
-        if (page > TotalPages) page = TotalPages;
-        CurrentPage = page;
+        Rooms = (await RoomService.GetAllAsync())?.ToList() ?? new();
+        Categories = (await RoomCategoryService.GetAllAsync())?.ToList() ?? new();
+        Statuses = (await RoomStatusService.GetAllAsync())?.ToList() ?? new();
+        Conditions = (await RoomConditionService.GetAllAsync())?.ToList() ?? new();
     }
-
-
-    private IEnumerable<Room> FilteredRooms => Rooms
-        .Where(r => string.IsNullOrWhiteSpace(SearchTerm) || r.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase));
-
-    private string GetAvailabilityClass(bool available) =>
-        available ? "px-2 py-1 text-xs bg-green-200 text-green-800 rounded-full" : "px-2 py-1 text-xs bg-red-200 text-red-800 rounded-full";
 
     private void AddRoom()
     {
-        SelectedRoom = new Room();
+        Selected = new Room { IsAvailable = true };
+        FloorOptions.Clear();
         ModalTitle = "Add Room";
         ShowModal = true;
     }
 
-    private void EditRoom(Room room)
+    private void EditRoom(Room r)
     {
-        SelectedRoom = room;
+        Selected = new Room
+        {
+            Id = r.Id,
+            Name = r.Name,
+            RoomNo = r.RoomNo,
+            Floor = r.Floor,
+            Size = r.Size,
+            BuildingId = r.BuildingId,
+            CategoryId = r.CategoryId,
+            StatusId = r.StatusId,
+            ConditionId = r.ConditionId,
+            IsAvailable = r.IsAvailable
+        };
+
+        // Generate floors for current building
+        var b = Buildings.FirstOrDefault(x => x.Id == r.BuildingId);
+        FloorOptions = b is null ? new() : Enumerable.Range(1, b.TotalFloors).ToList();
+
         ModalTitle = "Edit Room";
         ShowModal = true;
     }
 
-    private void CloseModal() => ShowModal = false;
+    private void OnBuildingChanged()
+    {
+        var b = Buildings.FirstOrDefault(x => x.Id == Selected.BuildingId);
+        FloorOptions = b is null ? new() : Enumerable.Range(1, b.TotalFloors).ToList();
+        Selected.Floor = 0;
+    }
 
     private async Task SaveRoom()
     {
-        try
+        if (Selected.Id == 0)
+            await RoomService.AddAsync(Selected);
+        else
+            await RoomService.UpdateAsync(Selected);
+
+        // Upload file jika ada
+        if (uploadedFile != null)
         {
-            if (SelectedRoom.CategoryId == 0 || SelectedRoom.StatusId == 0 || SelectedRoom.ConditionId == 0)
-            {
-                toastContainer?.ShowToast("Category, Status, and Condition are required.",type:"warning");
-                return;
-            }
-
-
-            if (SelectedRoom.Id == 0)
-            {
-                await RoomService.AddAsync(SelectedRoom);
-                toastContainer?.ShowToast("Room added successfully!",type:"success");
-            }
-            else
-            {
-                await RoomService.UpdateAsync(SelectedRoom);
-                toastContainer?.ShowToast("Room updated successfully!",type:"success");
-            }
-
-            Rooms = await RoomService.GetAllAsync();
-            CloseModal();
+            using var stream = uploadedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // contoh 10 MB
+            await FileService.SaveFileAsync(uploadedFile, "Rooms", Selected.Id);
+            uploadedFile = null;
         }
-        catch (Exception ex)
-        {
-            toastContainer?.ShowToast($"Error: {ex.Message}",type:"error");
-        }
+
+        @* if (uploadedFile != null)
+            foreach (var f in uploadedFile)
+                await FileService.SaveFileAsync(f, "Building", Selected.Id); *@
+
+        ShowModal = false;
+        await LoadData();
     }
 
-    private async Task OnPhotoChange(InputFileChangeEventArgs e)
+    private void CloseModal() => ShowModal = false;
+
+    private void CancelDelete()
     {
-        var file = e.File;
-        if (!file.ContentType.StartsWith("image/"))
-        {
-            toastContainer?.ShowToast("Only image files are allowed!",type:"warning");
-            return;
-        }
-
-        var buffer = new byte[file.Size];
-        await file.OpenReadStream(5_000_000).ReadAsync(buffer); // max 5 MB
-        SelectedRoom.PhotoData = buffer;
+        ShowConfirmModal = false;
     }
-
-    private async Task OnDocumentChange(InputFileChangeEventArgs e)
-    {
-        var file = e.File;
-        if (!new[] { "application/pdf", 
-                     "application/msword", 
-                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }
-                     .Contains(file.ContentType))
-        {
-            ToastService.ShowWarning("Only PDF/DOC/DOCX files are allowed!");
-            return;
-        }
-
-        var buffer = new byte[file.Size];
-        await file.OpenReadStream(10_000_000).ReadAsync(buffer); // max 10 MB
-        SelectedRoom.DocumentData = buffer;
-        SelectedRoom.DocumentContentType = file.ContentType;
-        SelectedRoom.DocumentName = file.Name;
-    }
-
     private void ConfirmDelete(int id, string name)
     {
         RoomIdToDelete = id;
-        ConfirmMessage = $"Are you sure you want to delete room \"{name}\"?";
+        ConfirmMessage = new MarkupString(
+        $"Are you sure you want to delete the Building <b>\"{name}\"</b> ?"
+        );
         ShowConfirmModal = true;
     }
 
-    private void CancelDelete() => ShowConfirmModal = false;
-
-    private async Task DeleteConfirmed()
-    {
-        await RoomService.DeleteAsync(RoomIdToDelete);
-        Rooms = await RoomService.GetAllAsync();
-        ShowConfirmModal = false;
-        toastContainer?.ShowToast("Room deleted successfully!",type:"success");
-    }
+    private IEnumerable<Room> FilteredRooms => Rooms; // filter bisa ditambah
 }

@@ -218,6 +218,10 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "ApexCharts.Blazor": {
+              "target": "Package",
+              "version": "[0.9.6-alpha, )"
+            },
             "BCrypt.Net-Next": {
               "target": "Package",
               "version": "[4.0.3, )"
@@ -225,6 +229,14 @@
             "Blazored.Toast": {
               "target": "Package",
               "version": "[4.2.1, )"
+            },
+            "Blazored.Typeahead": {
+              "target": "Package",
+              "version": "[4.7.0, )"
+            },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[8.0.0, )"
             },
             "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
               "target": "Package",

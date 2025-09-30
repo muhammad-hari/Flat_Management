@@ -23,6 +23,8 @@ namespace MyApp.Infrastructure.Data
         public DbSet<RoomStatus> RoomStatus { get; set; } = default!;
         public DbSet<RoomCondition> RoomConditions { get; set; } = default!;
         public DbSet<Occupant> Occupants { get; set; } = default!;
+        public DbSet<OccupantHistory> OccupantHistories { get; set; } = default!;
+        public DbSet<Visitor> Visitors { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

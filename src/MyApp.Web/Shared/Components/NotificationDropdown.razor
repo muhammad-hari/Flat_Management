@@ -1,0 +1,28 @@
+<div class="relative">
+    <button @onclick="Toggle" class="relative mr-6 text-gray-600 hover:text-gray-800 focus:outline-none">
+        <i class="fa-solid fa-bell text-xl"></i>
+        <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+    </button>
+
+    @if (open)
+    {
+        <div class="absolute right-0 mt-2 w-64 bg-white border rounded-lg shadow-lg z-50">
+            <div class="px-4 py-2 font-semibold text-gray-700 border-b">
+                Notifications
+            </div>
+            <ul class="max-h-60 overflow-auto">
+                <li class="px-4 py-3 hover:bg-gray-50">🔔 Dummy notifikasi 1</li>
+                <li class="px-4 py-3 hover:bg-gray-50">📩 Dummy notifikasi 2</li>
+                <li class="px-4 py-3 hover:bg-gray-50">✅ Dummy notifikasi 3</li>
+            </ul>
+            <div class="px-4 py-2 text-center text-sm text-blue-600 hover:underline border-t">
+                View All
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool open;
+    private void Toggle() => open = !open;
+}

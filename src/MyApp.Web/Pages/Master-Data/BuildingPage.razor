@@ -1,0 +1,289 @@
+@page "/master-data/buildings"
+@using MyApp.Core.Entities
+@using MyApp.Core.Interfaces
+@inject IBuildingRepository BuildingService
+@inject IFileService FileService
+@inject Blazored.Toast.Services.IToastService ToastService
+@inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
+@using System.Security.Claims
+
+<div class="bg-white rounded-lg shadow-sm p-6">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-2xl font-semibold text-gray-800">Building Management</h2>
+            <p class="text-gray-600 mt-1">Manage Building</p>
+        </div>
+        <div class="flex items-center">
+            <button
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                @onclick="AddBuilding">
+                + Add Building
+            </button>
+        </div>
+    </div>
+
+    @* <div class="flex items-center justify-between mb-6">
+            <input @bind="searchTerm" @bind:event="oninput" class="border px-3 py-2 rounded w-64"
+                placeholder="Cari nama/alamat..." />
+            <button class="bg-green-600 text-white px-4 py-2 rounded" @onclick="AddBuilding">+ Add Building</button>
+        </div> *@
+
+    <!-- Grid responsif -->
+    <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));">
+        @foreach (var b in FilteredBuildings)
+        {
+            <div class="relative bg-gradient-to-b from-red-200 to-black rounded-lg shadow p-3 flex flex-col">
+                <span class="absolute top-2 right-2 bg-red-700 text-white text-sm font-bold px-2 py-1 rounded-full">
+                    @b.TotalFloors F
+                </span>
+
+                @if (FilesByBuilding.TryGetValue(b.Id, out var files) && files.Any())
+                {
+                    <img src="@($"/secure-files/{files.First().Path}")"
+                        class="w-full h-64 object-cover rounded mb-2 cursor-pointer hover:scale-105 transition-transform"
+                        @onclick="() => ShowPreview(files.First().Path)" />
+                }
+
+                <h3 class="text-md font-semibold text-white truncate">@b.Name</h3>
+                <p class="text-gray-300 text-sm truncate">@b.Details</p>
+                <p class="text-gray-400 text-xs truncate">@b.Address</p>
+
+                @if (files?.Count > 1)
+                {
+                    <div class="flex gap-1 overflow-x-auto scroll-smooth snap-x snap-mandatory">
+                        @foreach (var f in files.Skip(1))
+                        {
+                            <img src="@($"/secure-files/{f.Path}")"
+                                class="h-12 w-12 object-cover rounded cursor-pointer hover:scale-105 transition-transform"
+                                @onclick="() => ShowPreview(f.Path)" />
+                        }
+                    </div>
+                }
+
+                <div class="mt-3 flex justify-end gap-2">
+                    <button class="px-2 py-1 bg-blue-500 text-white rounded" @onclick="() => EditBuilding(b)">Edit</button>
+                    <button class="px-2 py-1 bg-red-500 text-white rounded"
+                        @onclick="() => ConfirmDelete(b.Id, b.Name)">Delete</button>
+                </div>
+            </div>
+        }
+    </div>
+
+
+    @if (ShowModal)
+    {
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl p-6 w-full max-w-lg relative">
+                <h2 class="text-xl font-bold mb-4">@ModalTitle</h2>
+                <EditForm Model="@Selected" OnValidSubmit="@SaveBuilding">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="space-y-2">
+                        <InputText class="w-full border px-3 py-2 rounded" @bind-Value="Selected.Name" placeholder="Name" />
+                        <InputTextArea class="w-full border px-3 py-2 rounded" @bind-Value="Selected.Details"
+                            placeholder="Details" />
+                        <InputNumber class="w-full border px-3 py-2 rounded" @bind-Value="Selected.TotalFloors"
+                            placeholder="Total Floors" />
+                        <InputText class="w-full border px-3 py-2 rounded" @bind-Value="Selected.Address"
+                            placeholder="Address" />
+
+                        <label class="flex items-center gap-2">
+                            <InputCheckbox @bind-Value="Selected.IsActive" /> Active
+                        </label>
+
+                        <!-- Thumbnail file lama -->
+                        @if (EditFiles.Any())
+                        {
+                            <div class="mt-2">
+                                <div class="font-semibold mb-1">Existing Images</div>
+                                <div class="flex gap-2 flex-wrap">
+                                    @foreach (var f in EditFiles)
+                                    {
+                                        <div class="relative group">
+                                            <img src="@($"/secure-files/{f.Path}")"
+                                                class="h-16 w-16 object-cover rounded cursor-pointer"
+                                                @onclick="() => ShowPreview(f.Path)" />
+                                            <button type="button"
+                                                class="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-5 h-5 text-xs hidden group-hover:block"
+                                                @onclick="() => RemoveExistingFile(f)">
+                                                ×
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <div class="mt-2">
+                            <div class="font-semibold">Upload New Files</div>
+                            <InputFile OnChange="OnFilesSelected" multiple />
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-end gap-2">
+                        <button type="button" class="bg-red-700 text-white px-4 py-2 rounded"
+                            @onclick="() => ShowModal = false">Cancel</button>
+                        <button type="submit" class="bg-green-700 text-white px-4 py-2 rounded">Save</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(PreviewPath))
+    {
+        <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div class="relative">
+                <img src="@($"/secure-files/{PreviewPath}")" class="max-h-[90vh] max-w-[90vw] rounded shadow-lg" />
+                <button class="absolute top-2 right-2 bg-red-600 text-white rounded-full px-2"
+                    @onclick="() => PreviewPath = null">X</button>
+            </div>
+        </div>
+    }
+</div>
+@if (ShowConfirmModal)
+{
+    <div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 animate-fade-in">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-slide-up">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Confirm Delete</h3>
+            <p class="text-gray-700 mb-6">@ConfirmMessage</p>
+            <div class="flex justify-end space-x-3">
+                <button class="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-lg" @onclick="CancelDelete">Cancel</button>
+                <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+                    @onclick="DeleteConfirmed">Delete</button>
+            </div>
+        </div>
+    </div>
+}
+
+<ToastContainer @ref="toastContainer" />
+
+@code {
+    private ToastContainer? toastContainer;
+    private List<Building> Buildings = new();
+    private Dictionary<int, List<FileUpload>> FilesByBuilding = new();
+    private HashSet<int> Expanded = new();
+    private bool ShowModal;
+    private string ModalTitle = "";
+    private Building Selected = new();
+    private IReadOnlyList<IBrowserFile>? PendingUploads;
+    private List<FileUpload> EditFiles = new();
+    private string? PreviewPath;
+    private string searchTerm = string.Empty; // <--- tambah ini
+    private bool ShowConfirmModal = false;
+    private int BuildingIdToDelete;
+    @* private string ConfirmMessage = ""; *@
+    private MarkupString ConfirmMessage;
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private IEnumerable<Building> FilteredBuildings =>
+    string.IsNullOrWhiteSpace(searchTerm)
+    ? Buildings
+    : Buildings.Where(b =>
+    (b.Name ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+    (b.Address ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+
+    private async Task LoadData()
+    {
+        Buildings = await BuildingService.GetAllAsync();
+        FilesByBuilding.Clear();
+        foreach (var b in Buildings)
+        {
+            var files = await FileService.GetFilesAsync("Building", b.Id);
+            FilesByBuilding[b.Id] = files.ToList();
+        }
+    }
+
+    private void ToggleSubImages(int id)
+    {
+        if (!Expanded.Add(id)) Expanded.Remove(id);
+    }
+
+    private async Task AddBuilding()
+    {
+        var claims = await SessionStorage.GetAsync<Dictionary<string, string>>("claims");
+
+        string? username = null;
+        claims.Value?.TryGetValue(ClaimTypes.Name, out username);
+
+        Selected = new Building
+        {
+            CreatedBy = username ?? "unknown",
+            TotalFloors = 1,
+            Address = "",
+            IsActive = true
+        };
+        EditFiles.Clear();
+        ModalTitle = "Add Building";
+        PendingUploads = null;
+        ShowModal = true;
+    }
+
+    private void EditBuilding(Building b)
+    {
+        Selected = new Building
+        {
+            Id = b.Id,
+            Name = b.Name,
+            Details = b.Details,
+            TotalFloors = b.TotalFloors,
+            Address = b.Address,
+            IsActive = b.IsActive,
+            CreatedBy = b.CreatedBy
+        };
+        EditFiles = FilesByBuilding.TryGetValue(b.Id, out var f) ? f.ToList() : new();
+        PendingUploads = null;
+        ModalTitle = "Edit Building";
+        ShowModal = true;
+    }
+
+    private void OnFilesSelected(InputFileChangeEventArgs e) => PendingUploads = e.GetMultipleFiles();
+
+    private async Task SaveBuilding()
+    {
+        if (Selected.Id == 0)
+            await BuildingService.AddAsync(Selected);
+        else
+            await BuildingService.UpdateAsync(Selected);
+
+        if (PendingUploads?.Count > 0)
+            foreach (var f in PendingUploads)
+                await FileService.SaveFileAsync(f, "Building", Selected.Id);
+
+        toastContainer?.ShowToast("Building saved!", type: "success");
+        ShowModal = false;
+        await LoadData();
+    }
+
+    private async Task RemoveExistingFile(FileUpload file)
+    {
+        await FileService.DeleteFileAsync(file.Id);
+        EditFiles.Remove(file);
+        if (FilesByBuilding.TryGetValue(Selected.Id, out var list))
+            list.RemoveAll(f => f.Id == file.Id);
+        StateHasChanged();
+    }
+
+    private async Task DeleteConfirmed()
+    {
+        await BuildingService.DeleteAsync(BuildingIdToDelete);
+        await LoadData();
+        ShowConfirmModal = false;
+        toastContainer?.ShowToast("Data berhasil dihapus!", "success");
+    }
+
+    private void CancelDelete()
+    {
+        ShowConfirmModal = false;
+    }
+    private void ConfirmDelete(int id, string name)
+    {
+        BuildingIdToDelete = id;
+        ConfirmMessage = new MarkupString(
+        $"Are you sure you want to delete the Building <b>\"{name}\"</b> ?"
+        );
+        ShowConfirmModal = true;
+    }
+
+    private void ShowPreview(string path) => PreviewPath = path;
+}
