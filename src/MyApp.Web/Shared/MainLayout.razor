@@ -1,7 +1,9 @@
 ﻿@inherits LayoutComponentBase
+@using Microsoft.EntityFrameworkCore.Metadata.Internal
 @using MyApp.Web.Shared.Components
 @using MyApp.Web.Shared.IdleScreen
-@inject NavigationManager NavManager
+@inject CustomAuthenticationStateProvider AuthProvider
+@inject NavigationManager Navigation
 
 <div class="min-h-screen flex bg-gray-50">
     <Sidebar />
@@ -30,3 +32,31 @@
         </div>
     </div>
 </div>
+
+@code {
+    private Timer? _timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        if (!(authState.User.Identity?.IsAuthenticated ?? false))
+        {
+            Navigation.NavigateTo("/login");
+        }
+    }
+
+    @* private async void CheckSession(object? state)
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        if (!authState.User.Identity?.IsAuthenticated ?? true)
+        {
+            // redirect ke login
+            Navigation.NavigateTo("/login");
+        }
+    } *@
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+}

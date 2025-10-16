@@ -1,13 +1,15 @@
 @page "/auth"
-@attribute [Authorize]
+@using System.Security.Claims
+
 @inject AuthenticationStateProvider AuthStateProvider
 
 <h1 class="text-2xl font-bold mb-4">Dashboard</h1>
 
-<p>Hello, @username!</p>
+<p>Hello, @username! Your role is @Role.</p>
 
 @code {
     private string username = "";
+    private string Role = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -17,6 +19,7 @@
         if (user.Identity?.IsAuthenticated ?? false)
         {
             username = user.Identity.Name;
+            Role = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "No Role";
         }
         else
         {

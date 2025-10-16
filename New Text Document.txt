@@ -232,7 +232,7 @@ dotnet ef migrations add InitialMigrate --context AppDbContext -s ..\MyApp.Web
  dotnet ef migrations add InitIdentity --context ApplicationIdentityDbContext -s ..\MyApp.Web
 
  dotnet ef database update --context AppDbContext -s ..\MyApp.Web -- --environment Development
-dotnet ef database update --context ApplicationIdentityDbContext -s ..\MyApp.Web -- --environment Development
+dotnet ef database update --context ApplicationDbContext -s ..\MyApp.Web -- --environment Development
 
 
 

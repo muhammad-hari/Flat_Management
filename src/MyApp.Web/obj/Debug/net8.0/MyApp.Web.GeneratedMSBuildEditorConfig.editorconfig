@@ -160,6 +160,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXEZlYXR1cmVPblByb2dyZXNzUGFnZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/Forbidden.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXEZvcmJpZGRlbi5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/Icon.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXEljb24ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 

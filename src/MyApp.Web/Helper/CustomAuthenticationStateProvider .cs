@@ -17,12 +17,27 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
     {
         try
         {
-            var result = await _sessionStorage.GetAsync<string>("username");
-            if (result.Success && !string.IsNullOrEmpty(result.Value))
+            var usernameResult = await _sessionStorage.GetAsync<string>("username");
+            var loginTimeResult = await _sessionStorage.GetAsync<DateTime>("loginTime");
+
+            if (usernameResult.Success && !string.IsNullOrEmpty(usernameResult.Value))
             {
+                var loginTime = loginTimeResult.Value;
+                // cek expired (misal 30 menit)
+                if ((DateTime.UtcNow - loginTime).TotalMinutes > 30)
+                {
+                    // session expired
+                    await _sessionStorage.DeleteAsync("username");
+                    await _sessionStorage.DeleteAsync("role");
+                    await _sessionStorage.DeleteAsync("loginTime");
+                    return new AuthenticationState(_anonymous);
+                }
+
+                var roleResult = await _sessionStorage.GetAsync<string>("role");
                 var identity = new ClaimsIdentity(new[]
                 {
-                    new Claim(ClaimTypes.Name, result.Value)
+                    new Claim(ClaimTypes.Name, usernameResult.Value),
+                    new Claim(ClaimTypes.Role, roleResult.Value ?? "Anonymous")
                 }, "apiauth_type");
 
                 var user = new ClaimsPrincipal(identity);
@@ -31,11 +46,13 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
         }
         catch
         {
-            // gagal baca session, fallback ke anonymous
+            // fallback ke anonymousreturn new AuthenticationState(_anonymous);
+            return new AuthenticationState(_anonymous);
         }
 
         return new AuthenticationState(_anonymous);
     }
+
 
     public async Task NotifyUserAuthentication(string username)
     {

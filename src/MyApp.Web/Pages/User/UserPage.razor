@@ -4,9 +4,12 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using MyApp.Core.Entities
 @using MyApp.Core.Interfaces
+
+@inherits AppBase
 @inject IUserRepository UserService
 @inject IRoleRepository RoleService
 @inject ToastService ToastService
+@inject HttpClient Http
 
 <PageTitle>User Management</PageTitle>
 
@@ -434,36 +437,65 @@
             await ToastService.ShowWarning("Username is required.");
             return;
         }
+
+        if (SelectedUser.Id == 0 && string.IsNullOrWhiteSpace(Password))
+        {
+            await ToastService.ShowWarning("Password is required for new users.");
+            return;
+        }
+
         try
         {
-             // ⬅️ Tutup dulu biar UI langsung update
-     
             if (SelectedUser.Id == 0)
             {
-                if (string.IsNullOrWhiteSpace(Password))
+                // --- CALL API REGISTER ---
+                var request = new RegisterRequest
                 {
-                    await ToastService.ShowWarning("Password is required for new users.");
-                    return;
+                    UserName = SelectedUser.UserName,
+                    Email = SelectedUser.Email,
+                    Password = Password,
+                    RoleId = (int)SelectedUser.RoleId
+                };
+
+                var response = await Http.PostAsJsonAsync("api/auth/register", request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    await ToastService.ShowSuccess("User added successfully!");
+                    ShowModal = false;
+                    await LoadUsers();
                 }
-                     
-                SelectedUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(Password);
-                await UserService.AddAsync(SelectedUser);
-                ShowModal = false;
-                await ToastService.ShowSuccess("User added successfully!");
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    await ToastService.ShowError($"Failed to add user: {error}");
+                }
             }
             else
             {
+                // Update user lokal / domain
                 if (!string.IsNullOrWhiteSpace(Password))
                     SelectedUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(Password);
+
                 await UserService.UpdateAsync(SelectedUser);
                 await ToastService.ShowInfo("User updated successfully!");
+                ShowModal = false;
+                await LoadUsers();
             }
-            await LoadUsers();
-            ShowModal = false;
         }
         catch (Exception ex)
         {
             await ToastService.ShowError($"Error: {ex.Message}");
         }
     }
+
+
+    public class RegisterRequest
+    {
+        public string UserName { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+        public int RoleId { get; set; }
+    }
+
 }

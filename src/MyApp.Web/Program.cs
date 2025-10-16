@@ -67,7 +67,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.None;
-    options.ExpireTimeSpan = TimeSpan.FromHours(2);
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
     options.SlidingExpiration = true;
 });
 
@@ -163,14 +163,19 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        var context = services.GetRequiredService<AppDbContext>();
+        // Context utama aplikasi
+        var appDbContext = services.GetRequiredService<AppDbContext>();
+        appDbContext.Database.Migrate();
+
+        // Context Identity
+        var identityContext = services.GetRequiredService<ApplicationDbContext>();
+        identityContext.Database.Migrate();
+
+        // --- SEEDING ROLE & USER ADMIN ---
         var userRepo = services.GetRequiredService<IUserRepository>();
         var roleRepo = services.GetRequiredService<IRoleRepository>();
         var config = services.GetRequiredService<IConfiguration>();
 
-        context.Database.Migrate();
-
-        // --- Seed Role Admin ---
         const string adminRoleName = "Admin";
         var adminRole = await roleRepo.GetByNameAsync(adminRoleName);
         if (adminRole == null)
@@ -179,7 +184,6 @@ using (var scope = app.Services.CreateScope())
             await roleRepo.AddAsync(adminRole);
         }
 
-        // --- Seed User Admin ---
         var adminUserName = config["AdminUser:UserName"];
         var adminUser = await userRepo.GetByUserNameAsync(adminUserName);
         if (adminUser == null)
@@ -204,6 +208,7 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "Database seeding failed");
     }
 }
+
 
 // ======================================================
 // MIDDLEWARE PIPELINE
