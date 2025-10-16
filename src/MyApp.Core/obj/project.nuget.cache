@@ -1,8 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "ZMVTWDueQ18=",
+  "dgSpecHash": "E5cAg4YZeoA=",
   "success": true,
-  "projectFilePath": "D:\\Project\\Densus88\\new_app\\src\\MyApp.Core\\MyApp.Core.csproj",
-  "expectedPackageFiles": [],
+  "projectFilePath": "D:\\Projects\\Densus88\\new_app\\src\\MyApp.Core\\MyApp.Core.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\LENOVO\\.nuget\\packages\\documentformat.openxml\\3.3.0\\documentformat.openxml.3.3.0.nupkg.sha512",
+    "C:\\Users\\LENOVO\\.nuget\\packages\\documentformat.openxml.framework\\3.3.0\\documentformat.openxml.framework.3.3.0.nupkg.sha512",
+    "C:\\Users\\LENOVO\\.nuget\\packages\\system.io.packaging\\8.0.1\\system.io.packaging.8.0.1.nupkg.sha512"
+  ],
   "logs": []
 }

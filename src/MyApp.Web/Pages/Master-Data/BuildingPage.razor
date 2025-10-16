@@ -3,110 +3,202 @@
 @using MyApp.Core.Interfaces
 @inject IBuildingRepository BuildingService
 @inject IFileService FileService
-@inject Blazored.Toast.Services.IToastService ToastService
 @inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
 @using System.Security.Claims
+@inject ToastService ToastService
 
-<div class="bg-white rounded-lg shadow-sm p-6">
-    <div class="flex items-center justify-between mb-6">
+<PageTitle>Building Management</PageTitle>
+
+<div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 border-b pb-4">
         <div>
-            <h2 class="text-2xl font-semibold text-gray-800">Building Management</h2>
-            <p class="text-gray-600 mt-1">Manage Building</p>
+            <h2 class="text-3xl font-extrabold text-gray-800 tracking-tight">Building Management</h2>
+            <p class="text-gray-500 mt-1">Manage Building Property,Maintenence and Status.</p>
         </div>
-        <div class="flex items-center">
-            <button
-                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-                @onclick="AddBuilding">
-                + Add Building
+        
+        <div class="flex items-center space-x-3 mt-4 md:mt-0 w-full md:w-auto">
+            <div class="relative w-full md:w-64">
+                <input @bind="searchTerm" @bind:event="oninput" 
+       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+       placeholder="Search Name or Location..." />
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            </div>
+            
+            <button class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2 rounded-xl 
+                           shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                    @onclick="AddBuilding">
+                <i class="fas fa-plus"></i> Add Building
             </button>
         </div>
     </div>
 
-    @* <div class="flex items-center justify-between mb-6">
-            <input @bind="searchTerm" @bind:event="oninput" class="border px-3 py-2 rounded w-64"
-                placeholder="Cari nama/alamat..." />
-            <button class="bg-green-600 text-white px-4 py-2 rounded" @onclick="AddBuilding">+ Add Building</button>
-        </div> *@
-
-    <!-- Grid responsif -->
-    <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));">
-        @foreach (var b in FilteredBuildings)
+    <div class="grid gap-6" style="grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));">
+        @foreach (var b in PagedBuildings) 
         {
-            <div class="relative bg-gradient-to-b from-red-200 to-black rounded-lg shadow p-3 flex flex-col">
-                <span class="absolute top-2 right-2 bg-red-700 text-white text-sm font-bold px-2 py-1 rounded-full">
-                    @b.TotalFloors F
-                </span>
-
-                @if (FilesByBuilding.TryGetValue(b.Id, out var files) && files.Any())
-                {
-                    <img src="@($"/secure-files/{files.First().Path}")"
-                        class="w-full h-64 object-cover rounded mb-2 cursor-pointer hover:scale-105 transition-transform"
-                        @onclick="() => ShowPreview(files.First().Path)" />
-                }
-
-                <h3 class="text-md font-semibold text-white truncate">@b.Name</h3>
-                <p class="text-gray-300 text-sm truncate">@b.Details</p>
-                <p class="text-gray-400 text-xs truncate">@b.Address</p>
-
-                @if (files?.Count > 1)
-                {
-                    <div class="flex gap-1 overflow-x-auto scroll-smooth snap-x snap-mandatory">
-                        @foreach (var f in files.Skip(1))
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-2xl transition-all duration-300">
+                <div class="relative">
+                    @if (FilesByBuilding.TryGetValue(b.Id, out var files) && files.Any())
+                    {
+                        <img src="@($"/secure-files/{files.First().Path}")"
+                             class="w-full h-48 object-cover rounded-t-xl cursor-pointer"
+                             @onclick="() => ShowPreview(b.Id, files.First().Path)" /> 
+                        
+                        @if (files.Count > 1)
                         {
-                            <img src="@($"/secure-files/{f.Path}")"
-                                class="h-12 w-12 object-cover rounded cursor-pointer hover:scale-105 transition-transform"
-                                @onclick="() => ShowPreview(f.Path)" />
+                            <span class="absolute bottom-2 right-2 bg-black/60 text-white text-xs font-medium px-2 py-1 rounded-full">
+                                +@(files.Count - 1) Photos
+                            </span>
                         }
-                    </div>
-                }
+                    }
+                    else
+                    {
+                        <div class="w-full h-48 bg-gray-200 rounded-t-xl flex items-center justify-center text-gray-400">
+                            <i class="fas fa-image fa-3x"></i>
+                        </div>
+                    }
 
-                <div class="mt-3 flex justify-end gap-2">
-                    <button class="px-2 py-1 bg-blue-500 text-white rounded" @onclick="() => EditBuilding(b)">Edit</button>
-                    <button class="px-2 py-1 bg-red-500 text-white rounded"
-                        @onclick="() => ConfirmDelete(b.Id, b.Name)">Delete</button>
+                    <span class="absolute top-2 left-2 bg-blue-600 text-white text-sm font-semibold px-3 py-1 rounded-full shadow-md">
+                        @b.TotalFloors F
+                    </span>
+                    
+                    <span class="absolute top-2 right-2 @(b.IsActive ? "bg-green-500" : "bg-red-500") text-white text-xs font-semibold px-3 py-1 rounded-full">
+                        @(b.IsActive ? "Active" : "Inactive")
+                    </span>
                 </div>
+
+                <div class="p-4">
+                    <h3 class="text-xl font-bold text-gray-800 truncate mb-1">@b.Name</h3>
+                    <div class="flex items-center text-sm text-gray-600 mb-1">
+                        <i class="fas fa-map-marker-alt mr-2 text-gray-400"></i>
+                        <span class="truncate">@b.Address</span>
+                    </div>
+                    <p class="text-gray-500 text-sm line-clamp-2 mb-3">@b.Details</p>
+
+                    <div class="mt-3 flex justify-end gap-3 pt-3 border-t border-gray-100">
+                        <button class="flex items-center gap-1 px-3 py-1 text-sm bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors" 
+                                @onclick="() => EditBuilding(b)">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="flex items-center gap-1 px-3 py-1 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                                @onclick="() => ConfirmDelete(b.Id, b.Name)">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+        
+        @if (!FilteredBuildings.Any())
+        {
+            <div class="col-span-full text-center py-10 text-gray-500">
+                <i class="fas fa-inbox fa-3x mb-3"></i>
+                <p class="text-lg">Tidak ada Building yang ditemukan.</p>
             </div>
         }
     </div>
 
+    @if (FilteredBuildings.Any())
+    {
+        <div class="mt-8 flex justify-between items-center p-4 bg-gray-50 rounded-xl shadow-inner">
+            <span class="text-sm text-gray-600">
+                Showing <strong>@((CurrentPage - 1) * PageSize + 1)</strong> to <strong>@(Math.Min(CurrentPage * PageSize, FilteredBuildings.Count()))</strong> of <strong>@FilteredBuildings.Count()</strong> entries
+            </span>
+            <div class="flex space-x-2">
+                <button class="px-4 py-2 text-sm rounded-lg border @(CurrentPage == 1 ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-white hover:bg-gray-100 text-gray-700")"
+                        @onclick="() => ChangePage(CurrentPage - 1)"
+                        disabled="@(CurrentPage == 1)">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+
+                @for (int i = 1; i <= TotalPages; i++)
+                {
+                    var pageNumber = i;
+                    <button class="px-4 py-2 text-sm rounded-lg font-medium @(i == CurrentPage ? "bg-blue-600 text-white shadow-md" : "bg-white hover:bg-blue-50 border text-gray-700")"
+                            @onclick="() => ChangePage(pageNumber)">
+                        @i
+                    </button>
+                }
+
+                <button class="px-4 py-2 text-sm rounded-lg border @(CurrentPage == TotalPages ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-white hover:bg-gray-100 text-gray-700")"
+                        @onclick="() => ChangePage(CurrentPage + 1)"
+                        disabled="@(CurrentPage == TotalPages)">
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    }
 
     @if (ShowModal)
     {
-        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-xl p-6 w-full max-w-lg relative">
-                <h2 class="text-xl font-bold mb-4">@ModalTitle</h2>
-                <EditForm Model="@Selected" OnValidSubmit="@SaveBuilding">
+        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-out">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl relative animate-zoom-in">
+                
+                <div class="border-b px-6 py-4 flex justify-between items-center">
+                <div class="absolute inset-0 flex justify-center items-center pointer-events-none">
+                    <img src="assets/images/mock.png" class="max-w-[50%] max-h-[50%] opacity-30" alt="watermark">
+                </div>
+                    <h2 class="text-2xl font-bold text-gray-800">@ModalTitle</h2>
+                    <button class="text-gray-400 hover:text-gray-600" @onclick="() => ShowModal = false">
+                        <i class="fas fa-times fa-lg"></i>
+                    </button>
+                </div>
+
+                <EditForm Model="@Selected" OnValidSubmit="@SaveBuilding" class="p-6">
                     <DataAnnotationsValidator />
-                    <ValidationSummary />
-                    <div class="space-y-2">
-                        <InputText class="w-full border px-3 py-2 rounded" @bind-Value="Selected.Name" placeholder="Name" />
-                        <InputTextArea class="w-full border px-3 py-2 rounded" @bind-Value="Selected.Details"
-                            placeholder="Details" />
-                        <InputNumber class="w-full border px-3 py-2 rounded" @bind-Value="Selected.TotalFloors"
-                            placeholder="Total Floors" />
-                        <InputText class="w-full border px-3 py-2 rounded" @bind-Value="Selected.Address"
-                            placeholder="Address" />
+                    <ValidationSummary class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" />
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-1">Name</label>
+                            <InputText class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:border-blue-500" 
+                                       @bind-Value="Selected.Name" placeholder="Nama Gedung" />
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-1">Total Floors</label>
+                            <InputNumber class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:border-blue-500" 
+                                         @bind-Value="Selected.TotalFloors" placeholder="Jumlah Lantai" />
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-medium mb-1">Address</label>
+                        <InputText class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:border-blue-500" 
+                                   @bind-Value="Selected.Address" placeholder="Alamat lengkap" />
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-medium mb-1">Details</label>
+                        <InputTextArea class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:border-blue-500 h-24" 
+                                       @bind-Value="Selected.Details" placeholder="Deskripsi Gedung" />
+                    </div>
 
-                        <label class="flex items-center gap-2">
-                            <InputCheckbox @bind-Value="Selected.IsActive" /> Active
+                    <div class="mb-6">
+                        <label class="flex items-center gap-2 text-gray-700 font-medium cursor-pointer">
+                            <InputCheckbox @bind-Value="Selected.IsActive" class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" /> 
+                            Gedung Aktif
                         </label>
+                    </div>
 
-                        <!-- Thumbnail file lama -->
+                    <div class="border p-4 rounded-lg bg-gray-50">
+                        <h4 class="font-semibold text-gray-800 mb-3">Image Management</h4>
+
                         @if (EditFiles.Any())
                         {
-                            <div class="mt-2">
-                                <div class="font-semibold mb-1">Existing Images</div>
-                                <div class="flex gap-2 flex-wrap">
+                            <div class="mb-3">
+                                <div class="text-sm font-medium mb-2 text-gray-600">Existing Images (@EditFiles.Count)</div>
+                                <div class="flex gap-3 flex-wrap">
                                     @foreach (var f in EditFiles)
                                     {
                                         <div class="relative group">
                                             <img src="@($"/secure-files/{f.Path}")"
-                                                class="h-16 w-16 object-cover rounded cursor-pointer"
-                                                @onclick="() => ShowPreview(f.Path)" />
+                                                 class="h-16 w-16 object-cover rounded-lg border-2 border-transparent hover:border-blue-500 cursor-pointer transition"
+                                                 @onclick="() => ShowPreview(Selected.Id, f.Path)" />
                                             <button type="button"
-                                                class="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-5 h-5 text-xs hidden group-hover:block"
-                                                @onclick="() => RemoveExistingFile(f)">
-                                                ×
+                                                    class="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 text-sm flex items-center justify-center shadow-lg"
+                                                    @onclick="() => RemoveExistingFile(f)">
+                                                <i class="fas fa-times"></i>
                                             </button>
                                         </div>
                                     }
@@ -114,15 +206,27 @@
                             </div>
                         }
 
-                        <div class="mt-2">
-                            <div class="font-semibold">Upload New Files</div>
-                            <InputFile OnChange="OnFilesSelected" multiple />
+                        <div>
+                            <div class="text-sm font-medium mb-2 text-gray-600">Upload New Files</div>
+                            <InputFile OnChange="OnFilesSelected" multiple 
+                                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                            @if (PendingUploads?.Count > 0)
+                            {
+                                <p class="text-xs text-blue-600 mt-1">@PendingUploads.Count file siap diunggah.</p>
+                            }
                         </div>
                     </div>
-                    <div class="mt-4 flex justify-end gap-2">
-                        <button type="button" class="bg-red-700 text-white px-4 py-2 rounded"
-                            @onclick="() => ShowModal = false">Cancel</button>
-                        <button type="submit" class="bg-green-700 text-white px-4 py-2 rounded">Save</button>
+
+                    <div class="mt-6 flex justify-end gap-3 border-t pt-4">
+                        <button type="button" 
+                                class="bg-red-600 hover:bg-red-700 text-white font-semibold px-5 py-2 rounded-lg transition flex items-center gap-2"
+                                @onclick="() => ShowModal = false">
+                            <i class="fas fa-ban"></i> Cancel
+                        </button>
+                        <button type="submit" 
+                                class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2 rounded-lg transition flex items-center gap-2">
+                            <i class="fas fa-save"></i> Save Building
+                        </button>
                     </div>
                 </EditForm>
             </div>
@@ -131,57 +235,101 @@
 
     @if (!string.IsNullOrEmpty(PreviewPath))
     {
-        <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-            <div class="relative">
-                <img src="@($"/secure-files/{PreviewPath}")" class="max-h-[90vh] max-w-[90vw] rounded shadow-lg" />
-                <button class="absolute top-2 right-2 bg-red-600 text-white rounded-full px-2"
-                    @onclick="() => PreviewPath = null">X</button>
+        <div class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 transition-opacity duration-300 ease-out" 
+             @onclick="() => PreviewPath = null">
+            
+            <div class="relative flex items-center justify-center" @onclick:stopPropagation="true">
+
+                <button class="absolute left-4 z-10 p-3 bg-white/30 backdrop-blur-sm text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-white/50 transition disabled:opacity-50"
+                        @onclick="PrevImage" disabled="@(CurrentFileIndex == 0)">
+                    <i class="fas fa-chevron-left fa-lg"></i>
+                </button>
+
+                <img src="@($"/secure-files/{PreviewPath}")" 
+                     class="max-h-[90vh] max-w-[80vw] rounded-xl shadow-2xl object-contain transition-transform duration-300" />
+                
+                <button class="absolute right-4 z-10 p-3 bg-white/30 backdrop-blur-sm text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-white/50 transition disabled:opacity-50"
+                        @onclick="NextImage" disabled="@(CurrentFileIndex >= CurrentFileList.Count - 1)">
+                    <i class="fas fa-chevron-right fa-lg"></i>
+                </button>
+
+                <button class="absolute top-4 right-4 z-20 bg-white/30 backdrop-blur-sm text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-white/50 transition"
+                        @onclick="() => PreviewPath = null">
+                    <i class="fas fa-times"></i>
+                </button>
+
+                <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full">
+                    @(CurrentFileIndex + 1) of @CurrentFileList.Count
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (ShowConfirmModal)
+    {
+        <div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 animate-fade-in">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-slide-up">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2 text-red-600">
+                    <i class="fas fa-exclamation-triangle"></i> Confirm Delete
+                </h3>
+                <p class="text-gray-700 mb-6">@ConfirmMessage</p>
+                <div class="flex justify-end space-x-3">
+                    <button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 font-medium" 
+                            @onclick="CancelDelete">Cancel</button>
+                    <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
+                            @onclick="DeleteConfirmed">Delete</button>
+                </div>
             </div>
         </div>
     }
 </div>
-@if (ShowConfirmModal)
-{
-    <div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 animate-fade-in">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-slide-up">
-            <h3 class="text-xl font-semibold text-gray-800 mb-4">Confirm Delete</h3>
-            <p class="text-gray-700 mb-6">@ConfirmMessage</p>
-            <div class="flex justify-end space-x-3">
-                <button class="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-lg" @onclick="CancelDelete">Cancel</button>
-                <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
-                    @onclick="DeleteConfirmed">Delete</button>
-            </div>
-        </div>
-    </div>
-}
 
 <ToastContainer @ref="toastContainer" />
 
 @code {
-    private ToastContainer? toastContainer;
+    // Properti Toast
+    private ToastContainer? toastContainer; 
+    
+    // Properti Data
     private List<Building> Buildings = new();
     private Dictionary<int, List<FileUpload>> FilesByBuilding = new();
-    private HashSet<int> Expanded = new();
+    
+    // Properti Modal
     private bool ShowModal;
     private string ModalTitle = "";
     private Building Selected = new();
     private IReadOnlyList<IBrowserFile>? PendingUploads;
     private List<FileUpload> EditFiles = new();
+    
+    // Properti Preview/Gallery
     private string? PreviewPath;
-    private string searchTerm = string.Empty; // <--- tambah ini
+    private List<FileUpload> CurrentFileList = new(); 
+    private int CurrentFileIndex = 0;
+    
+    // Properti Search & Delete
+    private string searchTerm = string.Empty;
     private bool ShowConfirmModal = false;
     private int BuildingIdToDelete;
-    @* private string ConfirmMessage = ""; *@
     private MarkupString ConfirmMessage;
 
-    protected override async Task OnInitializedAsync() => await LoadData();
+    // Properti Pagination
+    private const int PageSize = 12;
+    private int CurrentPage = 1;
 
+    // Computed Properties untuk Pagination
+    private int TotalPages => (int)Math.Ceiling(FilteredBuildings.Count() / (double)PageSize);
+    
     private IEnumerable<Building> FilteredBuildings =>
-    string.IsNullOrWhiteSpace(searchTerm)
-    ? Buildings
-    : Buildings.Where(b =>
-    (b.Name ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-    (b.Address ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+        string.IsNullOrWhiteSpace(searchTerm)
+        ? Buildings
+        : Buildings.Where(b =>
+        (b.Name ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+        (b.Address ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+    
+    private IEnumerable<Building> PagedBuildings =>
+        FilteredBuildings.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
+    
+    protected override async Task OnInitializedAsync() => await LoadData();
 
     private async Task LoadData()
     {
@@ -192,13 +340,29 @@
             var files = await FileService.GetFilesAsync("Building", b.Id);
             FilesByBuilding[b.Id] = files.ToList();
         }
+        CurrentPage = 1; 
     }
 
-    private void ToggleSubImages(int id)
+    // Fungsi untuk mengurus perubahan halaman
+    private void ChangePage(int page)
     {
-        if (!Expanded.Add(id)) Expanded.Remove(id);
+        if (page >= 1 && page <= TotalPages)
+        {
+            CurrentPage = page;
+        }
+    }
+    
+    // Fungsi untuk mengatur ulang halaman saat pencarian berubah
+    private void HandleSearchTermChange()
+    {
+        // Panggil StateHasChanged jika Anda tidak menggunakan @bind:event="oninput" yang sudah memanggilnya.
+        // Cukup reset halaman ke 1
+        CurrentPage = 1; 
     }
 
+    // --- CRUD METHODS ---
+    
+    // Method: AddBuilding (DIPERBAIKI)
     private async Task AddBuilding()
     {
         var claims = await SessionStorage.GetAsync<Dictionary<string, string>>("claims");
@@ -214,11 +378,12 @@
             IsActive = true
         };
         EditFiles.Clear();
-        ModalTitle = "Add Building";
+        ModalTitle = "Add New Building";
         PendingUploads = null;
         ShowModal = true;
     }
 
+    // Method: EditBuilding (DIPERBAIKI)
     private void EditBuilding(Building b)
     {
         Selected = new Building
@@ -231,9 +396,10 @@
             IsActive = b.IsActive,
             CreatedBy = b.CreatedBy
         };
+        // Memastikan EditFiles diisi dari FilesByBuilding
         EditFiles = FilesByBuilding.TryGetValue(b.Id, out var f) ? f.ToList() : new();
         PendingUploads = null;
-        ModalTitle = "Edit Building";
+        ModalTitle = $"Edit Building: {b.Name}";
         ShowModal = true;
     }
 
@@ -241,7 +407,9 @@
 
     private async Task SaveBuilding()
     {
-        if (Selected.Id == 0)
+        bool isNew = Selected.Id == 0;
+        
+        if (isNew)
             await BuildingService.AddAsync(Selected);
         else
             await BuildingService.UpdateAsync(Selected);
@@ -250,7 +418,9 @@
             foreach (var f in PendingUploads)
                 await FileService.SaveFileAsync(f, "Building", Selected.Id);
 
-        toastContainer?.ShowToast("Building saved!", type: "success");
+        // Menggunakan toastContainer
+        ToastService.ShowSuccess($"Building '{(isNew ? Selected.Name : "Data")}' successfully {(isNew ? "added" : "updated")}.");
+        
         ShowModal = false;
         await LoadData();
     }
@@ -261,6 +431,10 @@
         EditFiles.Remove(file);
         if (FilesByBuilding.TryGetValue(Selected.Id, out var list))
             list.RemoveAll(f => f.Id == file.Id);
+            
+        // Menggunakan toastContainer
+        ToastService.ShowInfo("Image removed. Save the building to confirm change.");
+        
         StateHasChanged();
     }
 
@@ -269,21 +443,55 @@
         await BuildingService.DeleteAsync(BuildingIdToDelete);
         await LoadData();
         ShowConfirmModal = false;
-        toastContainer?.ShowToast("Data berhasil dihapus!", "success");
+        
+        // Menggunakan toastContainer
+        ToastService.ShowInfo("Data berhasil dihapus!");
     }
 
     private void CancelDelete()
     {
         ShowConfirmModal = false;
     }
+    
     private void ConfirmDelete(int id, string name)
     {
         BuildingIdToDelete = id;
         ConfirmMessage = new MarkupString(
-        $"Are you sure you want to delete the Building <b>\"{name}\"</b> ?"
+        $"Are you sure you want to delete the Building <b>\"{name}\"</b>? This action cannot be undone."
         );
         ShowConfirmModal = true;
     }
 
-    private void ShowPreview(string path) => PreviewPath = path;
+    // --- CAROUSEL METHODS ---
+
+    // Method: ShowPreview (DIPERBAIKI untuk Carousel)
+    private void ShowPreview(int buildingId, string path)
+    {
+        if (FilesByBuilding.TryGetValue(buildingId, out var files))
+        {
+            CurrentFileList = files.ToList();
+            CurrentFileIndex = CurrentFileList.FindIndex(f => f.Path == path);
+            PreviewPath = path;
+        }
+    }
+
+    // Method: NextImage
+    private void NextImage()
+    {
+        if (CurrentFileIndex < CurrentFileList.Count - 1)
+        {
+            CurrentFileIndex++;
+            PreviewPath = CurrentFileList[CurrentFileIndex].Path;
+        }
+    }
+
+    // Method: PrevImage
+    private void PrevImage()
+    {
+        if (CurrentFileIndex > 0)
+        {
+            CurrentFileIndex--;
+            PreviewPath = CurrentFileList[CurrentFileIndex].Path;
+        }
+    }
 }

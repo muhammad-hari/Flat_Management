@@ -3,6 +3,7 @@
 @using MyApp.Core.Interfaces
 @using MyApp.Core.Entities
 @inject IRoomStatusRepository RoomStatusService
+@inject ToastService ToastService
 
 <div class="bg-white rounded-lg shadow-sm p-6">
     <div class="flex items-center justify-between mb-6">
@@ -152,6 +153,7 @@
         ShowAddModal = false;
     }
 
+
     private void ShowAddRoomStatusModal()
     {
         NewRoomStatus = new RoomStatus(); // reset form
@@ -187,7 +189,7 @@
         await RoomStatusService.DeleteAsync(RoomStatusIdToDelete);
         RoomStatuss = await RoomStatusService.GetAllAsync();
         ShowConfirmModal = false;
-        toastContainer?.ShowToast("Data berhasil dihapus!", "success");
+        ToastService.ShowSuccess("Data Deleted!");
     }
 
     private void CancelDelete()
@@ -205,7 +207,7 @@
         RoomStatuss = await RoomStatusService.GetAllAsync();
         NewRoomStatus = new RoomStatus();
         ShowAddModal = false;
-        toastContainer?.ShowToast("Data berhasil disimpan!", "success");
+        ToastService.ShowSuccess("Data Saved!");
     }
 
     private string GetStatusClasses(bool isActive) =>

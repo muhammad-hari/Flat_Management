@@ -1,0 +1,418 @@
+@page "/weapons"
+@using MyApp.Core.Entities
+@using MyApp.Core.Interfaces
+@inject IWeaponRepository WeaponService
+@inject ToastService ToastService
+
+<PageTitle>Weapons</PageTitle>
+
+<div class="space-y-6">
+    <!-- Top summary cards like Occupant page -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-gradient-to-br from-blue-600 to-blue-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+            <div class="bg-white/20 rounded-full p-3"><i class="fas fa-boxes fa-2x"></i></div>
+            <div>
+                <h2 class="text-lg font-semibold">Total Weapons</h2>
+                <p class="text-2xl font-bold">@Weapons?.Count()</p>
+            </div>
+        </div>
+        <div class="bg-gradient-to-br from-green-600 to-green-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+            <div class="bg-white/20 rounded-full p-3"><i class="fas fa-check-circle fa-2x"></i></div>
+            <div>
+                <h2 class="text-lg font-semibold">Available</h2>
+                <p class="text-2xl font-bold">@Weapons?.Count(w => w.IsAvailable)</p>
+            </div>
+        </div>
+        <div class="bg-gradient-to-br from-red-600 to-red-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+            <div class="bg-white/20 rounded-full p-3"><i class="fas fa-times-circle fa-2x"></i></div>
+            <div>
+                <h2 class="text-lg font-semibold">Unavailable</h2>
+                <p class="text-2xl font-bold">@Weapons?.Count(w => !w.IsAvailable)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
+            <div>
+                <h2 class="text-2xl font-extrabold text-gray-800">Weapons</h2>
+                <p class="text-gray-500">Manage weapons with document and photo.</p>
+            </div>
+            <div class="flex items-center space-x-3 mt-4 md:mt-0">
+                <div class="relative w-64">
+                    <input value="@searchTerm" @oninput="HandleSearchTermChange"
+                           class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                           placeholder="Search name, code, description..." />
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg" @onclick="OpenNew">New Weapon</button>
+            </div>
+        </div>
+
+        <!-- Card grid (replaces table) -->
+        <div class="grid gap-6" style="grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));">
+            @if (!PagedWeapons.Any())
+            {
+                <div class="col-span-full text-center py-10 text-gray-500">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <p class="text-lg">No weapons found.</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var w in PagedWeapons)
+                {
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-2xl transition-all duration-300 flex flex-col overflow-hidden">
+                        <div class="relative">
+                            @if (w.PhotoData != null && !string.IsNullOrEmpty(w.PhotoContentType))
+                            {
+                                <div class="w-full h-56 flex items-center justify-center bg-gray-50 rounded-t-xl p-4">
+                                    <img src="@($"data:{w.PhotoContentType};base64,{Convert.ToBase64String(w.PhotoData)}")" class="max-h-full max-w-full object-contain" />
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="w-full h-56 bg-gray-200 rounded-t-xl flex items-center justify-center text-gray-400">
+                                    <i class="fas fa-image fa-3x"></i>
+                                </div>
+                            }
+
+                            <span class="absolute top-3 left-3 bg-indigo-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md">
+                                @w.Code
+                            </span>
+
+                            <span class="absolute top-3 right-3 @(w.IsAvailable ? "bg-green-500" : "bg-red-500") text-white text-xs font-semibold px-3 py-1 rounded-full">
+                                @(w.IsAvailable ? "Available" : "No")
+                            </span>
+                        </div>
+
+                        <div class="p-4 flex flex-col flex-grow">
+                            <h3 class="text-lg font-bold text-gray-800 truncate mb-1">@w.Name</h3>
+                            <p class="text-gray-500 text-sm line-clamp-3 mb-3 flex-grow">@w.Description</p>
+
+                            <div class="mt-3 flex justify-between items-center gap-3 pt-3 border-t border-gray-100">
+                               
+                                <div class="flex items-center gap-2">
+                                    <button class="flex items-center gap-2 px-4 py-2 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                                            @onclick="() => ShowDetail(w)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="flex items-center gap-2 px-4 py-2 text-sm bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors" 
+                                            @onclick="() => Edit(w)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="flex items-center gap-2 px-4 py-2 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                                            @onclick="() => ConfirmDelete(w.Id, w.Name)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+
+                                
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        @* Pagination *@
+        @if (FilteredWeapons.Any())
+        {
+            <div class="mt-6 flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div class="text-sm text-gray-600">
+                    Showing <strong>@((CurrentPage - 1) * PageSize + 1)</strong> to <strong>@(Math.Min(CurrentPage * PageSize, FilteredWeapons.Count()))</strong> of <strong>@FilteredWeapons.Count()</strong> entries
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button class="px-3 py-2 rounded-lg border text-sm @(CurrentPage == 1 ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-white hover:bg-gray-100")" @onclick="() => ChangePage(CurrentPage - 1)" disabled="@(CurrentPage == 1)">Previous</button>
+                    @for (int i = 1; i <= TotalPages; i++)
+                    {
+                        var pageNumber = i;
+                        <button class="px-3 py-2 rounded-lg text-sm font-medium @(i == CurrentPage ? "bg-blue-600 text-white" : "bg-white hover:bg-blue-50 border text-gray-700")" @onclick="() => ChangePage(pageNumber)">@i</button>
+                    }
+                    <button class="px-3 py-2 rounded-lg border text-sm @(CurrentPage == TotalPages ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-white hover:bg-gray-100")" @onclick="() => ChangePage(CurrentPage + 1)" disabled="@(CurrentPage == TotalPages)">Next</button>
+                </div>
+            </div>
+        }
+
+        @if (ShowConfirmModal)
+        {
+            <div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 animate-fade-in">
+                <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-slide-up">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2 text-red-600">
+                        <i class="fas fa-exclamation-triangle"></i> Confirm Delete
+                    </h3>
+                    <p class="text-gray-700 mb-6">@ConfirmMessage</p>
+                    <div class="flex justify-end space-x-3">
+                        <button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 font-medium"
+                            @onclick="CancelDelete">Cancel</button>
+                        <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
+                            @onclick="DeleteConfirmed">Delete</button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (ShowModal && Selected != null)
+    {
+        <!-- Improved detail modal: larger, readable and scrollable on small screens -->
+        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-6 overflow-y-auto max-h-[90vh]">
+                <div class="border-b px-6 py-4 flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">Weapon Detail</h2>
+                    <button class="text-gray-400 hover:text-gray-600" @onclick="() => ShowModal = false">Close</button>
+                </div>
+
+                <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-1 flex items-center justify-center">
+                        @if (Selected.PhotoData != null && !string.IsNullOrEmpty(Selected.PhotoContentType))
+                        {
+                            <img src="@($"data:{Selected.PhotoContentType};base64,{Convert.ToBase64String(Selected.PhotoData)}")" class="max-w-full max-h-64 object-contain rounded-md shadow" />
+                        }
+                        else
+                        {
+                            <div class="w-full h-48 bg-gray-100 rounded-md flex items-center justify-center text-gray-400">
+                                <i class="fas fa-image fa-3x"></i>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <h3 class="text-xl font-semibold mb-2">@Selected.Name</h3>
+                        <p class="text-sm text-gray-500 mb-4">Code: <span class="font-medium">@Selected.Code</span></p>
+                        <p class="text-gray-700 mb-4">@Selected.Description</p>
+
+                        <div class="flex flex-wrap gap-3 mb-4">
+                            <span class="px-3 py-1 rounded-full bg-gray-100 text-sm">Available: @(Selected.IsAvailable ? "Yes" : "No")</span>
+                            @if (!string.IsNullOrEmpty(Selected.DocumentName))
+                            {
+                                <a class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 flex items-center gap-2" href="@($"/api/files/weapon/{Selected.Id}/document")" target="_blank">
+                                    <i class="fas fa-download"></i> Download Document
+                                </a>
+                            }
+                        </div>
+
+                        <div class="mt-6 flex justify-end gap-3">
+                            <button class="px-4 py-2 bg-gray-200 rounded" @onclick="() => ShowModal = false">Close</button>
+                            <button class="px-4 py-2 bg-indigo-600 text-white rounded" @onclick="() => Edit(Selected)">Edit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (ShowEditModal)
+    {
+        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 overflow-y-auto max-h-[90vh]">
+                <div class="border-b px-6 py-4 flex justify-between items-center">
+                    <h2 class="text-xl font-bold">@((Selected.Id == 0) ? "New Weapon" : "Edit Weapon")</h2>
+                    <button class="text-gray-400 hover:text-gray-600" @onclick="() => CloseEdit()">Close</button>
+                </div>
+                <EditForm Model="Selected" OnValidSubmit="Save">
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm text-gray-600">Name</label>
+                            <InputText class="w-full border rounded px-3 py-2" @bind-Value="Selected.Name" />
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-600">Code</label>
+                            <InputText class="w-full border rounded px-3 py-2" @bind-Value="Selected.Code" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="text-sm text-gray-600">Description</label>
+                            <InputTextArea class="w-full border rounded px-3 py-2" @bind-Value="Selected.Description" />
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-600">Document (multiple allowed)</label>
+                            <InputFile OnChange="HandleDocuments" multiple />
+                            @if (PendingDocuments?.Count > 0)
+                            {
+                                <p class="text-xs text-blue-600 mt-1">@PendingDocuments.Count file(s) ready to upload.</p>
+                            }
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-600">Photo (multiple allowed)</label>
+                            <InputFile OnChange="HandlePhotos" multiple />
+                            @if (PendingPhotos?.Count > 0)
+                            {
+                                <p class="text-xs text-blue-600 mt-1">@PendingPhotos.Count file(s) selected.</p>
+                            }
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end">
+                        <button type="button" class="bg-gray-200 px-4 py-2 rounded mr-2" @onclick="() => CloseEdit()">Cancel</button>
+                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Save</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Weapon> Weapons = new();
+    private Weapon Selected = new();
+    private bool ShowModal = false;
+    private bool ShowEditModal = false;
+
+    // Multi-file support (UI only). Keep single-file fields for compatibility.
+    private IReadOnlyList<IBrowserFile>? PendingDocuments;
+    private IReadOnlyList<IBrowserFile>? PendingPhotos;
+
+    // Delete confirmation
+    private bool ShowConfirmModal = false;
+    private int WeaponIdToDelete;
+    private MarkupString ConfirmMessage;
+
+    // Search & Pagination
+    private string searchTerm = string.Empty;
+    private const int PageSize = 12;
+    private int CurrentPage = 1;
+
+    private IEnumerable<Weapon> FilteredWeapons =>
+        string.IsNullOrWhiteSpace(searchTerm)
+        ? Weapons
+        : Weapons.Where(w =>
+            (w.Name ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            (w.Code ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            (w.Description ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+        );
+
+    private int TotalPages => (int)Math.Ceiling(FilteredWeapons.Count() / (double)PageSize);
+
+    private IEnumerable<Weapon> PagedWeapons => FilteredWeapons.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
+
+    protected override async Task OnInitializedAsync()
+    {
+        Weapons = await WeaponService.GetAllAsync();
+    }
+
+    private void OpenNew()
+    {
+        Selected = new Weapon();
+        PendingDocuments = null;
+        PendingPhotos = null;
+        ShowEditModal = true;
+    }
+
+    private async Task Save()
+    {
+        Selected.UpdatedAt = DateTime.UtcNow;
+        if (Selected.Id == 0)
+        {
+            Selected.CreatedAt = DateTime.UtcNow;
+            await WeaponService.AddAsync(Selected);
+            await ToastService.ShowSuccess("Weapon created.");
+        }
+        else
+        {
+            await WeaponService.UpdateAsync(Selected);
+            await ToastService.ShowSuccess("Weapon updated.");
+        }
+
+        // If multiple files selected, use first for existing single-file storage
+        if (PendingPhotos?.Count > 0)
+        {
+            var f = PendingPhotos[0];
+            using var ms = new MemoryStream();
+            await f.OpenReadStream().CopyToAsync(ms);
+            Selected.PhotoName = f.Name;
+            Selected.PhotoContentType = f.ContentType;
+            Selected.PhotoData = ms.ToArray();
+        }
+
+        if (PendingDocuments?.Count > 0)
+        {
+            var f = PendingDocuments[0];
+            using var ms = new MemoryStream();
+            await f.OpenReadStream().CopyToAsync(ms);
+            Selected.DocumentName = f.Name;
+            Selected.DocumentContentType = f.ContentType;
+            Selected.DocumentData = ms.ToArray();
+        }
+
+        ShowEditModal = false;
+        Weapons = await WeaponService.GetAllAsync();
+        CurrentPage = 1;
+    }
+
+    private async Task Edit(Weapon w)
+    {
+        Selected = w;
+        PendingPhotos = null;
+        PendingDocuments = null;
+        ShowEditModal = true;
+    }
+
+    // immediate delete (kept for compatibility but not used in markup)
+    private async Task Delete(int id)
+    {
+        var ok = await WeaponService.DeleteAsync(id);
+        if (ok) await ToastService.ShowSuccess("Deleted"); else await ToastService.ShowWarning("Delete failed");
+        Weapons = await WeaponService.GetAllAsync();
+        CurrentPage = 1;
+    }
+
+    private void ShowDetail(Weapon w)
+    {
+        Selected = w;
+        ShowModal = true;
+    }
+
+    private async Task HandleDocuments(InputFileChangeEventArgs e)
+    {
+        PendingDocuments = e.GetMultipleFiles();
+    }
+
+    private async Task HandlePhotos(InputFileChangeEventArgs e)
+    {
+        PendingPhotos = e.GetMultipleFiles();
+    }
+
+    private void CloseEdit()
+    {
+        ShowEditModal = false;
+        Selected = new Weapon();
+        PendingDocuments = null;
+        PendingPhotos = null;
+    }
+
+    // Delete confirmation helpers
+    private void ConfirmDelete(int id, string name)
+    {
+        WeaponIdToDelete = id;
+        ConfirmMessage = new MarkupString($"Are you sure you want to delete the Weapon <b>\"{name}\"</b>? This action cannot be undone.");
+        ShowConfirmModal = true;
+    }
+
+    private async Task DeleteConfirmed()
+    {
+        if (WeaponIdToDelete == 0) return;
+        var ok = await WeaponService.DeleteAsync(WeaponIdToDelete);
+        if (ok) await ToastService.ShowSuccess("Deleted"); else await ToastService.ShowWarning("Delete failed");
+        ShowConfirmModal = false;
+        Weapons = await WeaponService.GetAllAsync();
+        CurrentPage = 1;
+    }
+
+    private void CancelDelete()
+    {
+        ShowConfirmModal = false;
+    }
+
+    private void HandleSearchTermChange(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        CurrentPage = 1;
+    }
+
+    private void ChangePage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            CurrentPage = page;
+        }
+    }
+}

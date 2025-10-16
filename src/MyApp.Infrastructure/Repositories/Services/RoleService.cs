@@ -16,6 +16,13 @@ namespace MyApp.Infrastructure.Data
         public async Task<Role?> GetByIdAsync(int id) =>
             await _context.Roles.FindAsync(id);
 
+        public async Task<Role?> GetByNameAsync(string roleName)
+        {
+            return await _context.Roles
+                .FirstOrDefaultAsync(r => r.RoleName == roleName);
+        }
+
+
         public async Task<List<Role>> GetAllAsync() =>
             await _context.Roles.ToListAsync();
 

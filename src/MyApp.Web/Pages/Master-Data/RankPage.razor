@@ -3,6 +3,7 @@
 @using MyApp.Core.Interfaces
 @using MyApp.Core.Entities
 @inject IRankRepository RankService
+@inject ToastService ToastService
 
 <div class="bg-white rounded-lg shadow-sm p-6">
     <div class="flex items-center justify-between mb-6">
@@ -132,10 +133,8 @@
     </div>
 }
 
-<ToastContainer @ref="toastContainer" />
 
 @code {
-    private ToastContainer? toastContainer;
 
     private List<Rank>? Ranks;
     private bool ShowAddModal = false;
@@ -149,7 +148,6 @@
         Ranks = await RankService.GetAllAsync();
         ShowAddModal = false;
     }
-
     private void ShowAddRankModal()
     {
         NewRank = new Rank(); // reset form
@@ -185,7 +183,7 @@
         await RankService.DeleteAsync(RankIdToDelete);
         Ranks = await RankService.GetAllAsync();
         ShowConfirmModal = false;
-        toastContainer?.ShowToast("Data berhasil dihapus!", "success");
+        ToastService.ShowSuccess("Success deleted!");
     }
 
     private void CancelDelete()
@@ -203,7 +201,7 @@
         Ranks = await RankService.GetAllAsync();
         NewRank = new Rank();
         ShowAddModal = false;
-        toastContainer?.ShowToast("Data berhasil disimpan!", "success");
+        ToastService.ShowSuccess("Data Saved!");
     }
 
     private string GetStatusClasses(bool isActive) =>

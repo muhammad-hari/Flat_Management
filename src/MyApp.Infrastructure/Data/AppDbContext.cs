@@ -25,6 +25,15 @@ namespace MyApp.Infrastructure.Data
         public DbSet<Occupant> Occupants { get; set; } = default!;
         public DbSet<OccupantHistory> OccupantHistories { get; set; } = default!;
         public DbSet<Visitor> Visitors { get; set; } = default!;
+        public DbSet<Vendor> Vendors { get; set; } = default!;
+        public DbSet<MaintenanceRequest> MaintenanceRequests { get; set; } = default!;
+        public DbSet<InventoryType> InventoryTypes { get; set; } = default!;
+        public DbSet<Repository> Repositories { get; set; } = default!;
+        public DbSet<Inventory> Inventories { get; set; } = default!;
+        public DbSet<InventoryRequest> InventoryRequests { get; set; } = default!;
+        public DbSet<InventoryHistory> InventoryHistories { get; set; } = default!;
+        public DbSet<Weapon> Weapons { get; set; } = default!;
+        public DbSet<Alsus> Alsuses { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -36,6 +45,28 @@ namespace MyApp.Infrastructure.Data
             modelBuilder.Entity<Occupant>()
                 .Property(o => o.PhotoData)
                 .HasColumnType("LONGBLOB");
+
+            // Pastikan semua Id auto increment
+            modelBuilder.Entity<User>().Property(u => u.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<FileUpload>().Property(f => f.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<Position>().Property(p => p.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<Role>().Property(r => r.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<UserType>().Property(t => t.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<Rank>().Property(r => r.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<Employee>().Property(e => e.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<Building>().Property(b => b.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<Room>().Property(r => r.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<RoomCategory>().Property(rc => rc.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<RoomStatus>().Property(rs => rs.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<RoomCondition>().Property(rc => rc.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<Occupant>().Property(o => o.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<OccupantHistory>().Property(h => h.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<Visitor>().Property(v => v.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<Vendor>().Property(v => v.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<MaintenanceRequest>().Property(v => v.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<InventoryRequest>().Property(v => v.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<Weapon>().Property(w => w.Id).ValueGeneratedOnAdd();
+            modelBuilder.Entity<Alsus>().Property(a => a.Id).ValueGeneratedOnAdd();
         }
     }
 }

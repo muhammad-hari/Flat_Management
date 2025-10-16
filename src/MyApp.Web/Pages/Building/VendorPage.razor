@@ -1,0 +1,701 @@
+@page "/vendors"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using MyApp.Core.Entities
+@using MyApp.Core.Interfaces
+@inject IVendorRepository VendorService
+@inject IFileService FileService
+@inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
+@inject ToastService ToastService
+
+<PageTitle>Vendor Management</PageTitle>
+
+<div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 border-b pb-4">
+        <div>
+            <h2 class="text-3xl font-extrabold text-gray-800 tracking-tight">Vendor Management</h2>
+            <p class="text-gray-500 mt-1">Manage vendor contact details and contracts.</p>
+        </div>
+
+        <div class="flex items-center space-x-3 mt-4 md:mt-0 w-full md:w-auto">
+            <div class="relative w-full md:w-64">
+                <input value="@searchTerm" @oninput="HandleSearchTermChange"
+                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                    placeholder="Search Name, Email, or Phone..." />
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            </div>
+
+            <button class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2 rounded-xl 
+                            shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                @onclick="AddVendor">
+                <i class="fas fa-plus"></i> Add Vendor
+            </button>
+        </div>
+    </div>
+
+    @* --- VENDOR TABLE --- *@
+    @if (Loading)
+    {
+        <div class="col-span-full text-center py-10 text-gray-500">
+            <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+            <p class="text-lg">Loading vendors...</p>
+        </div>
+    }
+    else
+    {
+        <div class="overflow-x-auto rounded-xl shadow-md border border-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gradient-to-b from-red-700 to-black">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Name
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Director
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Type
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Phone
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Email
+                        </th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach (var v in PagedVendors)
+                    {
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">@v.Name</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-700">@v.Director</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-700">@(v.BusinnesType ?? "-")</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-xs text-gray-500">
+                                    <i class="fas fa-phone mr-1 text-green-500"></i> @(v.Phone ?? "-")
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(v.SecondPhone))
+                                {
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        <i class="fas fa-phone mr-1 text-green-500"></i> @v.SecondPhone
+                                    </div>
+                                }
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">
+                                    <i class="fas fa-envelope mr-1 text-blue-500"></i> @(v.Email ?? "-")
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                <button class="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-green-100 transition"
+                                    @onclick="() => ShowDetail(v)">
+                                    <i class="fas fa-eye mr-1"></i> Detail
+                                </button>
+                                <button
+                                    class="text-indigo-600 hover:text-indigo-900 p-2 rounded-lg hover:bg-indigo-100 transition"
+                                    @onclick="() => EditVendor(v)">
+                                    <i class="fas fa-edit mr-1"></i> Edit
+                                </button>
+                                <button class="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-100 transition"
+                                    @onclick="() => ConfirmDelete(v.Id, v.Name)">
+                                    <i class="fas fa-trash-alt mr-1"></i> Delete
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!FilteredVendors.Any() && !Loading)
+        {
+            <div class="col-span-full text-center py-10 text-gray-500">
+                <i class="fas fa-inbox fa-3x mb-3"></i>
+                <p class="text-lg">No Vendors found.</p>
+            </div>
+        }
+    }
+
+    @* --- PAGINATION --- *@
+    @if (FilteredVendors.Any() && !Loading && TotalPages > 1)
+    {
+        <div class="mt-8 flex justify-between items-center p-4 bg-gray-50 rounded-xl shadow-inner">
+            <span class="text-sm text-gray-600">
+                Showing <strong>@((CurrentPage - 1) * PageSize + 1)</strong> to <strong>@(Math.Min(CurrentPage * PageSize,
+                                    FilteredVendors.Count()))</strong> of <strong>@FilteredVendors.Count()</strong> entries
+            </span>
+            <div class="flex space-x-2">
+                <button
+                    class="px-4 py-2 text-sm rounded-lg border @(CurrentPage == 1 ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-white hover:bg-gray-100 text-gray-700")"
+                    @onclick="() => ChangePage(CurrentPage - 1)" disabled="@(CurrentPage == 1)">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+
+                @for (int i = 1; i <= TotalPages; i++)
+                {
+                    var pageNumber = i;
+                    <button
+                        class="px-4 py-2 text-sm rounded-lg font-medium @(i == CurrentPage ? "bg-blue-600 text-white shadow-md" : "bg-white hover:bg-blue-50 border text-gray-700")"
+                        @onclick="() => ChangePage(pageNumber)">
+                        @i
+                    </button>
+                }
+
+                <button
+                    class="px-4 py-2 text-sm rounded-lg border @(CurrentPage == TotalPages ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-white hover:bg-gray-100 text-gray-700")"
+                    @onclick="() => ChangePage(CurrentPage + 1)" disabled="@(CurrentPage == TotalPages)">
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    }
+
+    @* --- ADD/EDIT/DETAIL MODAL --- *@
+    @if (ShowModal)
+    {
+        <div
+            class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-out">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl relative animate-zoom-in">
+
+                <div class="border-b px-6 py-4 flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-800">
+                        @if (ModalMode == "Detail")
+                        {
+                            <i class="fas fa-eye text-green-600 mr-2"></i>
+                        }
+                        else if (ModalMode == "Add")
+                        {
+
+                            <i class="fas fa-plus text-green-600 mr-2"></i>
+                        }
+                        else
+                        {
+
+                            <i class="fas fa-edit text-blue-600 mr-2"></i>
+                        }
+                        @ModalTitle
+                    </h2>
+                    <button class="text-gray-400 hover:text-gray-600" @onclick="() => ShowModal = false">
+                        <i class="fas fa-times fa-lg"></i>
+                    </button>
+                </div>
+
+                @if (ModalMode == "Detail")
+                {
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-700">
+                            <div class="space-y-4">
+                                <h3 class="text-xl font-semibold text-gray-900 border-b pb-2">Primary Info</h3>
+                                <p><strong>Name:</strong> @Selected.Name</p>
+                                <p><strong>Director/PIC:</strong> @Selected.Director</p>
+                                <p><strong>Business Type:</strong> @(Selected.BusinnesType ?? "-")</p>
+                                <p><strong>Email:</strong> @(Selected.Email ?? "-")</p>
+                                <p><strong>Primary Phone:</strong> @(Selected.Phone ?? "-")</p>
+                                <p><strong>Secondary Phone:</strong> @(Selected.SecondPhone ?? "-")</p>
+                            </div>
+                            <div class="space-y-4">
+                                <h3 class="text-xl font-semibold text-gray-900 border-b pb-2">Details & History</h3>
+                                <p><strong>Address:</strong> @(Selected.Address ?? "-")</p>
+                                <p><strong>Details:</strong> @(Selected.Details ?? "-")</p>
+                                <p><strong>Created By:</strong> @Selected.CreatedBy</p>
+                                <p><strong>Created At:</strong> @Selected.CreatedAt.ToShortDateString()</p>
+                                <p><strong>Last Updated:</strong> @Selected.UpdatedAt.ToShortDateString()</p>
+                            </div>
+                        </div>
+
+                        @* --- FILES AND DOCUMENTS DISPLAY --- *@
+                        <div class="mt-8">
+                            <h3 class="text-xl font-semibold text-gray-900 border-b pb-2 mb-4">Documents & Attachments</h3>
+                            @if (EditFiles.Any())
+                            {
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    @foreach (var f in EditFiles)
+                                    {
+                                        <div class="p-3 border rounded-lg flex items-center justify-between bg-gray-50 shadow-sm">
+                                            <div class="flex items-center">
+                                                <i
+                                                    class="fas @(f.IsImage ? "fa-image text-purple-600" : "fa-file-alt text-blue-600") mr-3"></i>
+                                                <span
+                                                    class="text-sm font-medium truncate max-w-[150px]">@System.IO.Path.GetFileName(f.Path)</span>
+                                            </div>
+                                            <a href="@f.Path" target="_blank" download="@System.IO.Path.GetFileName(f.Path)"
+                                                class="text-green-600 hover:text-green-800 transition">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-gray-500">No documents attached.</p>
+                            }
+
+                            @* Displaying PhotoData as image if available (Assuming this is a single main photo/logo) *@
+                            @if (Selected.PhotoData != null && Selected.PhotoData.Length > 0)
+                            {
+                                var base64 = Convert.ToBase64String(Selected.PhotoData);
+                                <div class="mt-6">
+                                    <h4 class="font-semibold text-gray-800 mb-2">Vendor Logo/Photo</h4>
+                                    <img src="data:@Selected.DocumentContentType;base64,@base64" alt="Vendor Photo"
+                                        class="w-24 h-24 object-cover rounded-lg shadow-md border" />
+                                </div>
+                            }
+                        </div>
+
+                        <div class="mt-6 flex justify-end">
+                            <button type="button"
+                                class="bg-gray-700 hover:bg-gray-800 text-white font-semibold px-5 py-2 rounded-lg transition"
+                                @onclick="() => ShowModal = false">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    @* ADD/EDIT FORM CONTENT *@
+                    <EditForm Model="@Selected" OnValidSubmit="@SaveVendor" class="p-6">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary
+                            class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" />
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            @* Row 1: Name, Director *@
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-1">Vendor Name</label>
+                                <InputText class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:border-blue-500"
+                                    @bind-Value="Selected.Name" placeholder="e.g., PT Solusi Jaya" />
+                                <ValidationMessage For="@(() => Selected.Name)" />
+                            </div>
+
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-1">Director/PIC</label>
+                                <InputText class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:border-blue-500"
+                                    @bind-Value="Selected.Director" placeholder="e.g., Budi Santoso" />
+                                <ValidationMessage For="@(() => Selected.Director)" />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            @* Row 2: Email, Business Type *@
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-1">Email</label>
+                                <InputText type="email"
+                                    class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:border-blue-500"
+                                    @bind-Value="Selected.Email" placeholder="e.g., info@solusijaya.com" />
+                                <ValidationMessage For="@(() => Selected.Email)" />
+                            </div>
+
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-1">Business Type</label>
+                                <InputText class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:border-blue-500"
+                                    @bind-Value="Selected.BusinnesType" placeholder="e.g., IT Consultant" />
+                                <ValidationMessage For="@(() => Selected.BusinnesType)" />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            @* Row 3: Phone, Second Phone *@
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-1">Primary Phone</label>
+                                <InputText class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:border-blue-500"
+                                    @bind-Value="Selected.Phone" placeholder="e.g., 0812xxxxxx" />
+                                <ValidationMessage For="@(() => Selected.Phone)" />
+                            </div>
+
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-1">Secondary Phone (Optional)</label>
+                                <InputText class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:border-blue-500"
+                                    @bind-Value="Selected.SecondPhone" placeholder="Optional contact number" />
+                                <ValidationMessage For="@(() => Selected.SecondPhone)" />
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            @* Row 4: Address *@
+                            <label class="block text-gray-700 text-sm font-medium mb-1">Address</label>
+                            <InputTextArea class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:border-blue-500 h-24"
+                                @bind-Value="Selected.Address" placeholder="Full address of the vendor" />
+                            <ValidationMessage For="@(() => Selected.Address)" />
+                        </div>
+
+                        <div class="mb-6">
+                            @* Row 5: Details *@
+                            <label class="block text-gray-700 text-sm font-medium mb-1">Details/Notes</label>
+                            <InputTextArea class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:border-blue-500 h-24"
+                                @bind-Value="Selected.Details" placeholder="Description, special notes, or history" />
+                            <ValidationMessage For="@(() => Selected.Details)" />
+                        </div>
+
+                        @* --- FILE UPLOAD SECTION --- *@
+                        <div class="border p-4 rounded-lg bg-gray-50 mb-6">
+                            <h4 class="font-semibold text-gray-800 mb-3">Supporting Files (Contracts, Logo)</h4>
+
+                            @* Existing Files *@
+                            @if (EditFiles.Any())
+                            {
+                                <div class="mb-3">
+                                    <div class="text-sm font-medium mb-2 text-gray-600">Existing Files (@EditFiles.Count)</div>
+                                    <div class="flex gap-3 flex-wrap">
+                                        @foreach (var f in EditFiles)
+                                        {
+                                            <div
+                                                class="relative group flex items-center bg-white p-2 rounded-lg shadow-sm border text-xs text-gray-700">
+                                                <i class="fas fa-file-alt mr-2 text-blue-500"></i>
+                                                @System.IO.Path.GetFileName(f.Path)
+
+                                                <button type="button" class="ml-2 text-red-500 hover:text-red-700"
+                                                    @onclick="() => RemoveExistingFile(f)">
+                                                    <i class="fas fa-times text-xs"></i>
+                                                </button>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            @* Upload New Files *@
+                            <div>
+                                <div class="text-sm font-medium mb-2 text-gray-600">Upload New Files</div>
+                                <InputFile OnChange="OnFilesSelected" multiple
+                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                                @if (PendingUploads?.Count > 0)
+                                {
+                                    <p class="text-xs text-blue-600 mt-1">@PendingUploads.Count file ready to upload.</p>
+                                }
+                            </div>
+                        </div>
+
+
+                        <div class="mt-6 flex justify-end gap-3 border-t pt-4">
+                            <button type="button"
+                                class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-5 py-2 rounded-lg transition flex items-center gap-2"
+                                @onclick="() => ShowModal = false">
+                                <i class="fas fa-ban"></i> Cancel
+                            </button>
+                            <button type="submit"
+                                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2 rounded-lg transition flex items-center gap-2">
+                                <i class="fas fa-save"></i> Save Vendor
+                            </button>
+                        </div>
+                    </EditForm>
+                }
+            </div>
+        </div>
+    }
+
+    @* --- CONFIRMATION MODAL --- *@
+    @if (ShowConfirmModal)
+    {
+        <div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 animate-fade-in">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-slide-up">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2 text-red-600">
+                    <i class="fas fa-exclamation-triangle"></i> Confirm Delete
+                </h3>
+                <p class="text-gray-700 mb-6">@ConfirmMessage</p>
+                <div class="flex justify-end space-x-3">
+                    <button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 font-medium"
+                        @onclick="CancelDelete">Cancel</button>
+                    <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
+                        @onclick="DeleteConfirmed">Delete</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+
+@code {
+    // Properti Toast (Assume ToastContainer is a component you have)
+    private ToastContainer? toastContainer;
+
+    // Properti Data
+    private List<Vendor> Vendors = new();
+    private bool Loading = true;
+
+    // Properti File/Upload (Jika vendor punya file)
+    private Dictionary<int, List<FileUpload>> FilesByVendor = new();
+    private IReadOnlyList<IBrowserFile>? PendingUploads;
+    private List<FileUpload> EditFiles = new();
+
+    // Properti Modal
+    private bool ShowModal;
+    private string ModalTitle = "";
+    private string ModalMode = ""; // New property: "Add", "Edit", or "Detail"
+    private Vendor Selected = new();
+
+    // Properti Search & Delete
+    private string searchTerm = string.Empty;
+    private bool ShowConfirmModal = false;
+    private int VendorIdToDelete;
+    private MarkupString ConfirmMessage;
+
+    // Properti Pagination
+    private const int PageSize = 2;
+    private int CurrentPage = 1;
+
+    // Computed Properties untuk Pagination
+    private int TotalPages => (int)Math.Ceiling(FilteredVendors.Count() / (double)PageSize);
+
+    private IEnumerable<Vendor> FilteredVendors =>
+    string.IsNullOrWhiteSpace(searchTerm)
+    ? Vendors
+    : Vendors.Where(v =>
+    (v.Name ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+    (v.Email ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+    (v.Phone ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+    (v.Director ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+    (v.BusinnesType ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase)); // Added BusinessType search
+
+    private IEnumerable<Vendor> PagedVendors =>
+    FilteredVendors.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        Loading = false;
+    }
+
+    private async Task LoadData()
+    {
+        // 1. Load Vendors
+        Vendors = await VendorService.GetAllAsync();
+
+        // 2. Load files for all vendors (Optimization: consider lazy loading for large lists)
+        FilesByVendor.Clear();
+        foreach (var v in Vendors)
+        {
+            // Assuming GetFilesAsync returns a List<FileUpload> for a specific EntityType and EntityId
+            var files = await FileService.GetFilesAsync("Vendor", v.Id);
+            FilesByVendor[v.Id] = files.ToList();
+        }
+
+        CurrentPage = 1;
+    }
+
+    // Fungsi untuk mengurus perubahan halaman
+    private void ChangePage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            CurrentPage = page;
+        }
+    }
+
+    // Fungsi untuk mengatur ulang halaman saat pencarian berubah
+    private void HandleSearchTermChange(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        CurrentPage = 1;
+        StateHasChanged(); // Ensure the table updates immediately
+    }
+
+    // --- CRUD MODAL METHODS ---
+
+    // Method: ShowDetail (New)
+    private void ShowDetail(Vendor v)
+    {
+        // Clone the vendor for display
+        Selected = CloneVendor(v);
+
+        // Memastikan EditFiles diisi dari FilesByVendor
+        EditFiles = FilesByVendor.TryGetValue(v.Id, out var f) ? f.ToList() : new();
+
+        ModalMode = "Detail";
+        ModalTitle = $"Vendor Detail: {v.Name}";
+        ShowModal = true;
+    }
+
+    // Method: AddVendor
+    private async Task AddVendor()
+    {
+        var claims = await SessionStorage.GetAsync<Dictionary<string, string>>("claims");
+        string? username = null;
+        claims.Value?.TryGetValue(ClaimTypes.Name, out username);
+
+        Selected = new Vendor
+        {
+            Name = "",
+            Email = "",
+            Phone = "",
+            Address = "",
+            Director = "",
+            BusinnesType = "", // Initialize new property
+            Details = "", // Initialize new property
+            CreatedBy = username ?? "unknown", // Use username from session
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+
+        EditFiles.Clear();
+        PendingUploads = null;
+        ModalMode = "Add";
+        ModalTitle = "Add New Vendor";
+        ShowModal = true;
+    }
+
+    // Method: EditVendor
+    private void EditVendor(Vendor v)
+    {
+        // Clone the vendor for editing to avoid modifying the list directly
+        Selected = CloneVendor(v);
+
+        // Memastikan EditFiles diisi dari FilesByVendor
+        EditFiles = FilesByVendor.TryGetValue(v.Id, out var f) ? f.ToList() : new();
+        PendingUploads = null;
+
+        ModalMode = "Edit";
+        ModalTitle = $"Edit Vendor: {v.Name}";
+        ShowModal = true;
+    }
+
+    // Helper to clone Vendor properties (essential for Blazor forms/rollback)
+    private Vendor CloneVendor(Vendor v)
+    {
+        // Use JSON serialization/deserialization for a deep, safe clone (if your entity supports it)
+        // For simplicity here, we'll manually clone the necessary properties.
+        return new Vendor
+        {
+            Id = v.Id,
+            Name = v.Name,
+            Email = v.Email,
+            Phone = v.Phone,
+            SecondPhone = v.SecondPhone,
+            Address = v.Address,
+            Director = v.Director,
+            BusinnesType = v.BusinnesType, // Include new property
+            Details = v.Details, // Include new property
+                                 // Core File/Image data (if stored on the main entity)
+            PhotoData = v.PhotoData,
+            DocumentContentType = v.DocumentContentType,
+            // History properties
+            CreatedBy = v.CreatedBy,
+            CreatedAt = v.CreatedAt,
+            UpdatedAt = v.UpdatedAt,
+        };
+    }
+
+    private void OnFilesSelected(InputFileChangeEventArgs e) => PendingUploads = e.GetMultipleFiles();
+
+    private async Task SaveVendor()
+    {
+        bool isNew = Selected.Id == 0;
+
+        try
+        {
+            Selected.UpdatedAt = DateTime.UtcNow;
+
+            if (isNew)
+            {
+                // Set CreatedAt only on creation
+                Selected.CreatedAt = DateTime.UtcNow;
+                await VendorService.AddAsync(Selected);
+            }
+            else
+            {
+                await VendorService.UpdateAsync(Selected);
+            }
+
+            // Save files
+            if (PendingUploads?.Count > 0)
+            {
+                foreach (var f in PendingUploads)
+                {
+                    await FileService.SaveFileAsync(f, "Vendor", Selected.Id);
+                }
+            }
+
+            ToastService.ShowSuccess($"Vendor '{(isNew ? Selected.Name : "Data")}' successfully {(isNew ? "added" : "updated")}.");
+
+            ShowModal = false;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error saving vendor: {ex.Message}");
+        }
+    }
+
+    private async Task RemoveExistingFile(FileUpload file)
+    {
+        try
+        {
+            await FileService.DeleteFileAsync(file.Id);
+            EditFiles.Remove(file);
+
+            // Remove from the master list
+            if (FilesByVendor.TryGetValue(Selected.Id, out var list))
+                list.RemoveAll(f => f.Id == file.Id);
+
+            ToastService.ShowInfo("File removed. Save the Vendor to confirm the overall change.");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error deleting file: {ex.Message}");
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+
+    // --- DELETE METHODS ---
+
+    private async Task DeleteConfirmed()
+    {
+        if (VendorIdToDelete == 0) return;
+
+        try
+        {
+            // First, delete associated files
+            var filesToDelete = FilesByVendor.GetValueOrDefault(VendorIdToDelete, new List<FileUpload>());
+            foreach (var file in filesToDelete)
+            {
+                await FileService.DeleteFileAsync(file.Id);
+            }
+
+            // Then, delete the vendor
+            var success = await VendorService.DeleteAsync(VendorIdToDelete);
+
+            if (success)
+            {
+                await LoadData();
+                ToastService.ShowInfo("Vendor and all associated files successfully deleted!");
+            }
+            else
+            {
+                ToastService.ShowWarning("Vendor failed to delete. Check for other associated records.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"An error occurred during deletion: {ex.Message}");
+        }
+        finally
+        {
+            ShowConfirmModal = false;
+        }
+    }
+
+    private void CancelDelete()
+    {
+        ShowConfirmModal = false;
+    }
+
+    private void ConfirmDelete(int id, string name)
+    {
+        VendorIdToDelete = id;
+        ConfirmMessage = new MarkupString(
+        $"Are you sure you want to delete the Vendor <b>\"{name}\"</b>? This action cannot be undone."
+        );
+        ShowConfirmModal = true;
+    }
+}

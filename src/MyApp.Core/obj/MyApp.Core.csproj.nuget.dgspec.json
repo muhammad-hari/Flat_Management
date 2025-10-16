@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Project\\Densus88\\new_app\\src\\MyApp.Core\\MyApp.Core.csproj": {}
+    "D:\\Projects\\Densus88\\new_app\\src\\MyApp.Core\\MyApp.Core.csproj": {}
   },
   "projects": {
-    "D:\\Project\\Densus88\\new_app\\src\\MyApp.Core\\MyApp.Core.csproj": {
+    "D:\\Projects\\Densus88\\new_app\\src\\MyApp.Core\\MyApp.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Project\\Densus88\\new_app\\src\\MyApp.Core\\MyApp.Core.csproj",
+        "projectUniqueName": "D:\\Projects\\Densus88\\new_app\\src\\MyApp.Core\\MyApp.Core.csproj",
         "projectName": "MyApp.Core",
-        "projectPath": "D:\\Project\\Densus88\\new_app\\src\\MyApp.Core\\MyApp.Core.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "D:\\Project\\Densus88\\new_app\\src\\MyApp.Core\\obj\\",
+        "projectPath": "D:\\Projects\\Densus88\\new_app\\src\\MyApp.Core\\MyApp.Core.csproj",
+        "packagesPath": "C:\\Users\\LENOVO\\.nuget\\packages\\",
+        "outputPath": "D:\\Projects\\Densus88\\new_app\\src\\MyApp.Core\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\LENOVO\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -50,6 +50,12 @@
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
+          "dependencies": {
+            "DocumentFormat.OpenXml": {
+              "target": "Package",
+              "version": "[3.3.0, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -66,7 +72,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

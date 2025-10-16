@@ -3,6 +3,7 @@
 @using MyApp.Core.Interfaces
 @using MyApp.Core.Entities
 @inject IUserTypeRepository UserTypeService
+@inject ToastService ToastService
 
 <div class="bg-white rounded-lg shadow-sm p-6">
     <div class="flex items-center justify-between mb-6">
@@ -178,7 +179,7 @@
         await UserTypeService.DeleteAsync(UserTypeIdToDelete);
         UserTypes = await UserTypeService.GetAllAsync();
         ShowConfirmModal = false;
-        toastContainer?.ShowToast("Data berhasil dihapus!", "success");
+        ToastService.ShowSuccess("Data Deleted!");
     }
 
     private void CancelDelete()
@@ -196,7 +197,7 @@
         UserTypes = await UserTypeService.GetAllAsync();
         NewUserType = new UserType();
         ShowAddModal = false;
-        toastContainer?.ShowToast("Data berhasil disimpan!", "success");
+        ToastService.ShowSuccess("Data Deleted!");
     }
 
     private string GetStatusClasses(bool isActive) =>

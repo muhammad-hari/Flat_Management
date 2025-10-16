@@ -3,6 +3,7 @@
 @using MyApp.Core.Interfaces
 @using MyApp.Core.Entities
 @inject IRoleRepository RoleService
+@inject ToastService ToastService
 
 <div class="bg-white rounded-lg shadow-sm p-6">
     <div class="flex items-center justify-between mb-6">
@@ -185,7 +186,7 @@
         await RoleService.DeleteAsync(RoleIdToDelete);
         Roles = await RoleService.GetAllAsync();
         ShowConfirmModal = false;
-        toastContainer?.ShowToast("Data berhasil dihapus!", "success");
+         ToastService.ShowInfo("Data Deleted!");
     }
 
     private void CancelDelete()
@@ -203,7 +204,7 @@
         Roles = await RoleService.GetAllAsync();
         NewRole = new Role();
         ShowAddModal = false;
-        toastContainer?.ShowToast("Data berhasil disimpan!", "success");
+        ToastService.ShowSuccess("Data berhasil disimpan!");
     }
 
     private string GetStatusClasses(bool isActive) =>

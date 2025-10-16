@@ -20,6 +20,10 @@ public class OccupantHistoryRepository : IOccupantHistoryRepository
         return await _context.OccupantHistories
             .Include(o => o.Occupant)
                 .ThenInclude(e => e.Employee)
+                    .ThenInclude(e => e.Rank)
+            .Include(o => o.Occupant)
+                .ThenInclude(e => e.Employee)
+                    .ThenInclude(e => e.Position)
             .Include(o => o.Room)
                 .ThenInclude(r => r.Building)
             .AsNoTracking()
@@ -33,6 +37,10 @@ public class OccupantHistoryRepository : IOccupantHistoryRepository
         return await _context.OccupantHistories
             .Include(o => o.Occupant)
                 .ThenInclude(e => e.Employee)
+                    .ThenInclude(e => e.Rank)
+            .Include(o => o.Occupant)
+                .ThenInclude(e => e.Employee)
+                    .ThenInclude(e => e.Position)
             .Include(o => o.Room)
                 .ThenInclude(e => e.Building)
             .AsNoTracking()

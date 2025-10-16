@@ -1,0 +1,481 @@
+@page "/request-inventory"
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@using MyApp.Core.Entities
+@using MyApp.Core.Interfaces
+@inject IInventoryRepository InventoryService
+@inject IInventoryRequestRepository RequestService
+@inject IInventoryHistoryRepository InventoryHistoryService
+@inject ToastService ToastService
+
+<PageTitle>Inventory Requests</PageTitle>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-gradient-to-br from-blue-600 to-blue-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+        <div class="bg-white/20 rounded-full p-3"><i class="fas fa-boxes fa-2x"></i></div>
+        <div>
+            <h2 class="text-lg font-semibold">Total Items</h2>
+            <p class="text-2xl font-bold">@TotalItems</p>
+        </div>
+    </div>
+    <div class="bg-gradient-to-br from-yellow-600 to-yellow-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+        <div class="bg-white/20 rounded-full p-3"><i class="fas fa-hand-holding fa-2x"></i></div>
+        <div>
+            <h2 class="text-lg font-semibold">Borrowed</h2>
+            <p class="text-2xl font-bold">@TotalBorrowed</p>
+        </div>
+    </div>
+    <div class="bg-gradient-to-br from-green-600 to-green-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+        <div class="bg-white/20 rounded-full p-3"><i class="fas fa-undo fa-2x"></i></div>
+        <div>
+            <h2 class="text-lg font-semibold">Returned</h2>
+            <p class="text-2xl font-bold">@TotalReturned</p>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
+        <div>
+            <h2 class="text-3xl font-extrabold text-gray-800">Inventory Requests</h2>
+            <p class="text-gray-500 mt-1">Manage loan requests and track borrowed items.</p>
+        </div>
+        <div class="mt-4 md:mt-0 flex items-center gap-3 w-full md:w-auto">
+            <div class="relative w-full md:w-72">
+                <input class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="Search by code, name, status" value="@search" @oninput="OnSearch" />
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+            <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg ml-2 shadow" @onclick="OpenNewRequest">New Request</button>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto rounded-xl shadow-md border border-gray-200">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gradient-to-b from-blue-700 to-black">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Item</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Code</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Requested By</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Start</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">End</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Overdue</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                @foreach (var loan in PagedRequests)
+                {
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">@loan.Inventory?.Name</td>
+                        <td class="px-6 py-4">@loan.Inventory?.Code</td>
+                        <td class="px-6 py-4">@loan.RequestedBy</td>
+                        <td class="px-6 py-4">@loan.StartDate.ToShortDateString()</td>
+                        <td class="px-6 py-4">@(loan.EndDate?.ToShortDateString() ?? "-")</td>
+                        <td class="px-6 py-4">@GetOverdueText(loan)</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded-full text-sm font-semibold @(loan.Status == "Borrowed" ? "bg-yellow-100 text-yellow-800" : loan.Status == "Returned" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800")">@loan.Status</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                            <button class="text-indigo-600 hover:text-indigo-900 p-2 rounded-lg hover:bg-indigo-100 transition" @onclick="() => ShowDetail(loan)">
+                                <i class="fas fa-eye mr-1"></i> Detail
+                            </button>
+                            <button class="text-gray-600 hover:text-gray-800 p-2 rounded-lg hover:bg-gray-100 transition" @onclick="() => ShowEdit(loan)">
+                                <i class="fas fa-edit mr-1"></i> Edit
+                            </button>
+                            @if (loan.Status == "Borrowed")
+                            {
+                                <button class="text-yellow-600 hover:text-yellow-900 p-2 rounded-lg hover:bg-yellow-100 transition" @onclick="() => ReturnRequest(loan)">
+                                    <i class="fas fa-undo mr-1"></i> Return
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-3 flex items-center justify-between">
+        <div class="text-sm text-gray-600">Showing @(((currentPage-1)*pageSize)+1) to @(Math.Min(currentPage*pageSize, FilteredRequests.Count())) of @FilteredRequests.Count()</div>
+        <div class="flex items-center gap-2">
+            <button class="px-3 py-1 border rounded" @onclick="PrevPage" disabled="@(currentPage==1)">Prev</button>
+            @for (var p = 1; p <= totalPages; p++)
+            {
+                <button class="px-3 py-1 rounded @(p==currentPage?"bg-gray-800 text-white":"border")" @onclick="() => GoToPage(p)">@p</button>
+            }
+            <button class="px-3 py-1 border rounded" @onclick="NextPage" disabled="@(currentPage==totalPages)">Next</button>
+        </div>
+    </div>
+
+    @* Detail modal *@
+    @if (ShowDetailModal && SelectedRequest != null)
+    {
+        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl relative overflow-hidden">
+                <div class="absolute -right-24 -top-24 opacity-8 pointer-events-none">
+                    <img src="/assets/images/mock.png" class="w-72 h-72 object-cover opacity-10" alt="watermark" />
+                </div>
+                <div class="border-b px-6 py-4 flex justify-between items-center bg-white">
+                    <h3 class="text-lg font-semibold">Request Detail</h3>
+                    <button class="text-gray-500" @onclick="() => ShowDetailModal = false">Close</button>
+                </div>
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+                    <div class="space-y-2">
+                        <p><strong>Item:</strong> @SelectedRequest.Inventory?.Name</p>
+                        <p><strong>Code:</strong> @SelectedRequest.Inventory?.Code</p>
+                        <p><strong>Requested By:</strong> @SelectedRequest.RequestedBy</p>
+                        <p><strong>Status:</strong> @SelectedRequest.Status</p>
+                    </div>
+                    <div class="space-y-2">
+                        <p><strong>Start:</strong> @SelectedRequest.StartDate.ToString("dd MMM yyyy")</p>
+                        <p><strong>End:</strong> @(SelectedRequest.EndDate?.ToString("dd MMM yyyy") ?? "-")</p>
+                        <p><strong>Overdue:</strong> @GetOverdueText(SelectedRequest)</p>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end p-6 bg-gray-50">
+                    <button class="bg-gray-700 hover:bg-gray-800 text-white font-semibold px-5 py-2 rounded-lg transition" @onclick="() => ShowDetailModal = false">Close</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Edit modal *@
+    @if (ShowEditModal && SelectedRequest != null)
+    {
+        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 relative overflow-hidden">
+                <div class="absolute -right-24 -top-24 opacity-8 pointer-events-none">
+                    <img src="/assets/images/mock.png" class="w-72 h-72 object-cover opacity-10" alt="watermark" />
+                </div>
+                <div class="border-b px-6 py-4 flex justify-between items-center bg-white">
+                    <h3 class="text-lg font-semibold">Edit Request</h3>
+                    <button class="text-gray-500" @onclick="() => ShowEditModal = false">Close</button>
+                </div>
+                <EditForm Model="SelectedRequest" OnValidSubmit="SaveEdit">
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm text-gray-600">Requested By</label>
+                            <InputText class="w-full border rounded px-3 py-2" @bind-Value="SelectedRequest.RequestedBy" />
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-600">Start Date</label>
+                            <InputDate class="w-full border rounded px-3 py-2" @bind-Value="SelectedRequest.StartDate" />
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-600">End Date</label>
+                            <InputDate class="w-full border rounded px-3 py-2" @bind-Value="SelectedRequest.EndDate" />
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-end gap-2">
+                        <button type="button" class="bg-gray-200 px-4 py-2 rounded" @onclick="() => ShowEditModal = false">Cancel</button>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Save</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    @* New Request Modal *@
+    @if (ShowRequestModal)
+    {
+        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-6 relative overflow-hidden">
+                <div class="absolute -right-24 -top-24 opacity-8 pointer-events-none">
+                    <img src="/assets/images/mock.png" class="w-72 h-72 object-cover opacity-10" alt="watermark" />
+                </div>
+                <div class="border-b px-6 py-4 flex justify-between items-center bg-white">
+                    <h3 class="text-xl font-semibold">New Inventory Request</h3>
+                    <button class="text-gray-500" @onclick="() => ShowRequestModal = false">Close</button>
+                </div>
+                <EditForm Model="NewRequest" OnValidSubmit="SubmitRequest">
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-700">Inventory</label>
+                            <InputSelect class="w-full border rounded px-3 py-2" @bind-Value="NewRequest.InventoryId">
+                                <option value="0">Select item...</option>
+                                @foreach (var i in Inventories)
+                                {
+                                    <option value="@i.Id" disabled="@(!i.IsAvailable)">@i.Code - @i.Name (@(i.IsAvailable ? "Available" : "Not Available"))</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-700">Requested By</label>
+                            <InputText class="w-full border rounded px-3 py-2" @bind-Value="NewRequest.RequestedBy" />
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-700">Start Date</label>
+                            <InputDate class="w-full border rounded px-3 py-2" @bind-Value="NewRequest.StartDate" />
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-700">End Date</label>
+                            <InputDate class="w-full border rounded px-3 py-2" @bind-Value="NewRequest.EndDate" />
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-end gap-2">
+                        <button type="button" class="bg-gray-200 px-4 py-2 rounded" @onclick="() => ShowRequestModal = false">Cancel</button>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit Request</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // Data
+    private List<InventoryRequest> Requests = new();
+    private List<Inventory> Inventories = new();
+    private InventoryRequest NewRequest = new();
+    private bool ShowRequestModal = false;
+    private string search = string.Empty;
+
+    // Modal / selection state
+    private bool ShowDetailModal = false;
+    private bool ShowEditModal = false;
+    private InventoryRequest? SelectedRequest;
+
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private IEnumerable<InventoryRequest> PagedRequests => FilteredRequests.Skip((currentPage - 1) * pageSize).Take(pageSize);
+
+    private IEnumerable<InventoryRequest> FilteredRequests =>
+        string.IsNullOrWhiteSpace(search) ? Requests : Requests.Where(l =>
+            (l.Inventory?.Name ?? "").Contains(search, StringComparison.OrdinalIgnoreCase) ||
+            (l.Inventory?.Code ?? "").Contains(search, StringComparison.OrdinalIgnoreCase) ||
+            (l.RequestedBy ?? "").Contains(search, StringComparison.OrdinalIgnoreCase) ||
+            (l.Status ?? "").Contains(search, StringComparison.OrdinalIgnoreCase)
+        );
+
+    private int totalPages => (int)Math.Ceiling(FilteredRequests.Count() / (double)pageSize);
+    private int TotalItems => Inventories.Count;
+    private int TotalBorrowed => Requests.Count(l => l.Status == "Borrowed" || l.Status == "Requested");
+    private int TotalReturned => Requests.Count(l => l.Status == "Returned");
+
+    protected override async Task OnInitializedAsync()
+    {
+        Inventories = await InventoryService.GetAllAsync();
+        Requests = await RequestService.GetAllAsync();
+    }
+
+    private void OnSearch(ChangeEventArgs e)
+    {
+        search = e.Value?.ToString() ?? string.Empty;
+        currentPage = 1;
+    }
+
+    private void OpenNewRequest()
+    {
+        NewRequest = new InventoryRequest { StartDate = DateTime.Today, RequestedBy = "unknown" };
+        ShowRequestModal = true;
+    }
+
+    private async Task SubmitRequest()
+    {
+        try
+        {
+            // Basic validation
+            if (NewRequest.InventoryId == 0)
+            {
+                await ToastService.ShowError("Please select an inventory item.");
+                return;
+            }
+
+            // Load the inventory to get name/code and check availability
+            var inv = await InventoryService.GetByIdAsync(NewRequest.InventoryId);
+            if (inv == null)
+            {
+                await ToastService.ShowError("Selected inventory item was not found.");
+                return;
+            }
+
+            if (!inv.IsAvailable)
+            {
+                await ToastService.ShowError("Selected inventory item is not available.");
+                return;
+            }
+
+            // Prepare and save request (do not attach the loaded inventory navigation to avoid tracking conflicts)
+            NewRequest.Status = "Borrowed";
+            NewRequest.CreatedAt = DateTime.UtcNow;
+
+            // Ensure navigation is not attached/tracked by setting to null
+            NewRequest.Inventory = null;
+
+            await RequestService.AddAsync(NewRequest);
+
+            // Create history record using stable values (avoid setting navigation properties)
+            var history = new InventoryHistory
+            {
+                ItemName = inv.Name,
+                Code = inv.Code,
+                InventoryId = inv.Id,
+                BorrowerName = NewRequest.RequestedBy,
+                Action = "Borrowed",
+                Description = $"Borrowed (inventory id: {inv.Id})",
+                StartDate = NewRequest.StartDate,
+                EndDate = NewRequest.EndDate,
+                PerformedBy = NewRequest.RequestedBy ?? "System",
+                CreatedBy = NewRequest.RequestedBy ?? "System",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                Status = "Completed"
+            };
+
+            await InventoryHistoryService.AddAsync(history);
+
+            // Mark inventory unavailable and update it
+            inv.IsAvailable = false;
+            inv.UpdatedAt = DateTime.UtcNow;
+            await InventoryService.UpdateAsync(inv);
+
+            await ToastService.ShowSuccess("Request submitted successfully.");
+            ShowRequestModal = false;
+            await RefreshData();
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowError($"Failed to submit request: {ex.Message}");
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        Inventories = await InventoryService.GetAllAsync();
+        Requests = await RequestService.GetAllAsync();
+        StateHasChanged();
+    }
+
+    private void PrevPage()
+    {
+        if (currentPage > 1) currentPage--;
+    }
+
+    private void NextPage()
+    {
+        if (currentPage < totalPages) currentPage++;
+    }
+
+    private void GoToPage(int p)
+    {
+        if (p >= 1 && p <= totalPages) currentPage = p;
+    }
+
+    private string GetOverdueText(InventoryRequest r)
+    {
+        if (r.EndDate == null) return "-";
+        var today = DateTime.Today;
+        if (r.Status == "Returned") return "0";
+        var days = (today - r.EndDate.Value.Date).Days;
+        if (days > 0) return $"{days} days";
+        return "0";
+    }
+
+    // --- Modal handlers (missing previously) ---
+
+    private void ShowDetail(InventoryRequest r)
+    {
+        SelectedRequest = r;
+        ShowDetailModal = true;
+    }
+
+    private void ShowEdit(InventoryRequest r)
+    {
+        // Create a shallow clone to edit in the modal (avoid directly editing list item until save)
+        SelectedRequest = new InventoryRequest
+        {
+            Id = r.Id,
+            InventoryId = r.InventoryId,
+            Inventory = r.Inventory,
+            RequestedBy = r.RequestedBy,
+            StartDate = r.StartDate,
+            EndDate = r.EndDate,
+            Status = r.Status,
+            CreatedAt = r.CreatedAt,
+            UpdatedAt = r.UpdatedAt
+        };
+        ShowEditModal = true;
+    }
+
+    private async Task SaveEdit()
+    {
+        if (SelectedRequest == null) return;
+
+        try
+        {
+            SelectedRequest.UpdatedAt = DateTime.UtcNow;
+            await RequestService.UpdateAsync(SelectedRequest);
+
+            await ToastService.ShowSuccess("Request updated.");
+            ShowEditModal = false;
+            await RefreshData();
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowError($"Failed to save: {ex.Message}");
+        }
+    }
+
+    private async Task ReturnRequest(InventoryRequest r)
+    {
+        try
+        {
+            // Load latest from repository to avoid stale/tracking issues
+            var req = await RequestService.GetByIdAsync(r.Id);
+            if (req == null)
+            {
+                await ToastService.ShowError("Request not found.");
+                return;
+            }
+
+            if (req.Status == "Returned")
+            {
+                await ToastService.ShowInfo("Request already returned.");
+                return;
+            }
+
+            req.Status = "Returned";
+            req.UpdatedAt = DateTime.UtcNow;
+            req.EndDate = req.EndDate ?? DateTime.UtcNow;
+
+            await RequestService.UpdateAsync(req);
+
+            // Create history record for return
+            var inv = await InventoryService.GetByIdAsync(req.InventoryId);
+            var history = new InventoryHistory
+            {
+                ItemName = inv?.Name,
+                Code = inv?.Code,
+                InventoryId = req.InventoryId,
+                BorrowerName = req.RequestedBy,
+                Action = "Returned",
+                Description = $"Returned via request #{req.Id}",
+                StartDate = req.StartDate,
+                EndDate = req.EndDate,
+                PerformedBy = req.RequestedBy ?? "System",
+                CreatedBy = req.RequestedBy ?? "System",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                Status = "Completed"
+            };
+
+            await InventoryHistoryService.AddAsync(history);
+
+            // Mark inventory available again
+            if (inv != null)
+            {
+                inv.IsAvailable = true;
+                inv.UpdatedAt = DateTime.UtcNow;
+                await InventoryService.UpdateAsync(inv);
+            }
+
+            await ToastService.ShowSuccess("Item returned and history recorded.");
+            await RefreshData();
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowError($"Failed to return item: {ex.Message}");
+        }
+    }
+}

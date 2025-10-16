@@ -3,19 +3,18 @@
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
                 <NotAuthorized>
-                    @* Kalau belum login, redirect ke login *@
                     <RedirectToLogin />
                 </NotAuthorized>
                 <Authorizing>
                     <p>Checking authorization...</p>
                 </Authorizing>
             </AuthorizeRouteView>
-            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
         </Found>
         <NotFound>
-            <PageTitle>Feature On Progress</PageTitle>
-            @* Redirect ke halaman FeatureOnProgress *@
+            <PageTitle>Not Found</PageTitle>
             <RedirectToFeatureOnProgress />
         </NotFound>
     </Router>
 </CascadingAuthenticationState>
+<ToastContainer />
+

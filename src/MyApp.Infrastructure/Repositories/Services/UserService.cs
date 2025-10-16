@@ -34,17 +34,59 @@ public class UserRepository : IUserRepository
 
     public async Task UpdateAsync(User user)
     {
-        _context.Users.Update(user);
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task DeleteAsync(int id)
-    {
-        var user = await _context.Users.FindAsync(id);
-        if (user != null)
+        try
         {
-            _context.Users.Remove(user);
+            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
+            if (existingUser == null)
+                throw new Exception("User not found.");
+
+            // Detach entity lama
+            _context.Entry(existingUser).State = EntityState.Detached;
+
+            // Attach entity baru lalu tandai sebagai Modified
+            _context.Attach(user);
+            _context.Entry(user).State = EntityState.Modified;
+
             await _context.SaveChangesAsync();
         }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new Exception("The user record was modified or deleted by another process.");
+        }
     }
+
+
+    public async Task DeleteAsync(int id)
+{
+    try
+    {
+        // Coba cari user yang sudah dilacak dulu
+        var trackedUser = _context.ChangeTracker.Entries<User>()
+                                  .FirstOrDefault(e => e.Entity.Id == id)?.Entity;
+
+        if (trackedUser != null)
+        {
+            // Kalau sudah dilacak, langsung hapus dari tracking yang sama
+            _context.Users.Remove(trackedUser);
+        }
+        else
+        {
+            // Kalau belum dilacak, ambil dari DB tanpa tracking
+            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
+            if (user == null)
+                throw new Exception("User not found or already deleted.");
+
+            // Tambahkan ke context baru sebagai entity yang akan dihapus
+            _context.Entry(user).State = EntityState.Deleted;
+        }
+
+        await _context.SaveChangesAsync();
+    }
+    catch (DbUpdateConcurrencyException)
+    {
+        throw new Exception("User already deleted or modified by another process.");
+    }
+}
+
+
 }

@@ -3,6 +3,7 @@
 @using MyApp.Core.Interfaces
 @using MyApp.Core.Entities
 @inject IPositionRepository PositionService
+@inject ToastService ToastService
 
 <div class="bg-white rounded-lg shadow-sm p-6">
     <div class="flex items-center justify-between mb-6">
@@ -177,7 +178,7 @@
         await PositionService.DeleteAsync(PositionIdToDelete);
         Positions = await PositionService.GetAllAsync();
         ShowConfirmModal = false;
-        toastContainer?.ShowToast("Data berhasil dihapus!", "success");
+        ToastService.ShowInfo("Success Deleted!");
     }
 
     private void CancelDelete()
@@ -195,7 +196,7 @@
         Positions = await PositionService.GetAllAsync();
         NewPosition = new Position();
         ShowAddModal = false;
-        toastContainer?.ShowToast("Data berhasil disimpan!", "success");
+        ToastService.ShowSuccess("Data Saved!");
     }
 
     private string GetStatusClasses(bool isActive) =>

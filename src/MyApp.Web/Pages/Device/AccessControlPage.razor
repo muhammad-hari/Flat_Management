@@ -1,0 +1,310 @@
+@page "/access-control"
+@using System.Text.Json
+@inject DeviceService DeviceService
+@inject IJSRuntime JS
+
+<h3 class="text-2xl font-bold mb-6">Access Control - Handle Section</h3>
+
+@if (devices == null)
+{
+    <p>Loading devices...</p>
+}
+else if (devices.Count == 0)
+{
+    <p>No devices found.</p>
+}
+else
+{
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @foreach (var device in devices)
+        {
+            var cardBg = device.ElectricQuantity < 20 
+                ? "bg-gradient-to-br from-red-200 via-red-100 to-red-50 dark:from-red-800 dark:via-red-700 dark:to-red-600"
+                : "bg-gradient-to-br from-green-100 via-green-50 to-green-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-600";
+
+            <div class="@cardBg border rounded-xl shadow-md hover:shadow-xl transition p-4 flex flex-col items-center w-full sm:w-80">
+
+                <img src="assets/images/smart-lock.png" alt="Smart Lock" class="w-20 h-20 mb-4"/>
+
+                <h4 class="text-lg font-semibold mb-2 text-center">@device.LockAlias</h4>
+                <div class="flex justify-end w-full">
+                    <button class="text-gray-500 hover:text-gray-700" @onclick="() => OpenSettingsModal(device.LockId)">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2-1.343-2-3-2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.4 15a1.65 1.65 0 010 3.3H4.6a1.65 1.65 0 010-3.3h14.8z" />
+                        </svg>
+                    </button>
+                </div>
+                <p class="text-sm text-gray-500 mb-2"><strong>Lock ID:</strong> @device.LockId</p>
+
+                <!-- Battery & Passkey -->
+                <div class="grid grid-cols-2 gap-4 mb-2 w-full text-sm">
+                    <div class="flex items-center">
+                        <svg class="h-5 w-5 text-yellow-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7H7v10h6V7zM7 7h6V5H7v2z" />
+                        </svg>
+                        Battery: @device.ElectricQuantity%
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="h-5 w-5 text-gray-700 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 11-4 0 2 2 0 014 0zM7 11h10v10H7V11z" />
+                        </svg>
+                        Passkey: @device.NoKeyPwd
+                    </div>
+                </div>
+
+                <!-- Card & Fingerprint Count -->
+                <div class="grid grid-cols-2 gap-4 mb-4 w-full text-sm">
+                    <div class="flex items-center">
+                        <svg class="h-5 w-5 text-blue-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-3-3v6M4 6h16v12H4V6z" />
+                        </svg>
+                        Card: @(cards?.Count(c => c.LockId == device.LockId) ?? 0)
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="h-5 w-5 text-purple-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.5 0 3-1.5 3-3s-1.5-3-3-3-3 1.5-3 3 1.5 3 3 3zM5 21v-2a4 4 0 014-4h6a4 4 0 014 4v2" />
+                        </svg>
+                        Fingerprint: @(fingerprints?.Count(f => f.LockId == device.LockId) ?? 0)
+                    </div>
+                </div>
+
+                <!-- Lock/Unlock Buttons -->
+                <div class="flex gap-2 mb-2">
+                    <button class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition" @onclick="() => UnlockDevice(device.LockId)">
+                        Unlock
+                    </button>
+                    <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition" @onclick="() => LockDevice(device.LockId)">
+                        Lock
+                    </button>
+                </div>
+
+                <!-- Add Card / Fingerprint Buttons -->
+                <div class="flex gap-2">
+                    <button class="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition"
+                            @onclick="() => OpenAddCardModal(device.LockId)">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Card
+                    </button>
+                    <button class="flex items-center gap-1 bg-purple-500 text-white px-3 py-2 rounded-lg hover:bg-purple-600 transition"
+                            @onclick="() => OpenAddFingerprintModal(device.LockId)">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12c2 0 4-2 4-4s-2-4-4-4-4 2-4 4 2 4 4 4zM12 14v6" />
+                        </svg>
+                        Add Finger
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<!-- Modal Add Card -->
+@if (showAddCardModal)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-96">
+            <h4 class="font-bold mb-4">Add Card for Lock @modalLockId</h4>
+            <div class="flex flex-col gap-2">
+                <input class="border rounded px-2 py-1" placeholder="Card Name" @bind="newCardName"/>
+                <input class="border rounded px-2 py-1" placeholder="Card Number" @bind="newCardNumber"/>
+                <input type="number" class="border rounded px-2 py-1" placeholder="Valid Days" @bind="newCardValidDays"/>
+                <label class="flex items-center gap-2 mt-1">
+                    <input type="checkbox" @bind="usePeriod"/>
+                    Use Start/End Date Period
+                </label>
+                @if (usePeriod)
+                {
+                    <input type="datetime-local" class="border rounded px-2 py-1" @bind="cardStart"/>
+                    <input type="datetime-local" class="border rounded px-2 py-1" @bind="cardEnd"/>
+                }
+            </div>
+            <div class="flex justify-end gap-2 mt-4">
+                <button class="bg-gray-400 text-white px-4 py-2 rounded-lg" @onclick="CloseAddCardModal">Cancel</button>
+                <button class="bg-blue-500 text-white px-4 py-2 rounded-lg" @onclick="AddCardAsync">Add</button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Add Fingerprint -->
+@if (showAddFingerprintModal)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-96">
+            <h4 class="font-bold mb-4">Add Fingerprint for Lock @modalLockId</h4>
+            <div class="flex flex-col gap-2">
+                <input class="border rounded px-2 py-1" placeholder="Fingerprint Number" @bind="newFingerprintNumber"/>
+                <input type="number" class="border rounded px-2 py-1" placeholder="Fingerprint Type" @bind="newFingerprintType"/>
+                <input class="border rounded px-2 py-1" placeholder="Fingerprint Name" @bind="newFingerprintName"/>
+                <label class="flex items-center gap-2 mt-1">
+                    <input type="checkbox" @bind="useFingerprintPeriod"/>
+                    Use Start/End Date Period
+                </label>
+                @if (useFingerprintPeriod)
+                {
+                    <input type="datetime-local" class="border rounded px-2 py-1" @bind="fingerStart"/>
+                    <input type="datetime-local" class="border rounded px-2 py-1" @bind="fingerEnd"/>
+                }
+            </div>
+            <div class="flex justify-end gap-2 mt-4">
+                <button class="bg-gray-400 text-white px-4 py-2 rounded-lg" @onclick="CloseAddFingerprintModal">Cancel</button>
+                <button class="bg-purple-500 text-white px-4 py-2 rounded-lg" @onclick="AddFingerprintAsync">Add</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showSettingsModal)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-96">
+            <h4 class="font-bold mb-4">Lock Settings - @settingsLockId</h4>
+
+            <div class="flex flex-col gap-2 text-sm">
+                <p><strong>Tamper Alert:</strong> @(tamperAlertValue == 1 ? "On" : "Off")</p>
+                <p><strong>Privacy Lock:</strong> @(privacyLockValue == 1 ? "On" : "Off")</p>
+                <p><strong>Open Direction:</strong> @(openDirectionValue == 1 ? "Left Open" : "Right Open")</p>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-4">
+                <button class="bg-gray-400 text-white px-4 py-2 rounded-lg" @onclick="CloseSettingsModal">Close</button>
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+    private List<DeviceDto>? devices;
+    private List<ICCardDto>? cards;
+    private List<FingerprintDto>? fingerprints;
+    private long copiedLockId = 0;
+    // Settings modal
+    private bool showSettingsModal = false;
+    private long settingsLockId;
+    private int tamperAlertValue;
+    private int privacyLockValue;
+    private int openDirectionValue;
+
+    private bool showAddCardModal = false;
+    private bool showAddFingerprintModal = false;
+    private long modalLockId;
+
+    // Card input
+    private string newCardName = "";
+    private string newCardNumber = "";
+    private int newCardValidDays = 30;
+    private bool usePeriod = false;
+    private DateTime cardStart = DateTime.Now;
+    private DateTime cardEnd = DateTime.Now.AddYears(1);
+
+    // Fingerprint input
+    private string newFingerprintNumber = "";
+    private int newFingerprintType = 1;
+    private string newFingerprintName = "";
+    private bool useFingerprintPeriod = false;
+    private DateTime fingerStart = DateTime.Now;
+    private DateTime fingerEnd = DateTime.Now.AddYears(1);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await DeviceService.AuthAsync();
+        devices = await DeviceService.GetDevicesAsync();
+        
+    }
+    private async Task OpenSettingsModal(long lockId)
+    {
+        settingsLockId = lockId;
+        showSettingsModal = true;
+
+        // Query settings via TTLockClient (DeviceService wrapper)
+        var tamper = await DeviceService.QueryLockSettingAsync(lockId, 3); // Tamper Alert
+    
+        tamperAlertValue = tamper.RootElement.GetProperty("value").GetInt32();
+
+        var privacy = await DeviceService.QueryLockSettingAsync(lockId, 2); // Privacy Lock
+        privacyLockValue = privacy.RootElement.GetProperty("value").GetInt32();
+
+        var openDir = await DeviceService.QueryLockSettingAsync(lockId, 7); // Open Direction
+        openDirectionValue = openDir.RootElement.GetProperty("value").GetInt32();
+    }
+
+private void CloseSettingsModal() => showSettingsModal = false;
+
+    private async Task UnlockDevice(long lockId)
+    {
+        await DeviceService.UnlockDeviceAsync(lockId);
+        devices = await DeviceService.GetDevicesAsync();
+    }
+
+    private async Task LockDevice(long lockId)
+    {
+        await DeviceService.LockDeviceAsync(lockId);
+        devices = await DeviceService.GetDevicesAsync();
+    }
+
+    private async Task LoadCards(long lockId)
+    {
+        cards = await DeviceService.GetCardsAsync(lockId);
+    }
+
+    private async Task LoadFingerprints(long lockId)
+    {
+        fingerprints = await DeviceService.GetFingerprintsAsync(lockId);
+    }
+
+    private void OpenAddCardModal(long lockId)
+    {
+        modalLockId = lockId;
+        showAddCardModal = true;
+    }
+
+    private void CloseAddCardModal() => showAddCardModal = false;
+
+    private void OpenAddFingerprintModal(long lockId)
+    {
+        modalLockId = lockId;
+        showAddFingerprintModal = true;
+    }
+
+    private void CloseAddFingerprintModal() => showAddFingerprintModal = false;
+
+    private async Task AddCardAsync()
+    {
+        long startMs = usePeriod ? new DateTimeOffset(cardStart).ToUnixTimeMilliseconds() : 0;
+        long endMs = usePeriod ? new DateTimeOffset(cardEnd).ToUnixTimeMilliseconds() : 0;
+
+        await DeviceService.AddCardAsync(modalLockId, newCardName, newCardNumber, newCardValidDays);
+
+        // Jika ingin gunakan periode, bisa modify DeviceService.AddCardAsync untuk mengirim start/end
+        CloseAddCardModal();
+        await JS.InvokeVoidAsync("alert", "Card added successfully!");
+        await LoadCards(modalLockId);
+    }
+
+    private async Task AddFingerprintAsync()
+    {
+        long startMs = useFingerprintPeriod ? new DateTimeOffset(fingerStart).ToUnixTimeMilliseconds() : DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long endMs = useFingerprintPeriod ? new DateTimeOffset(fingerEnd).ToUnixTimeMilliseconds() : DateTimeOffset.UtcNow.AddYears(1).ToUnixTimeMilliseconds();
+
+        await DeviceService.AddFingerprintAsync(modalLockId, newFingerprintNumber, newFingerprintType, newFingerprintName, startMs, endMs);
+
+        CloseAddFingerprintModal();
+        await JS.InvokeVoidAsync("alert", "Fingerprint added successfully!");
+        await LoadFingerprints(modalLockId);
+    }
+
+    private async Task CopyToClipboard(string text, long lockId)
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        copiedLockId = lockId;
+        StateHasChanged();
+
+        await Task.Delay(1500);
+        copiedLockId = 0;
+        StateHasChanged();
+    }
+}

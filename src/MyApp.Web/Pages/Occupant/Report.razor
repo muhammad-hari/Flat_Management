@@ -1,0 +1,260 @@
+@page "/visitor-analytics"
+@using System.Globalization
+@using MyApp.Core.Entities
+@using MyApp.Core.Interfaces
+@inject IVisitorRepository VisitorRepo
+
+<div class="p-6 space-y-6">
+  <div class="bg-gradient-to-b from-red-700 to-black rounded-lg shadow-sm p-6 text-white">
+    <h1 class="text-4xl font-bold text-yellow-300">Visitor Report Analytics</h1>
+    <p class="text-sm text-white mt-1">Charts Visitors and Trafic</p>
+  </div>
+
+  <div class="flex gap-2 items-center flex-wrap">
+    <label class="text-sm font-medium">Dataset:</label>
+    @foreach (var ds in Enum.GetValues<DatasetType>())
+    {
+      <button class="px-3 py-1 rounded text-sm transition
+                              @(SelectedDataset == ds ? "bg-blue-600 text-white" : "bg-gray-100 hover:bg-gray-200")"
+        @onclick="() => ChangeDataset(ds)">
+        @ds
+      </button>
+    }
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="bg-white rounded-lg shadow p-4">
+      <h3 class="font-semibold mb-3">Visitors (Bar)</h3>
+      <svg viewBox="0 0 600 200" class="w-full h-48">
+        @* Bars *@
+        @for (int i = 0; i < BarData.Count; i++)
+        {
+          var x = 40 + i * (12 + ((520.0 - BarData.Count * 12) / (BarData.Count - 1)));
+          var height = (BarData[i] / MaxBarValue) * 160.0;
+          var y = 190 - height;
+
+          <rect x="@x" y="@y" width="12" height="@height" rx="3" fill="@BarColors[i % BarColors.Length]" />
+
+          @* <text x="@(x + 6)" y="195" font-size="10" fill="#6b7280" text-anchor="middle">@Labels[i]</text> *@
+        }
+      </svg>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4">
+      <h3 class="font-semibold mb-3">Visitors Trend (Line)</h3>
+      <svg viewBox="0 0 600 200" class="w-full h-48">
+        <path d="@LinePath" fill="none" stroke="#1f6feb" stroke-width="3" stroke-linejoin="round"
+          stroke-linecap="round" />
+        <path d="@AreaPath" fill="#bfdbfe" opacity="0.18" stroke="none" />
+        @for (int i = 0; i < LineData.Count; i++)
+        {
+          var x = 40 + (i * ((550.0) / (LineData.Count - 1)));
+          var y = 190 - (LineData[i] / MaxLineValue) * 160.0;
+          <circle cx="@x" cy="@y" r="3.5" fill="#1f6feb" stroke="#fff" stroke-width="1" />
+        }
+      </svg>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4">
+      <h3 class="font-semibold mb-3">Visitors by Purpose (Donut)</h3>
+      <div class="flex items-center justify-center">
+        <svg viewBox="0 0 200 200" class="w-40 h-40">
+          <g transform="translate(100,100)">
+            @{
+              var total = DonutData.Sum();
+              double startAngle = -90;
+              for (int i = 0; i < DonutData.Count; i++)
+              {
+                var value = DonutData[i];
+                var angle = value / (double)total * 360.0;
+                var endAngle = startAngle + angle;
+                <path d="@ArcPath(60, startAngle, endAngle)" fill="@DonutColors[i % DonutColors.Length]" stroke="white"
+                  stroke-width="2"></path>
+                ;
+                startAngle += angle;
+              }
+            }
+            <circle r="36" fill="white"></circle>
+            <text x="0" y="4" text-anchor="middle" font-size="12" fill="#374151">Total</text>
+            <text x="0" y="20" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">@total</text>
+          </g>
+        </svg>
+      </div>
+      <div class="mt-4 space-y-2">
+        @for (int i = 0; i < DonutData.Count; i++)
+        {
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded" style="background:@DonutColors[i % DonutColors.Length]"></span>
+              <span class="text-sm">@DonutLabels[i]</span>
+            </div>
+            <div class="text-sm text-gray-600">@DonutData[i]</div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white rounded-lg shadow p-4">
+      <h3 class="font-semibold mb-3">Visitors by Building</h3>
+      <svg width="600" height="@(BuildingData.Count * 30 + 20)" class="w-full">
+        @for (int i = 0; i < BuildingData.Count; i++)
+        {
+          var barWidth = (BuildingData[i].Count / (double)MaxBuildingValue) * 500.0;
+          var y = 20 + i * 30;
+          <rect x="100" y="@y" width="@barWidth" height="20" fill="orange" />
+          @((MarkupString)$"<text x='95' y='{y + 15}' font-size='12' text-anchor='end'>{BuildingData[i].Label}</text>")
+          @((MarkupString)$"<text x='{100 + barWidth + 5}' y='{y + 15}' font-size='12'>{BuildingData[i].Count}</text>")
+        }
+      </svg>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4">
+      <h3 class="font-semibold mb-3">Visitors by Room</h3>
+      <svg width="600" height="@(RoomData.Count * 30 + 20)" class="w-full">
+        @for (int i = 0; i < RoomData.Count; i++)
+        {
+          var barWidth = (RoomData[i].Count / (double)MaxRoomValue) * 500.0;
+          var y = 20 + i * 30;
+          <rect x="100" y="@y" width="@barWidth" height="20" fill="purple" />
+          @((MarkupString)$"<text x='95' y='{y + 15}' font-size='12' text-anchor='end'>{RoomData[i].Label}</text>")
+          @((MarkupString)$"<text x='{100 + barWidth + 5}' y='{y + 15}' font-size='12'>{RoomData[i].Count}</text>")
+        }
+      </svg>
+    </div>
+  </div>
+</div>
+
+@code {
+  enum DatasetType { All, Days, Weeks, Months, Years }
+  private DatasetType SelectedDataset = DatasetType.Months;
+
+  private List<string> Labels = new();
+  private List<int> BarData = new();
+  private List<int> LineData = new();
+  private List<int> DonutData = new();
+  private List<string> DonutLabels = new();
+
+  private List<ChartItem> BuildingData = new();
+  private List<ChartItem> RoomData = new();
+
+  private double MaxBarValue = 1;
+  private double MaxLineValue = 1;
+  private double MaxBuildingValue = 1;
+  private double MaxRoomValue = 1;
+
+  private string LinePath = "";
+  private string AreaPath = "";
+
+  private List<Visitor> AllVisitors = new();
+
+  private readonly string[] BarColors = { "#1f6feb", "#16a34a", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#f97316" };
+  private readonly string[] DonutColors = { "#1f6feb", "#16bdca", "#f59e0b", "#e74694", "#10b981" };
+
+  protected override async Task OnInitializedAsync()
+  {
+    AllVisitors = await VisitorRepo.GetAllAsync();
+    ApplyDataset(SelectedDataset);
+  }
+
+  private void ChangeDataset(DatasetType ds)
+  {
+    SelectedDataset = ds;
+    ApplyDataset(ds);
+  }
+
+  private void ApplyDataset(DatasetType ds)
+  {
+    var now = DateTime.UtcNow;
+    IEnumerable<Visitor> visitors = AllVisitors;
+
+    if (ds == DatasetType.Days)
+    {
+      visitors = visitors.Where(v => v.ArrivedAt >= now.AddDays(-7));
+      Labels = Enumerable.Range(0, 7).Select(i => now.AddDays(-i).ToString("ddd")).Reverse().ToList();
+      BarData = Labels.Select(l => visitors.Count(v => v.ArrivedAt.ToString("ddd") == l)).ToList();
+    }
+    else if (ds == DatasetType.Months)
+    {
+      Labels = Enumerable.Range(0, 12).Select(i => now.AddMonths(-i).ToString("MMM")).Reverse().ToList();
+      BarData = Labels.Select(l => visitors.Count(v => v.ArrivedAt.ToString("MMM") == l)).ToList();
+    }
+    else if (ds == DatasetType.Years)
+    {
+      Labels = Enumerable.Range(0, 5).Select(i => now.AddYears(-i).Year.ToString()).Reverse().ToList();
+      BarData = Labels.Select(l => visitors.Count(v => v.ArrivedAt.Year.ToString() == l)).ToList();
+    }
+    else // All
+    {
+      Labels = AllVisitors.Select(v => v.ArrivedAt.ToString("MMM yyyy")).Distinct().OrderBy(x => x).ToList();
+      BarData = Labels.Select(l => visitors.Count(v => v.ArrivedAt.ToString("MMM yyyy") == l)).ToList();
+    }
+
+    LineData = BarData.ToList();
+    ComputeLinePath();
+
+    // Donut
+    DonutLabels = visitors.GroupBy(v => v.Purpose ?? "Other").Select(g => g.Key).ToList();
+    DonutData = visitors.GroupBy(v => v.Purpose ?? "Other").Select(g => g.Count()).ToList();
+
+    // Building
+    BuildingData = visitors.Where(v => v.Room?.Building != null)
+    .GroupBy(v => v.Room!.Building!.Name)
+    .Select(g => new ChartItem { Label = g.Key, Count = g.Count() }).ToList();
+
+    // Room
+    RoomData = visitors.Where(v => v.Room != null)
+    .GroupBy(v => v.Room!.Name)
+    .Select(g => new ChartItem { Label = g.Key, Count = g.Count() }).ToList();
+
+    MaxBarValue = BarData.Any() ? BarData.Max() : 1;
+    MaxLineValue = LineData.Any() ? LineData.Max() : 1;
+    MaxBuildingValue = BuildingData.Any() ? BuildingData.Max(x => x.Count) : 1;
+    MaxRoomValue = RoomData.Any() ? RoomData.Max(x => x.Count) : 1;
+
+    StateHasChanged();
+  }
+
+  private void ComputeLinePath()
+  {
+    if (!LineData.Any()) { LinePath = ""; AreaPath = ""; return; }
+
+    var width = 550.0;
+    var height = 160.0;
+    var left = 40.0;
+    var step = width / (LineData.Count - 1);
+    var points = new List<(double X, double Y)>();
+
+    for (int i = 0; i < LineData.Count; i++)
+    {
+      var x = left + i * step;
+      var y = 190 - (LineData[i] / MaxLineValue) * height;
+      points.Add((x, y));
+    }
+
+    // line
+    var sb = new System.Text.StringBuilder($"M {points[0].X} {points[0].Y} ");
+    for (int i = 1; i < points.Count; i++) sb.Append($"L {points[i].X} {points[i].Y} ");
+    LinePath = sb.ToString();
+
+    // area
+    var sb2 = new System.Text.StringBuilder($"M {points[0].X} {points[0].Y} ");
+    for (int i = 1; i < points.Count; i++) sb2.Append($"L {points[i].X} {points[i].Y} ");
+    sb2.Append($"L {points.Last().X} 190 L {points[0].X} 190 Z");
+    AreaPath = sb2.ToString();
+  }
+
+  private string ArcPath(double radius, double startAngle, double endAngle)
+  {
+    double start = (Math.PI / 180.0) * startAngle;
+    double end = (Math.PI / 180.0) * endAngle;
+    var (x1, y1) = (radius * Math.Cos(start), radius * Math.Sin(start));
+    var (x2, y2) = (radius * Math.Cos(end), radius * Math.Sin(end));
+    var largeArc = (endAngle - startAngle) > 180 ? 1 : 0;
+
+    return $"M {x1} {y1} A {radius} {radius} 0 {largeArc} 1 {x2} {y2} L 0 0 Z";
+  }
+
+  private class ChartItem { public string Label { get; set; } = ""; public int Count { get; set; } }
+}

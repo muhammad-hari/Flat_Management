@@ -12,8 +12,10 @@ public class FileUpload
 
     /// <summary>Path atau URL file</summary>
     public string Path { get; set; } = string.Empty;
+    public bool IsImage => ContentType != null && ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
 
     public string? FileName { get; set; }
     public string? ContentType { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
 }

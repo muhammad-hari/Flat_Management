@@ -1,0 +1,136 @@
+@page "/occupant-history"
+@using MyApp.Core.Entities
+@using MyApp.Core.Interfaces
+@inject IOccupantHistoryRepository HistoryService
+@inject IOccupantRepository OccupantService
+@inject IRoomRepository RoomService
+@inject ToastService ToastService
+
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="bg-gradient-to-br from-blue-600 to-blue-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+        <div class="bg-white/20 rounded-full p-3"><i class="fas fa-history fa-2x"></i></div>
+        <div>
+            <h2 class="text-lg font-semibold">Total Data Histories</h2>
+            <p class="text-2xl font-bold">@Histories?.Count()</p>
+        </div>
+    </div>
+    <div class="bg-gradient-to-br from-green-600 to-green-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+        <div class="bg-white/20 rounded-full p-3"><i class="fas fa-check-circle fa-2x"></i></div>
+        <div>
+            <h2 class="text-lg font-semibold">Active</h2>
+            <p class="text-2xl font-bold">@Histories?.Count(u => u.Action != "Checkout")</p>
+        </div>
+    </div>
+    <div class="bg-gradient-to-br from-red-600 to-red-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+        <div class="bg-white/20 rounded-full p-3"><i class="fas fa-user-slash fa-2x"></i></div>
+        <div>
+            <h2 class="text-lg font-semibold">Inactive</h2>
+            <p class="text-2xl font-bold">@Histories?.Count(u => u.Action == "Checkout")</p>
+        </div>
+    </div>
+    <div class="bg-gradient-to-br from-yellow-600 to-yellow-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+        <div class="bg-white/20 rounded-full p-3"><i class="fas fa-exchange-alt fa-2x"></i></div>
+        <div>
+            <h2 class="text-lg font-semibold">Total Transfer</h2>
+            <p class="text-2xl font-bold">@Histories?.Count(u => u.Action == "Transfer")</p>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 mt-8">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 border-b pb-4">
+        <div>
+            <h2 class="text-3xl font-extrabold text-gray-800 tracking-tight">Occupant History Management</h2>
+            <p class="text-gray-500 mt-1">Track all occupant check-in, checkout, and transfer activities</p>
+        </div>
+        <div class="flex items-center space-x-3 mt-4 md:mt-0 w-full md:w-auto">
+            <div class="relative w-full md:w-64">
+                <input value="@SearchTerm" @oninput="HandleSearchTermChange"
+                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                    placeholder="Search by Occupant, Action, Room..." />
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+    </div>
+    <div class="p-6 space-y-6">
+        <div class="overflow-x-auto">
+         @if (Histories != null && Histories.Any())
+        {
+            <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+                <thead class="bg-gradient-to-b from-red-700 to-black">
+                    <tr>
+                        <th class="px-4 py-2 text-white">Occupant</th>
+                        <th class="px-4 py-2 text-white">Gender</th>
+                        <th class="px-4 py-2 text-white">Rank</th>
+                        <th class="px-4 py-2 text-white">Position</th>
+                        <th class="px-4 py-2 text-white">Room</th>
+                        <th class="px-4 py-2 text-white">Action</th>
+                        <th class="px-4 py-2 text-white">Notes</th>
+                        <th class="px-4 py-2 text-white">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                   @foreach (var h in FilteredHistories)
+                        {
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="px-4 py-2">@h.Occupant?.Employee?.Name</td>
+                                <td class="px-4 py-2">@h.Occupant?.Employee?.Gender</td>
+                                <td class="px-4 py-2">@h.Occupant?.Employee?.Rank?.Name</td>
+                                <td class="px-4 py-2">@h.Occupant?.Employee?.Position?.Name</td>
+                                <td class="px-4 py-2">@h.Room?.Name</td>
+                                <td class="px-4 py-2">
+                                    <span class="@GetActionClass(h.Action)">@h.Action</span>
+                                </td>
+                                <td class="px-4 py-2">@h.Notes</td>
+                                <td class="px-4 py-2">@h.CreatedAt.ToString("dd MMM yyyy HH:mm")</td>
+                            </tr>
+                        }
+                    
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="flex flex-col items-center justify-center py-12 bg-white rounded-lg shadow-inner text-gray-500">
+                <i class="fas fa-inbox fa-3x mb-3"></i>
+                <p class="text-lg font-medium">No Histories found.</p>
+            </div>
+        }
+
+            
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<OccupantHistory> Histories = new();
+    private string SearchTerm { get; set; } = "";
+
+    private IEnumerable<OccupantHistory> FilteredHistories =>
+    string.IsNullOrEmpty(SearchTerm)
+    ? Histories
+    : Histories.Where(h =>
+    (h.Occupant?.Employee?.Name?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true) ||
+    (h.Action?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true) ||
+    (h.Room?.Name?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true) ||
+    (h.Notes?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true)
+    );
+
+    protected override async Task OnInitializedAsync()
+    {
+        Histories = await HistoryService.GetAllAsync();
+    }
+
+    private string GetActionClass(string action) => (action ?? "") switch
+    {
+        "Checkout" => "px-2 py-1 text-md bg-red-600 text-white rounded-full",
+        "Transfer" => "px-2 py-1 text-md bg-yellow-600 text-white rounded-full",
+        "CheckIn" => "px-2 py-1 text-md bg-green-600 text-white rounded-full",
+        _ => "text-gray-600"
+    };
+
+    private void HandleSearchTermChange(ChangeEventArgs e)
+    {
+        SearchTerm = e.Value?.ToString() ?? "";
+    }
+}

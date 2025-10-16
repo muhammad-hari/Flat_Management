@@ -36,7 +36,11 @@ public class VisitorRepository : IVisitorRepository
 
     public async Task UpdateAsync(Visitor Visitor)
     {
-        _context.Visitors.Update(Visitor);
+        var existing = await _context.Visitors.FindAsync(Visitor.Id);
+        if (existing == null) return;
+
+        // Copy semua property dari visitor ke existing
+        _context.Entry(existing).CurrentValues.SetValues(Visitor);
         await _context.SaveChangesAsync();
     }
 

@@ -1,0 +1,561 @@
+@page "/visitors"
+@using MyApp.Core.Entities
+@using MyApp.Core.Interfaces
+@using MyApp.Web.Helper
+@inject IVisitorRepository VisitorService
+@inject IRoomRepository RoomService
+@inject IOccupantRepository OccupantService
+@inject IFileService FileService
+@inject ToastService ToastService
+
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-gradient-to-br from-blue-600 to-blue-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+        <div class="bg-white/20 rounded-full p-3"><i class="fas fa-users fa-2x"></i></div>
+        <div>
+            <h2 class="text-lg font-semibold">Total Visitors</h2>
+            <p class="text-2xl font-bold">@Visitors?.Count()</p>
+        </div>
+    </div>
+    <div class="bg-gradient-to-br from-green-600 to-green-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+        <div class="bg-white/20 rounded-full p-3"><i class="fas fa-check-circle fa-2x"></i></div>
+        <div>
+            <h2 class="text-lg font-semibold">Active</h2>
+            <p class="text-2xl font-bold">@Visitors?.Count(v => v.DepartedAt == null)</p>
+        </div>
+    </div>
+    <div class="bg-gradient-to-br from-red-600 to-red-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+        <div class="bg-white/20 rounded-full p-3"><i class="fas fa-user-slash fa-2x"></i></div>
+        <div>
+            <h2 class="text-lg font-semibold">Inactive</h2>
+            <p class="text-2xl font-bold">@Visitors?.Count(v => v.DepartedAt != null)</p>
+        </div>
+    </div>
+    <div class="bg-gradient-to-br from-yellow-600 to-yellow-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+        <div class="bg-white/20 rounded-full p-3"><i class="fas fa-file-alt fa-2x"></i></div>
+        <div>
+            <h2 class="text-lg font-semibold">With Documents</h2>
+            <p class="text-2xl font-bold">@DocsByVisitor.Count</p>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 border-b pb-4">
+        <div>
+            <h2 class="text-3xl font-extrabold text-gray-800 tracking-tight">Visitor Management</h2>
+            <p class="text-gray-500 mt-1">Manage visitor check-in/out, upload photo & documents.</p>
+        </div>
+        <div class="flex items-center space-x-3 mt-4 md:mt-0 w-full md:w-auto">
+            <div class="relative w-full md:w-64">
+                <input value="@SearchTerm" @oninput="e => SearchTerm = e.Value?.ToString() ?? string.Empty"
+                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                    placeholder="Search Visitor..." />
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            </div>
+            <button class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                @onclick="AddVisitor">
+                <i class="fas fa-plus"></i> Add Visitor
+            </button>
+        </div>
+    </div>
+    <div class="overflow-x-auto rounded-xl shadow-md border border-gray-200">
+     @if (Visitors != null && Visitors.Any())
+    {
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gradient-to-b from-red-700 to-black">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Visitor Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Occupant Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Building & Room</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Relation</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Purpose</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Visit Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Visit Duration</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Departure Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                @foreach (var v in FilteredVisitors)
+                    {
+                        var durationText = GetVisitDuration(v.ArrivedAt, v.DepartedAt);
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">@v.Name</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-700">@v.Occupant?.Employee?.Name</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-700">@v.Occupant?.Room?.Building?.Name | @v.Occupant?.Room?.Name</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-700">@v.Relation</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-700">@v.Purpose</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-xs text-gray-500">@v.ArrivedAt.ToString("dddd, dd MMM yyyy 'Time : 'HH : mm")</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-xs text-gray-500">@durationText</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-xs text-gray-500">@(v.DepartedAt?.ToString("dddd, dd MMM yyyy 'Time : 'HH : mm") ?? "-")</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="@GetStatusClass(v.DepartedAt == null)">@((v.DepartedAt == null) ? "Active" : "Inactive")</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                <button class="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-green-100 transition"
+                                    @onclick="() => ShowDetail(v)">
+                                    <i class="fas fa-eye mr-1"></i> Detail
+                                </button>
+                                <button class="text-indigo-600 hover:text-indigo-900 p-2 rounded-lg hover:bg-indigo-100 transition"
+                                    @onclick="() => EditVisitor(v)">
+                                    <i class="fas fa-edit mr-1"></i> Edit
+                                </button>
+                                <button class="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-100 transition"
+                                    @onclick="() => ConfirmCheckout(v.Id)">
+                                    <i class="fas fa-sign-out-alt mr-1"></i> Checkout
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                
+            </tbody>
+        </table>
+    }
+    else
+        {
+            <div class="flex flex-col items-center justify-center py-12 bg-white rounded-lg shadow-inner text-gray-500">
+                <i class="fas fa-inbox fa-3x mb-3"></i>
+                <p class="text-lg font-medium">No Visitors found.</p>
+            </div>
+        }
+        
+    </div>
+</div>
+
+<!-- Modal Add/Edit/Detail -->
+@if (ShowModal)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-3xl shadow-lg mb-4">
+            <div class="absolute inset-0 flex justify-center items-center pointer-events-none">
+                <img src="assets/images/mock.png" class="max-w-[30%] max-h-[30%] opacity-30" alt="watermark">
+            </div>
+            <h2 class="text-xl font-bold mb-4 pb-2 border-b border-gray-300">@ModalTitle</h2>
+
+            @if (ModalMode == "Detail")
+            {
+                <!-- === DETAIL VISITOR === -->
+                <div class=" text-md font-semibold divide-y divide-gray-300 text-gray-700">
+
+                    <div class="grid grid-cols-3 gap-2 py-2">
+                        <div class="font-semibold">Name</div>
+                        <div class="font-semibold">@SelectedVisitor.Name</div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 py-2">
+                        <div class="font-semibold">Phone</div>
+                        <div>@SelectedVisitor.Phone</div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 py-2">
+                        <div class="font-semibold">Purpose</div>
+                        <div class="font-semibold">@SelectedVisitor.Purpose</div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 py-2">
+                        <div class="font-semibold">Occupant</div>
+                        <div>@SelectedVisitor.Occupant?.Employee?.Name</div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 py-2">
+                        <div class="font-semibold">Room</div>
+                        <div class="font-semibold">@SelectedVisitor.Occupant?.Room?.Name</div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 py-2">
+                        <div class="font-semibold">Arrived Date</div>
+                        <div>@SelectedVisitor.ArrivedAt</div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 py-2">
+                        <div class="font-semibold">Departure Date</div>
+                        <div>
+                            @if (SelectedVisitor.DepartedAt == null)
+                            {
+                                <span class="gap-2 px-6 py-1 text-md font-semibold rounded-full bg-green-600 text-white">
+                                    Hasn’t left yet
+                                </span>
+                            }
+                            else
+                            {
+                                @SelectedVisitor.DepartedAt?.ToString("dddd, dd MMMM yyyy HH:mm")
+                            }
+                        </div>
+                    </div>
+                </div>
+                @if (PhotoByVisitor.TryGetValue(SelectedVisitor.Id, out var photos) && photos.Any())
+                {
+                    <div class="mt-4">
+                        <h4 class="font-semibold mb-2">Photo Attachment</h4>
+                        <ul class="list-disc ml-5 space-y-1">
+                            <div class="relative w-full flex justify-center">
+                                <img src="@($"/secure-files/{photos.First().Path}")"
+                                    class="w-full h-48 rounded-md object-contain border" />
+                                <a href="@($"/secure-files/{photos.First().Path}")" download
+                                    class="absolute top-2 right-2 bg-blue-600 text-white p-2 rounded-full shadow hover:bg-blue-700">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                                    </svg>
+                                </a>
+                            </div>
+                        </ul>
+                    </div>
+                }
+
+                @if (DocsByVisitor.TryGetValue(SelectedVisitor.Id, out var docs) && docs.Any())
+                {
+                    <div class="mt-4">
+                        <h4 class="font-semibold mb-2">Documents</h4>
+                        <ul class="list-disc ml-5 space-y-1">
+                            @foreach (var d in docs)
+                            {
+                                <li>
+                                    <a href="@($"/secure-files/{d.Path}")" target="_blank"
+                                        class="text-blue-600 hover:underline">@d.FileName</a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+            }
+            else
+            {
+                <!-- === FORM ADD / EDIT === -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    <InputText class="w-full border rounded px-3 py-2" placeholder="Visitor Name"
+                        @bind-Value="SelectedVisitor.Name" />
+                    <InputText class="w-full border rounded px-3 py-2" placeholder="NIK" @bind-Value="SelectedVisitor.NIK" />
+                    <InputText class="w-full border rounded px-3 py-2" placeholder="Relation"
+                        @bind-Value="SelectedVisitor.Relation" />
+                    <InputText class="w-full border rounded px-3 py-2" placeholder="Phone"
+                        @bind-Value="SelectedVisitor.Phone" />
+                    <InputTextArea class="w-full border rounded px-3 py-2 md:col-span-2" placeholder="Purpose"
+                        @bind-Value="SelectedVisitor.Purpose" />
+
+                    <div class="md:col-span-2">
+                        <label class="block font-semibold mb-1">Destination Occupant</label>
+
+                        <input class="border rounded w-full p-2" list="occupantList" @bind="occupantInput" @bind:event="oninput"
+                            @onchange="OnOccupantChanged" placeholder="Ketik nama atau NRP..." />
+
+                        <datalist id="occupantList">
+                            @foreach (var occ in Occupants)
+                            {
+                                <option value="@($"{occ.Employee?.Name} ({occ.Employee?.NRP})")"></option>
+                            }
+                        </datalist>
+                    </div>
+                    <!-- Room otomatis -->
+                    <div class="md:col-span-2">
+                        <label class="block font-semibold mb-1">Room</label>
+                        <input class="w-full border rounded px-3 py-2 bg-gray-100" value="@AutoRoomName" readonly />
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block font-semibold mb-1">Arrived At</label>
+                        <InputDate @bind-Value="SelectedVisitor.ArrivedAt" class="w-full border rounded px-3 py-2" />
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold mb-1">Photo</label>
+                        <InputFile OnChange="OnPhotoSelected" accept="image/*" />
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold mb-1">Documents (.PDF)</label>
+                        <InputFile OnChange="OnDocsSelected" multiple accept="application/pdf" />
+                    </div>
+                </div>
+            }
+
+            <div class="flex justify-end space-x-2 mt-4">
+                <button class="bg-red-700 hover:bg-red-800 text-white font-semibold px-5 py-2 rounded-lg transition flex items-center gap-2" @onclick="CloseModal">
+                <i class="fas fa-ban"></i> Cancel
+                </button>
+                @if (ModalMode != "Detail")
+                {
+                    <button class="bg-green-700 hover:bg-green-800 text-white font-semibold px-5 py-2 rounded-lg transition flex items-center gap-2" @onclick="SaveVisitor">
+                    <i class="fas fa-save"></i> Save Visitor
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Checkout -->
+@if (ShowCheckoutModal)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md">
+            <h3 class="text-xl font-semibold mb-4">Confirm Checkout</h3>
+            <p class="mb-6">Mark this visitor as departed?</p>
+            <div class="flex justify-end space-x-3">
+                <button class="px-4 py-2 bg-gray-300 rounded" @onclick="() => ShowCheckoutModal = false">Cancel</button>
+                <button class="px-4 py-2 bg-red-600 text-white rounded" @onclick="CheckoutConfirmed">Checkout</button>
+            </div>
+        </div>
+    </div>
+}
+
+<ToastContainer @ref="toastContainer" />
+
+@code {
+    private string AutoRoomName = "";
+    @* public string DisplayText => $"{Employee?.Name} ({Employee?.NRP})"; *@
+    private ToastContainer? toastContainer;
+    private List<Visitor> Visitors = new();
+    private List<Occupant> Occupants = new();
+    private string SearchTerm = "";
+
+    private bool ShowModal;
+    private string ModalMode = "";
+    private string ModalTitle = "";
+    private Visitor SelectedVisitor = new();
+    private bool ShowCheckoutModal;
+    private int CheckoutVisitorId;
+
+    private IBrowserFile? PendingPhoto;
+    private IReadOnlyList<IBrowserFile>? PendingDocs;
+
+    private Dictionary<int, List<FileUpload>> PhotoByVisitor = new();
+    private Dictionary<int, List<FileUpload>> DocsByVisitor = new();
+    private string occupantInput = "";
+    private System.Threading.Timer? _timer;
+
+
+    private Task<IEnumerable<Occupant>> SearchOccupant(string searchText)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return Task.FromResult(Occupants.AsEnumerable());
+
+        return Task.FromResult(
+        Occupants.Where(o =>
+        (o.Employee?.Name?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+        || (o.Employee?.NRP?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false))
+        );
+    }
+
+    private string GetVisitDuration(DateTime start, DateTime? end)
+    {
+        var finish = end ?? DateTimeHelper.NowWIB; // kalau masih aktif, pakai waktu sekarang
+        var span = finish - start;
+
+        if (span.TotalSeconds < 1)
+            return "Just now";
+
+        var parts = new List<string>();
+        if (span.Days > 0)
+            parts.Add($"{span.Days} day{(span.Days > 1 ? "s" : "")}");
+        if (span.Hours > 0)
+            parts.Add($"{span.Hours} hour{(span.Hours > 1 ? "s" : "")}");
+        if (span.Minutes > 0)
+            parts.Add($"{span.Minutes} minute{(span.Minutes > 1 ? "s" : "")}");
+
+        // Tambahkan detik
+        parts.Add($"{span.Seconds} second{(span.Seconds != 1 ? "s" : "")}");
+
+        return string.Join(" ", parts);
+    }
+
+
+
+    private void OnOccupantChanged(ChangeEventArgs e)
+    {
+        occupantInput = e.Value?.ToString() ?? "";
+
+        // Cari occupant berdasarkan Name atau NRP yang ada di input
+        var selected = Occupants.FirstOrDefault(o =>
+        $"{o.Employee?.Name} ({o.Employee?.NRP})"
+        .Equals(occupantInput, StringComparison.OrdinalIgnoreCase));
+
+        if (selected != null)
+        {
+            SelectedVisitor.OccupantId = selected.Id;
+            SelectedVisitor.Occupant = selected;
+            AutoRoomName = selected.Room?.Name ?? "";
+        }
+        else
+        {
+            // Jika tidak ditemukan, kosongkan
+            SelectedVisitor.OccupantId = 0;
+            SelectedVisitor.Occupant = null;
+            AutoRoomName = "";
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _timer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(StateHasChanged);
+        }, null, 0, 1000);
+
+        base.OnInitialized();
+        Visitors = await VisitorService.GetAllAsync();
+        Occupants = await OccupantService.GetAllAsync();
+
+        var allPhotos = await FileService.GetFilesByCategoryAsync("VisitorPhoto");
+        PhotoByVisitor = allPhotos.GroupBy(f => f.OwnerId).ToDictionary(g => g.Key, g => g.ToList());
+
+        var allDocs = await FileService.GetFilesByCategoryAsync("VisitorDocs");
+        DocsByVisitor = allDocs.GroupBy(f => f.OwnerId).ToDictionary(g => g.Key, g => g.ToList());
+    }
+
+    private IEnumerable<Visitor> FilteredVisitors =>
+    Visitors.Where(v => string.IsNullOrWhiteSpace(SearchTerm)
+    || v.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase));
+
+    private string GetStatusClass(bool active) =>
+    active ? "px-2 py-1 text-xs bg-green-200 text-green-800 rounded-full"
+    : "px-2 py-1 text-xs bg-red-200 text-red-800 rounded-full";
+
+    private void AddVisitor()
+    {
+        SelectedVisitor = new Visitor
+        {
+            Id = 0,
+            ArrivedAt = DateTime.Now
+        };
+        ModalMode = "Add";
+        ModalTitle = "Add Visitor";
+        ShowModal = true;
+    }
+
+    private void EditVisitor(Visitor v)
+    {
+        SelectedVisitor = new Visitor
+        {
+            Id = v.Id,
+            Name = v.Name,
+            Phone = v.Phone,
+            Purpose = v.Purpose,
+            ArrivedAt = v.ArrivedAt,
+            DepartedAt = v.DepartedAt,
+            OccupantId = v.OccupantId,
+            // tidak copy navigation (EF akan isi sendiri kalau perlu)
+        };
+        ModalMode = "Edit";
+        ModalTitle = "Edit Visitor";
+        ShowModal = true;
+    }
+
+    private void ShowDetail(Visitor v)
+    {
+        SelectedVisitor = v;
+        ModalMode = "Detail";
+        ModalTitle = "Visitor Detail";
+        ShowModal = true;
+    }
+
+    private void CloseModal() => ShowModal = false;
+
+    private void ConfirmCheckout(int id)
+    {
+        CheckoutVisitorId = id;
+        ShowCheckoutModal = true;
+    }
+
+    private async Task CheckoutConfirmed()
+    {
+        var visitor = Visitors.FirstOrDefault(x => x.Id == CheckoutVisitorId);
+        if (visitor != null)
+        {
+            visitor.DepartedAt = DateTime.Now;
+            await VisitorService.UpdateAsync(visitor);
+            Visitors = await VisitorService.GetAllAsync();
+        }
+        ShowCheckoutModal = false;
+        ToastService.ShowInfo("Visitor checked out!");
+    }
+
+    private void OnPhotoSelected(InputFileChangeEventArgs e)
+    {
+        var f = e.File;
+        if (f.ContentType.StartsWith("image/")) PendingPhoto = f;
+        else ToastService.ShowWarning("Only image allowed");
+    }
+
+    private void OnDocsSelected(InputFileChangeEventArgs e)
+    {
+        var list = e.GetMultipleFiles().Where(f => f.ContentType == "application/pdf").ToList();
+        if (list.Any()) PendingDocs = list;
+        else ToastService.ShowWarning("Only PDF allowed");
+    }
+
+    private async Task SaveVisitor()
+    {
+        try
+        {
+            // safety guard: reset Id supaya auto increment jalan
+            SelectedVisitor.Id = 0;
+
+            // pastikan EF tidak coba insert Occupant/Room baru
+            if (SelectedVisitor.Occupant != null)
+                SelectedVisitor.Occupant = null;
+
+            if (SelectedVisitor.Room != null)
+                SelectedVisitor.Room = null;
+
+            // isi default timestamps
+            if (ModalMode == "Add")
+            {
+                SelectedVisitor.CreatedAt = DateTimeHelper.NowWIB;
+                SelectedVisitor.UpdatedAt = DateTimeHelper.NowWIB;
+                SelectedVisitor.ArrivedAt = DateTimeHelper.NowWIB;
+
+                await VisitorService.AddAsync(SelectedVisitor);
+            }
+            else if (ModalMode == "Edit")
+            {
+                SelectedVisitor.UpdatedAt = DateTimeHelper.NowWIB;
+                await VisitorService.UpdateAsync(SelectedVisitor);
+            }
+
+            // simpan photo kalau ada
+            if (PendingPhoto != null)
+                await FileService.SaveFileAsync(PendingPhoto, "VisitorPhoto", SelectedVisitor.Id);
+
+            // simpan dokumen kalau ada
+            if (PendingDocs?.Count > 0)
+            {
+                foreach (var doc in PendingDocs)
+                    await FileService.SaveFileAsync(doc, "VisitorDocs", SelectedVisitor.Id);
+            }
+
+            // refresh list visitors
+            Visitors = await VisitorService.GetAllAsync();
+
+            // refresh dictionary untuk photo & dokumen
+            var allPhotos = await FileService.GetFilesByCategoryAsync("VisitorPhoto");
+            PhotoByVisitor = allPhotos.GroupBy(f => f.OwnerId).ToDictionary(g => g.Key, g => g.ToList());
+
+            var allDocs = await FileService.GetFilesByCategoryAsync("VisitorDocs");
+            DocsByVisitor = allDocs.GroupBy(f => f.OwnerId).ToDictionary(g => g.Key, g => g.ToList());
+
+            ShowModal = false;
+            ToastService.ShowSuccess("Visitor saved!");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error: {ex.Message}");
+        }
+    }
+
+}

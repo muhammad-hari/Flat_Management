@@ -1,0 +1,517 @@
+@page "/maintenance-requests"
+@using MyApp.Core.Entities
+@using MyApp.Core.Interfaces
+@inject IMaintenanceRequestRepository MaintenanceService // Asumsi Repository
+@inject IVendorRepository VendorService
+@inject IBuildingRepository BuildingService
+@inject IRoomRepository RoomService
+@inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
+@using System.Security.Claims
+
+@using Microsoft.AspNetCore.Components.Forms 
+@inject ToastService ToastService
+
+<PageTitle>Maintenance Request Management</PageTitle>
+
+<div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 border-b pb-4">
+        <div>
+            <h2 class="text-3xl font-extrabold text-gray-800 tracking-tight">Maintenance Request</h2>
+            <p class="text-gray-500 mt-1">Manage scheduled maintenance tasks for rooms and buildings.</p>
+        </div>
+        
+        <div class="flex items-center space-x-3 mt-4 md:mt-0 w-full md:w-auto">
+            <div class="relative w-full md:w-64">
+                <input value="@searchTerm" @oninput="HandleSearchTermChange"
+                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                    placeholder="Search Title, Location, Status..." />
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            </div>
+            <button class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2 rounded-xl 
+                                shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                                @onclick="AddRequest">
+                <i class="fas fa-plus"></i> New Request
+            </button>
+        </div>
+    </div>
+
+    @* --- MAINTENANCE REQUEST TABLE --- *@
+    @if (Loading)
+    {
+        <div class="text-center py-10 text-gray-500">
+            <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+            <p class="text-lg">Loading maintenance requests...</p>
+        </div>
+    }
+    else
+    {
+        <div class="overflow-x-auto rounded-xl shadow-md border border-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach (var r in FilteredRequests)
+                    {
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="text-sm font-medium text-gray-900">@r.Title</div>
+                                <div class="text-xs text-gray-500 max-w-xs truncate">@r.Description</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-indigo-600 font-semibold">@r.Building.Name</div>
+                                @if (r.Room != null)
+                                {
+                                    <div class="text-xs text-gray-500">Room: @r.Room.RoomNo - @r.Room.Name</div>
+                                }
+                                else
+                                {
+                                    <div class="text-xs text-gray-400">Entire Building</div>
+                                }
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                @r.StartDate.ToShortDateString() - @r.EndDate.ToShortDateString()
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm text-gray-800">@(r.Vendor?.Name ?? "-")</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @{
+                                    var statusClass = r.Status switch
+                                    {
+                                        "Pending" => "bg-yellow-100 text-yellow-800",
+                                        "InProgress" => "bg-blue-100 text-blue-800",
+                                        "Completed" => "bg-green-100 text-green-800",
+                                        "Cancelled" => "bg-red-100 text-red-800",
+                                        _ => "bg-gray-100 text-gray-800"
+                                    };
+                                }
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full @statusClass">
+                                    @r.Status
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                <button class="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-green-100 transition"
+                                    @onclick="() => ShowDetail(r)"><i class="fas fa-eye mr-1"></i> Detail</button>
+                                <button class="text-indigo-600 hover:text-indigo-900 p-2 rounded-lg hover:bg-indigo-100 transition" @onclick="() => EditRequest(r)" disabled="@(r.Status == "Completed" || r.Status == "Cancelled")">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-100 transition" @onclick="() => ConfirmDelete(r.Id, r.Title)">
+                                    <i class="fas fa-trash-alt mr-1"></i> Delete
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+        
+                                        @if (!FilteredRequests.Any() && !Loading)
+                                        {
+                                            <div class="text-center py-10 text-gray-500">
+                                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                                <p class="text-lg">No Maintenance Requests found.</p>
+                                            </div>
+                                        }
+                                    }
+    @if (ShowDetailModal)
+    {
+        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-out">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl relative animate-zoom-in">
+                <div class="border-b px-6 py-4 flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-800">Maintenance Request Detail</h2>
+                    <button class="text-gray-400 hover:text-gray-600" @onclick="() => ShowDetailModal = false">
+                        <i class="fas fa-times fa-lg"></i>
+                    </button>
+                </div>
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-700">
+                    <div class="space-y-4">
+                        <h3 class="text-xl font-semibold text-gray-900 border-b pb-2">Request Info</h3>
+                        <p><strong>Title:</strong> @DetailRequest?.Title</p>
+                        <p><strong>Description:</strong> @DetailRequest?.Description</p>
+                        <p><strong>Status:</strong> @DetailRequest?.Status</p>
+                        <p><strong>Requested By:</strong> @DetailRequest?.RequestedBy</p>
+                            <p><strong>Created At:</strong> @(DetailRequest?.CreatedAt != null ? DetailRequest.CreatedAt.ToString("dd MMM yyyy HH:mm") : "-")</p>
+                            <p><strong>Updated At:</strong> @(DetailRequest?.UpdatedAt != null ? DetailRequest.UpdatedAt.ToString("dd MMM yyyy HH:mm") : "-")</p>
+                    </div>
+                    <div class="space-y-4">
+                        <h3 class="text-xl font-semibold text-gray-900 border-b pb-2">Location & Schedule</h3>
+                        <p><strong>Building:</strong> @DetailRequest?.Building?.Name</p>
+                        <p><strong>Room:</strong> @(DetailRequest?.Room != null ? $"{DetailRequest.Room.RoomNo} - {DetailRequest.Room.Name}" : "Entire Building")</p>
+                        <p><strong>Start Date:</strong> @DetailRequest?.StartDate.ToShortDateString()</p>
+                        <p><strong>End Date:</strong> @DetailRequest?.EndDate.ToShortDateString()</p>
+                        <p><strong>Block Room/Building:</strong> @(DetailRequest?.IsRoomAffected == true ? "Yes" : "No")</p>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end">
+                <!-- Removed absolute positioning, button is now in header -->
+                <!-- No close button here, it's in the header above -->
+                </div>
+            </div>
+        </div>
+    }
+    
+
+    @* --- CONFIRMATION MODAL (Reuse from RoomPage/VendorPage) --- *@
+    @if (ShowConfirmModal)
+    {
+        <div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 animate-fade-in">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-slide-up">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2 text-red-600">
+                    <i class="fas fa-exclamation-triangle"></i> Confirm Delete
+                </h3>
+                <p class="text-gray-700 mb-6">@ConfirmMessage</p>
+                <div class="flex justify-end space-x-3">
+                    <button class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-medium" 
+                            @onclick="CancelDelete"><i class="fas fa-ban"></i> Cancel</button>
+                    <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
+                            @onclick="DeleteConfirmed"><i class="fas fa-trash-alt"></i> Delete</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<ToastContainer @ref="toastContainer" />
+
+@code {
+    // Search and Detail Modal State
+    private string searchTerm = string.Empty;
+    private bool ShowDetailModal = false;
+    private MaintenanceRequest? DetailRequest;
+
+    // Filtered Requests
+    private IEnumerable<MaintenanceRequest> FilteredRequests =>
+        string.IsNullOrWhiteSpace(searchTerm)
+        ? Requests
+        : Requests.Where(r =>
+            (r.Title ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            (r.Description ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            (r.Status ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            (r.Building?.Name ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            (r.Room?.Name ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+        );
+
+    private void HandleSearchTermChange(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private void ShowDetail(MaintenanceRequest r)
+    {
+        DetailRequest = r;
+        ShowDetailModal = true;
+    }
+    // Properti Toast
+    private ToastContainer? toastContainer; 
+    
+    // Properti Data Utama
+    private List<MaintenanceRequest> Requests = new();
+    private List<Building> Buildings = new();
+    private List<Room> AllRooms = new(); // Semua ruangan
+    private List<Vendor> Vendors = new();
+    private bool Loading = true;
+    
+    // Properti Modal
+    private bool ShowModal;
+    private string ModalTitle = "";
+    private MaintenanceRequest Selected = new();
+    private readonly string[] StatusOptions = { "Pending", "InProgress", "Completed", "Cancelled" };
+
+    // Properti Delete
+    private bool ShowConfirmModal = false;
+    private int RequestIdToDelete;
+    private MarkupString ConfirmMessage;
+
+    // Computed Property
+    private IEnumerable<Room> AvailableRooms => 
+        AllRooms.Where(r => r.BuildingId == Selected.BuildingId);
+
+    protected override async Task OnInitializedAsync()
+    {
+    await LoadSupportingData();
+    Vendors = await VendorService.GetAllAsync();
+    await LoadRequests();
+    Loading = false;
+    }
+
+    private async Task LoadSupportingData()
+    {
+        Buildings = await BuildingService.GetAllAsync();
+        // Memuat semua ruangan untuk fitur dropdown
+        AllRooms = await RoomService.GetAllAsync(); 
+    }
+
+    private async Task LoadRequests()
+    {
+        // Asumsi GetAllAsync memuat Building dan Room
+        Requests = await MaintenanceService.GetAllAsync(); 
+    }
+
+    // Dipanggil saat Building berubah di modal
+    private void OnBuildingChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int buildingId) && buildingId != Selected.BuildingId)
+        {
+            Selected.BuildingId = buildingId;
+            Selected.RoomId = null; // Reset RoomId saat Building berubah
+        }
+        else if (buildingId == 0)
+        {
+            Selected.BuildingId = 0;
+            Selected.RoomId = null;
+        }
+    }
+
+    // --- CRUD METHODS ---
+    
+    private async Task AddRequest()
+    {
+        var claims = await SessionStorage.GetAsync<Dictionary<string, string>>("claims");
+        string? username = null;
+        claims.Value?.TryGetValue(ClaimTypes.Name, out username);
+        @* claims.Value?.TryGetValue(ClaimTypes.Name, out string? username); *@
+
+
+        Selected = new MaintenanceRequest
+        {
+            RequestedBy = username ?? "unknown",
+            CreatedBy = username ?? "unknown",
+            BuildingId = Buildings.FirstOrDefault()?.Id ?? 0, // Default Building
+            StartDate = DateTime.Today,
+            EndDate = DateTime.Today.AddDays(1),
+            IsRoomAffected = true,
+            VendorId = Vendors.FirstOrDefault()?.Id
+        };
+        ModalTitle = "Create New Maintenance Request";
+        ShowModal = true;
+    }
+
+    private void EditRequest(MaintenanceRequest r)
+    {
+        // Clone object
+        Selected = new MaintenanceRequest
+        {
+            Id = r.Id,
+            Title = r.Title,
+            Description = r.Description,
+            StartDate = r.StartDate,
+            EndDate = r.EndDate,
+            BuildingId = r.BuildingId,
+            RoomId = r.RoomId,
+            Status = r.Status,
+            IsRoomAffected = r.IsRoomAffected,
+            CreatedBy = r.CreatedBy,
+            CreatedAt = r.CreatedAt,
+            RequestedBy = r.RequestedBy,
+            VendorId = r.VendorId
+        };
+        ModalTitle = $"Edit Request: {r.Title}";
+        ShowModal = true;
+    }
+
+    private async Task SaveRequest()
+    {
+        bool isNew = Selected.Id == 0;
+        
+        Selected.UpdatedAt = DateTime.UtcNow;
+
+        // Validasi dasar: BuildingId harus diisi
+        if (Selected.BuildingId == 0)
+        {
+            await ToastService.ShowWarning("Please select a Building.");
+            return;
+        }
+        
+        // 1. Simpan Permintaan
+        if (isNew)
+            await MaintenanceService.AddAsync(Selected);
+        else
+            await MaintenanceService.UpdateAsync(Selected);
+
+        // 2. Update Status IsAvailable (Dampak)
+        if (Selected.IsRoomAffected)
+        {
+            bool isAvailable = Selected.Status == "Completed"; // Hanya set true jika Complete
+            
+            if (Selected.RoomId.HasValue && Selected.RoomId.Value != 0)
+            {
+                // Update Ruangan spesifik
+                await UpdateRoomAvailability(Selected.RoomId.Value, !isAvailable); // set to !isAvailable (false jika Pending/Inprogress)
+            }
+            else
+            {
+                // Update SEMUA Ruangan di Gedung tersebut
+                foreach (var room in AllRooms.Where(r => r.BuildingId == Selected.BuildingId))
+                {
+                     await UpdateRoomAvailability(room.Id, !isAvailable);
+                }
+                // Jika perlu, update properti IsActive/IsAvailable di Building juga
+                // await BuildingService.UpdateAvailability(Selected.BuildingId, !isAvailable); 
+            }
+        }
+        // Jika IsRoomAffected di-uncheck, set status kembali ke true (jika sebelumnya false)
+        else if (!isNew)
+        {
+            await RevertAffectedStatus(Selected.BuildingId, Selected.RoomId);
+        }
+
+    await ToastService.ShowSuccess($"Request '{(isNew ? Selected.Title : "Data")}' successfully {(isNew ? "created" : "updated")}.");
+        
+        ShowModal = false;
+        await LoadRequests();
+    }
+    
+    // Helper function untuk update Room.IsAvailable (Asumsi ada di IRoomRepository)
+    private async Task UpdateRoomAvailability(int roomId, bool isAvailable)
+    {
+        // Note: Ini membutuhkan RoomRepository.UpdateAvailability(id, bool)
+        // atau RoomService.GetById, ubah IsAvailable, lalu RoomService.Update.
+        var roomToUpdate = await RoomService.GetByIdAsync(roomId);
+        if (roomToUpdate != null)
+        {
+            roomToUpdate.IsAvailable = isAvailable;
+            await RoomService.UpdateAsync(roomToUpdate);
+        }
+    }
+
+    private async Task RevertAffectedStatus(int buildingId, int? roomId)
+    {
+        if (roomId.HasValue && roomId.Value != 0)
+        {
+            // Revert Ruangan spesifik
+            var roomToUpdate = await RoomService.GetByIdAsync(roomId.Value);
+            if (roomToUpdate != null)
+            {
+                roomToUpdate.IsAvailable = true;
+                await RoomService.UpdateAsync(roomToUpdate);
+            }
+        }
+        else
+        {
+            // Revert SEMUA Ruangan di Gedung tersebut
+            foreach (var room in AllRooms.Where(r => r.BuildingId == buildingId))
+            {
+                 var roomToUpdate = await RoomService.GetByIdAsync(room.Id);
+                 if (roomToUpdate != null)
+                 {
+                    roomToUpdate.IsAvailable = true;
+                    await RoomService.UpdateAsync(roomToUpdate);
+                 }
+            }
+        }
+    }
+
+    // --- DELETE METHODS ---
+
+    private async Task DeleteConfirmed()
+    {
+        if (RequestIdToDelete == 0) return; 
+        
+        // Asumsi DeleteAsync mengembalikan bool sukses/gagal
+        var success = await MaintenanceService.DeleteAsync(RequestIdToDelete);
+        
+        if(success)
+        {
+            await LoadRequests();
+            await ToastService.ShowInfo("Maintenance Request successfully deleted!");
+        }
+        else
+        {
+            await ToastService.ShowWarning("Failed to delete the request.");
+        }
+        
+        ShowConfirmModal = false;
+    }
+
+    private void CancelDelete()
+    {
+        ShowConfirmModal = false;
+    }
+    
+    private void ConfirmDelete(int id, string title)
+    {
+        RequestIdToDelete = id;
+        ConfirmMessage = new MarkupString(
+        $"Are you sure you want to delete the request for <b>\"{title}\"</b>? This action cannot be undone."
+        );
+        ShowConfirmModal = true;
+    }
+}
+    @* --- ADD/EDIT MODAL --- *@
+    @if (ShowModal)
+    {
+        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-out">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl relative animate-zoom-in">
+                <div class="border-b px-6 py-4 flex justify-between items-center">
+                <div class="absolute -right-20 -top-20 opacity-10 pointer-events-none">
+                    <img src="/assets/images/mock.png" class="w-72 h-72 object-cover" alt="watermark" />
+                </div>
+                    <h2 class="text-2xl font-bold text-gray-800">@ModalTitle</h2>
+                    <button class="text-gray-400 hover:text-gray-600" @onclick="() => ShowModal = false">
+                        <i class="fas fa-times fa-lg"></i>
+                    </button>
+                </div>
+                <EditForm Model="Selected" OnValidSubmit="SaveRequest">
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-700">
+                        <div class="space-y-4">
+                            <label>Maintenence Name:</label>
+                            <InputText class="w-full border rounded-lg px-3 py-2" @bind-Value="Selected.Title" placeholder="Title" />
+                            <label>Description:</label>
+                            <InputTextArea class="w-full border rounded-lg px-3 py-2" @bind-Value="Selected.Description" placeholder="Description" />
+                            <label>Status:</label>
+                            <InputSelect class="w-full border rounded-lg px-3 py-2" @bind-Value="Selected.Status">
+                                @foreach (var status in StatusOptions)
+                                {
+                                    <option value="@status">@status</option>
+                                }
+                            </InputSelect>
+                            <label>Vendor:</label>
+                            <InputSelect class="w-full border rounded-lg px-3 py-2" @bind-Value="Selected.VendorId">
+                                <option value="">Select Vendor</option>
+                                @foreach (var v in Vendors)
+                                {
+                                    <option value="@v.Id">@v.Name</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="space-y-4">
+                            <label>Building:</label>
+                            <InputSelect class="w-full border rounded-lg px-3 py-2" @bind-Value="Selected.BuildingId" @onchange="OnBuildingChange">
+                                <option value="">Select Building</option>
+                                @foreach (var b in Buildings)
+                                {
+                                    <option value="@b.Id">@b.Name</option>
+                                }
+                            </InputSelect>
+                            <label>Room:</label>
+                            <InputSelect class="w-full border rounded-lg px-3 py-2" @bind-Value="Selected.RoomId">
+                                <option value="">Select Room</option>
+                                @foreach (var room in AvailableRooms)
+                                {
+                                    <option value="@room.Id">@room.RoomNo - @room.Name</option>
+                                }
+                            </InputSelect>
+                            <label>Start Date:</label>
+                            <InputDate class="w-full border rounded-lg px-3 py-2" @bind-Value="Selected.StartDate" />
+                            <label>End Date:</label>
+                            <InputDate class="w-full border rounded-lg px-3 py-2" @bind-Value="Selected.EndDate" />
+                            <label><InputCheckbox @bind-Value="Selected.IsRoomAffected" /> Block Room/Building</label>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end space-x-3 px-6 pb-6">
+                        <button type="button" class="bg-red-600 hover:bg-red-700 text-white font-medium px-5 py-2 rounded-lg" @onclick="() => ShowModal = false"><i class="fas fa-ban"></i> Cancel</button>
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2 rounded-lg"><i class="fas fa-save"></i> Save Maintenance Request</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }

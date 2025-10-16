@@ -1,0 +1,199 @@
+@page "/alsus"
+@using MyApp.Core.Entities
+@using MyApp.Core.Interfaces
+@inject IAlsusRepository AlsusService
+@inject ToastService ToastService
+
+<PageTitle>Alsus</PageTitle>
+
+<div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-3xl font-extrabold text-gray-800">Alsus</h2>
+            <p class="text-gray-500">Manage alsus with document and photo.</p>
+        </div>
+        <div>
+            <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg" @onclick="OpenNew">New Alsus</button>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto rounded-xl shadow-md border border-gray-200">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gradient-to-b from-blue-700 to-black">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Code</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Available</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                @foreach (var w in Alsuses)
+                {
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">@w.Name</td>
+                        <td class="px-6 py-4">@w.Code</td>
+                        <td class="px-6 py-4">@(w.IsAvailable ? "Yes" : "No")</td>
+                        <td class="px-6 py-4 text-right">
+                            <button class="text-indigo-600 hover:text-indigo-900 p-2 rounded-lg hover:bg-indigo-100" @onclick="() => Edit(w)">Edit</button>
+                            <button class="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-100" @onclick="() => Delete(w.Id)">Delete</button>
+                            <button class="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-100" @onclick="() => ShowDetail(w)">Detail</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (ShowModal && Selected != null)
+    {
+        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-6 overflow-hidden">
+                <div class="border-b px-6 py-4 flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">Alsus Detail</h2>
+                    <button class="text-gray-400 hover:text-gray-600" @onclick="() => ShowModal = false">Close</button>
+                </div>
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <p><strong>Name:</strong> @Selected.Name</p>
+                        <p><strong>Code:</strong> @Selected.Code</p>
+                        <p><strong>Description:</strong> @Selected.Description</p>
+                        <p><strong>Available:</strong> @(Selected.IsAvailable ? "Yes" : "No")</p>
+                    </div>
+                    <div>
+                        <p><strong>Document:</strong></p>
+                        @if (Selected.DocumentData != null)
+                        {
+                            <a class="text-blue-600" href="@($"/api/files/alsus/{Selected.Id}/document")">Download Document</a>
+                        }
+                        <p><strong>Photo:</strong></p>
+                        @if (Selected.PhotoData != null)
+                        {
+                            <img src="@($"data:{Selected.PhotoContentType};base64,{Convert.ToBase64String(Selected.PhotoData)}")" class="max-w-full h-48 object-contain" />
+                        }
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button class="bg-gray-700 text-white px-5 py-2 rounded" @onclick="() => ShowModal = false">Close</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (ShowEditModal)
+    {
+        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 overflow-hidden">
+                <div class="border-b px-6 py-4 flex justify-between items-center">
+                    <h2 class="text-xl font-bold">@((Selected.Id == 0) ? "New Alsus" : "Edit Alsus")</h2>
+                    <button class="text-gray-400 hover:text-gray-600" @onclick="() => CloseEdit()">Close</button>
+                </div>
+                <EditForm Model="Selected" OnValidSubmit="Save">
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm text-gray-600">Name</label>
+                            <InputText class="w-full border rounded px-3 py-2" @bind-Value="Selected.Name" />
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-600">Code</label>
+                            <InputText class="w-full border rounded px-3 py-2" @bind-Value="Selected.Code" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="text-sm text-gray-600">Description</label>
+                            <InputTextArea class="w-full border rounded px-3 py-2" @bind-Value="Selected.Description" />
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-600">Document</label>
+                            <InputFile OnChange="HandleDocument" />
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-600">Photo</label>
+                            <InputFile OnChange="HandlePhoto" />
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end">
+                        <button type="button" class="bg-gray-200 px-4 py-2 rounded mr-2" @onclick="() => CloseEdit()">Cancel</button>
+                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Save</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Alsus> Alsuses = new();
+    private Alsus Selected = new();
+    private bool ShowModal = false;
+    private bool ShowEditModal = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Alsuses = await AlsusService.GetAllAsync();
+    }
+
+    private void OpenNew()
+    {
+        Selected = new Alsus();
+        ShowEditModal = true;
+    }
+
+    private async Task Save()
+    {
+        Selected.UpdatedAt = DateTime.UtcNow;
+        if (Selected.Id == 0)
+        {
+            Selected.CreatedAt = DateTime.UtcNow;
+            await AlsusService.AddAsync(Selected);
+            await ToastService.ShowSuccess("Alsus created.");
+        }
+        else
+        {
+            await AlsusService.UpdateAsync(Selected);
+            await ToastService.ShowSuccess("Alsus updated.");
+        }
+        ShowEditModal = false;
+        Alsuses = await AlsusService.GetAllAsync();
+    }
+
+    private async Task Edit(Alsus w)
+    {
+        Selected = w;
+        ShowEditModal = true;
+    }
+
+    private async Task Delete(int id)
+    {
+        var ok = await AlsusService.DeleteAsync(id);
+        if (ok) await ToastService.ShowSuccess("Deleted"); else await ToastService.ShowWarning("Delete failed");
+        Alsuses = await AlsusService.GetAllAsync();
+    }
+
+    private void ShowDetail(Alsus w)
+    {
+        Selected = w;
+        ShowModal = true;
+    }
+
+    private async Task HandleDocument(InputFileChangeEventArgs e)
+    {
+        var f = e.File;
+        using var ms = new MemoryStream();
+        await f.OpenReadStream().CopyToAsync(ms);
+        Selected.DocumentName = f.Name;
+        Selected.DocumentContentType = f.ContentType;
+        Selected.DocumentData = ms.ToArray();
+    }
+
+    private async Task HandlePhoto(InputFileChangeEventArgs e)
+    {
+        var f = e.File;
+        using var ms = new MemoryStream();
+        await f.OpenReadStream().CopyToAsync(ms);
+        Selected.PhotoName = f.Name;
+        Selected.PhotoContentType = f.ContentType;
+        Selected.PhotoData = ms.ToArray();
+    }
+
+    private void CloseEdit() { ShowEditModal = false; }
+}

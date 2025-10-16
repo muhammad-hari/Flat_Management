@@ -1,0 +1,26 @@
+@page "/auth"
+@attribute [Authorize]
+@inject AuthenticationStateProvider AuthStateProvider
+
+<h1 class="text-2xl font-bold mb-4">Dashboard</h1>
+
+<p>Hello, @username!</p>
+
+@code {
+    private string username = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            username = user.Identity.Name;
+        }
+        else
+        {
+            username = "Guest";
+        }
+    }
+}

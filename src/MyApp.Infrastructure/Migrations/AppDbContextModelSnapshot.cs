@@ -22,6 +22,61 @@ namespace MyApp.Infrastructure.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("MyApp.Core.Entities.Alsus", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("DocumentContentType")
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("DocumentData")
+                        .HasColumnType("longblob");
+
+                    b.Property<string>("DocumentName")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("PhotoContentType")
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("PhotoData")
+                        .HasColumnType("longblob");
+
+                    b.Property<string>("PhotoName")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Alsuses");
+                });
+
             modelBuilder.Entity("MyApp.Core.Entities.Building", b =>
                 {
                     b.Property<int>("Id")
@@ -167,6 +222,262 @@ namespace MyApp.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Files");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.Inventory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BarcodeToGenerate")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("DocumentContentType")
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("DocumentData")
+                        .HasColumnType("longblob");
+
+                    b.Property<string>("DocumentName")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("GeneratedBarcodeValue")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("InventoryTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("PhotoData")
+                        .HasColumnType("longblob");
+
+                    b.Property<int?>("RepositoryId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InventoryTypeId");
+
+                    b.HasIndex("RepositoryId");
+
+                    b.ToTable("Inventories");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.InventoryHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("BorrowerName")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Code")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("InventoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ItemName")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("PerformedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InventoryId");
+
+                    b.ToTable("InventoryHistories");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.InventoryRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("InventoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RequestedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InventoryId");
+
+                    b.ToTable("InventoryRequests");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.InventoryType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Details")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("TypeName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("InventoryTypes");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.MaintenanceRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BuildingId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsRoomAffected")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("RequestedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("RoomId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("VendorId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BuildingId");
+
+                    b.HasIndex("RoomId");
+
+                    b.HasIndex("VendorId");
+
+                    b.ToTable("MaintenanceRequests");
                 });
 
             modelBuilder.Entity("MyApp.Core.Entities.Occupant", b =>
@@ -341,6 +652,40 @@ namespace MyApp.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Ranks");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.Repository", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Details")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Repositories");
                 });
 
             modelBuilder.Entity("MyApp.Core.Entities.Role", b =>
@@ -570,19 +915,12 @@ namespace MyApp.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasColumnType("longtext");
-
-                    b.Property<DateOnly>("DateOfBirth")
-                        .HasColumnType("date");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -591,24 +929,18 @@ namespace MyApp.Infrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<string>("NRP")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                    b.Property<bool>("IsBlocked")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Phone")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
                     b.Property<byte[]>("PhotoData")
                         .HasColumnType("longblob");
-
-                    b.Property<int?>("PositionId")
-                        .IsRequired()
-                        .HasColumnType("int");
 
                     b.Property<int?>("RoleId")
                         .IsRequired()
@@ -621,17 +953,9 @@ namespace MyApp.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int?>("UserTypeId")
-                        .IsRequired()
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("PositionId");
-
                     b.HasIndex("RoleId");
-
-                    b.HasIndex("UserTypeId");
 
                     b.ToTable("Users");
                 });
@@ -668,6 +992,65 @@ namespace MyApp.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("UserTypes");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.Vendor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("BusinnesType")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Details")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Director")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("DocumentContentType")
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("DocumentData")
+                        .HasColumnType("longblob");
+
+                    b.Property<string>("DocumentName")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("PhotoData")
+                        .HasColumnType("longblob");
+
+                    b.Property<string>("SecondPhone")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Vendors");
                 });
 
             modelBuilder.Entity("MyApp.Core.Entities.Visitor", b =>
@@ -745,6 +1128,61 @@ namespace MyApp.Infrastructure.Migrations
                     b.ToTable("Visitors");
                 });
 
+            modelBuilder.Entity("MyApp.Core.Entities.Weapon", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("DocumentContentType")
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("DocumentData")
+                        .HasColumnType("longblob");
+
+                    b.Property<string>("DocumentName")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("PhotoContentType")
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("PhotoData")
+                        .HasColumnType("longblob");
+
+                    b.Property<string>("PhotoName")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Weapons");
+                });
+
             modelBuilder.Entity("MyApp.Core.Entities.Employee", b =>
                 {
                     b.HasOne("MyApp.Core.Entities.Position", "Position")
@@ -762,6 +1200,64 @@ namespace MyApp.Infrastructure.Migrations
                     b.Navigation("Position");
 
                     b.Navigation("Rank");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.Inventory", b =>
+                {
+                    b.HasOne("MyApp.Core.Entities.InventoryType", "InventoryType")
+                        .WithMany()
+                        .HasForeignKey("InventoryTypeId");
+
+                    b.HasOne("MyApp.Core.Entities.Repository", "Repository")
+                        .WithMany()
+                        .HasForeignKey("RepositoryId");
+
+                    b.Navigation("InventoryType");
+
+                    b.Navigation("Repository");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.InventoryHistory", b =>
+                {
+                    b.HasOne("MyApp.Core.Entities.Inventory", "Inventory")
+                        .WithMany()
+                        .HasForeignKey("InventoryId");
+
+                    b.Navigation("Inventory");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.InventoryRequest", b =>
+                {
+                    b.HasOne("MyApp.Core.Entities.Inventory", "Inventory")
+                        .WithMany()
+                        .HasForeignKey("InventoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Inventory");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.MaintenanceRequest", b =>
+                {
+                    b.HasOne("MyApp.Core.Entities.Building", "Building")
+                        .WithMany()
+                        .HasForeignKey("BuildingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MyApp.Core.Entities.Room", "Room")
+                        .WithMany()
+                        .HasForeignKey("RoomId");
+
+                    b.HasOne("MyApp.Core.Entities.Vendor", "Vendor")
+                        .WithMany()
+                        .HasForeignKey("VendorId");
+
+                    b.Navigation("Building");
+
+                    b.Navigation("Room");
+
+                    b.Navigation("Vendor");
                 });
 
             modelBuilder.Entity("MyApp.Core.Entities.Occupant", b =>
@@ -839,29 +1335,13 @@ namespace MyApp.Infrastructure.Migrations
 
             modelBuilder.Entity("MyApp.Core.Entities.User", b =>
                 {
-                    b.HasOne("MyApp.Core.Entities.Position", "Position")
-                        .WithMany()
-                        .HasForeignKey("PositionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("MyApp.Core.Entities.Role", "Role")
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MyApp.Core.Entities.UserType", "UserType")
-                        .WithMany()
-                        .HasForeignKey("UserTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Position");
-
                     b.Navigation("Role");
-
-                    b.Navigation("UserType");
                 });
 
             modelBuilder.Entity("MyApp.Core.Entities.Visitor", b =>

@@ -1,92 +1,217 @@
 ﻿@page "/"
-@page "/dashboard"
-@using System.Security.Claims
-@inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
-@inject NavigationManager Navigation
-@inject IHttpContextAccessor HttpContextAccessor
+@* @attribute [Authorize] *@
+@* @inject AuthenticationStateProvider AuthStateProvider *@
 
-@if (!IsAuthorized)
-{
-    <p>Checking access...</p>
-}
-else
-{
-    <div class="bg-white rounded-lg shadow-sm p-6">
-        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Welcome to Flat Management System</h2>
-        <p class="text-gray-600 mb-6">
-            Select an option from the sidebar to get started. The sidebar features colorful icons on hover
-            and includes a Master Data submenu with Position management.
-        </p>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
-                <div class="text-green-600 mb-2">
-                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clip-rule="evenodd" />
-                    </svg>
-                </div>
-                <h3 class="font-semibold text-gray-800 mb-2">Dashboard Overview</h3>
-                <p class="text-gray-600 text-sm">Monitor all building activities and get real-time insights.</p>
-            </div>
-            <!-- user management & security sections sama seperti sebelumnya -->
-        </div>
-
-        <div class="mt-8 p-4 bg-gray-50 rounded-lg">
-            <h4 class="font-semibold text-gray-800 mb-2">Features:</h4>
-            <ul class="text-gray-600 text-sm space-y-1">
-                <li>• Hover over sidebar items to see colorful icons</li>
-                <li>• Click on "Master Data" to expand and see "Position" submenu</li>
-                <li>• Responsive design with smooth transitions</li>
-                <li>• Organized navigation structure</li>
-            </ul>
-        </div>
-    </div>
-}
+@using System.Collections.Generic
+@using System.Linq
+@using System.Threading.Tasks
 
 @code {
-    private bool IsAuthorized = false;
-    private bool isFirstRender = true;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    public class Notification
     {
-        if (isFirstRender)
+        public int Id { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string TargetRole { get; set; } = "All"; // Admin, Manager, All
+        public DateTime Date { get; set; } = DateTime.Now;
+        public bool IsRead { get; set; }
+        public string Type { get; set; } = "Info"; // Success, Warning, Danger, Info
+    }
+
+    public class SummaryCard
+    {
+        public string Title { get; set; } = string.Empty;
+        public int Value { get; set; }
+        public string ColorClass { get; set; } = "bg-blue-600";
+        public string Icon { get; set; } = "fas fa-users";
+        public string Link { get; set; } = string.Empty;
+    }
+
+    private string CurrentUserRole = "Admin"; // Ubah ini untuk simulasi role: "Admin", "Manager"
+    private List<Notification> UserNotifications = new();
+    private List<SummaryCard> Cards = new();
+
+    protected override void OnInitialized()
+    {
+        // Data Dummy untuk Kartu Ringkasan
+        Cards = new List<SummaryCard>
+{
+new SummaryCard { Title = "Total Occupants", Value = 65, ColorClass = "bg-blue-600", Icon = "fas fa-house-user",
+Link="/occupants" },
+new SummaryCard { Title = "Available Room", Value = 15, ColorClass = "bg-green-600", Icon = "fas fa-door-open",
+Link="/rooms" },
+new SummaryCard { Title = "Maintenence Request", Value = 7, ColorClass = "bg-yellow-600", Icon = "fas fa-tools",
+Link="/maintenance" },
+new SummaryCard { Title = "Visitors Today", Value = 14, ColorClass = "bg-red-600", Icon = "fas fa-sign-in-alt",
+Link="/visitors" }
+};
+
+        // Data Dummy Notifikasi
+        var allNotifs = new List<Notification>
+{
+new Notification { Id = 1, Message = "Pengunjung baru di Gedung A, Kamar 101.", TargetRole = "Admin", IsRead = false,
+Type = "Info" },
+new Notification { Id = 2, Message = "Permintaan pindah dari Budi telah disetujui.", TargetRole = "Manager", IsRead =
+false, Type = "Success" },
+new Notification { Id = 3, Message = "Perlu perpanjangan masa hunian untuk 5 Occupant.", TargetRole = "Manager", IsRead
+= false, Type = "Warning" },
+new Notification { Id = 4, Message = "Maintenance rutin sistem akan dilakukan malam ini.", TargetRole = "All", IsRead =
+false, Type = "Info" },
+new Notification { Id = 5, Message = "Kapasitas Gedung C mencapai 90%.", TargetRole = "Admin", IsRead = false, Type =
+"Danger" }
+};
+
+        // Filter notifikasi sesuai role
+        UserNotifications = allNotifs
+        .Where(n => n.TargetRole == "All" || n.TargetRole == CurrentUserRole)
+        .OrderByDescending(n => n.Date)
+        .ToList();
+    }
+
+    private void MarkAsRead(int id)
+    {
+        var notification = UserNotifications.FirstOrDefault(n => n.Id == id);
+        if (notification != null)
         {
-            isFirstRender = false;
-
-            // cek device
-            var userAgent = HttpContextAccessor.HttpContext?.Request.Headers["User-Agent"].ToString() ?? "";
-            if (IsMobile(userAgent))
-            {
-                Navigation.NavigateTo("/MobileNotAllowed");
-                return;
-            }
-
-            // cek role admin
-            var claimsResult = await SessionStorage.GetAsync<Dictionary<string, string>>("claims");
-            var claimsDict = claimsResult.Value;
-            Console.WriteLine("claims :" + claimsDict);
-            if (claimsDict != null)
-            {
-                Console.WriteLine("claims: " + System.Text.Json.JsonSerializer.Serialize(claimsDict));
-            }
-
-            if (claimsDict == null || !claimsDict.TryGetValue(ClaimTypes.Role, out var role) || role != "admin")
-            {
-                Navigation.NavigateTo("/AccessDenied");
-                return;
-            }
-
-            IsAuthorized = true;
+            notification.IsRead = true;
             StateHasChanged();
+            // TODO: Tambahkan logika pembaruan di database (NotificationService.MarkAsRead(id))
         }
     }
+}
 
-    private bool IsMobile(string userAgent)
+@* --- TAMPILAN DASHBOARD --- *@
+<div class="p-6 space-y-8">
+
+    <div class="bg-gradient-to-r from-red-800 to-black rounded-xl shadow-lg p-6 text-white">
+        <h1 class="text-3xl font-bold">Hello , @CurrentUserRole!</h1>
+        <p class="text-gray-300 mt-1">Quick Overview Notification Dashboard</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        @foreach (var card in Cards)
+        {
+            <a href="@card.Link" class="transform transition duration-300 hover:scale-[1.02]">
+                <div class="p-5 rounded-lg shadow-xl @card.ColorClass text-white flex items-center justify-between h-32">
+                    <div>
+                        <p class="text-sm font-medium opacity-80">@card.Title</p>
+                        <p class="text-4xl font-extrabold mt-1">@card.Value</p>
+                    </div>
+                    <i class="@card.Icon text-4xl opacity-50"></i>
+                </div>
+            </a>
+        }
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-lg p-6 space-y-4">
+            <h2 class="text-xl font-semibold text-gray-800 flex justify-between items-center">
+                New Notification (Role: @CurrentUserRole)
+                <span class="text-sm font-normal text-blue-600 cursor-pointer">See All</span>
+            </h2>
+
+            <div class="space-y-2">
+                @if (!UserNotifications.Any())
+                {
+                    <p class="text-gray-500 italic p-4 text-center">No Notification</p>
+                }
+                @foreach (var notif in UserNotifications.Take(5)) // Hanya tampilkan 5 notif terbaru
+                {
+                    var isNew = !notif.IsRead;
+                    var bgColor = isNew ? "bg-blue-50/70 hover:bg-blue-100" : "bg-gray-50 hover:bg-gray-100";
+                    var borderColor = notif.Type switch
+                    {
+                        "Success" => "border-l-green-500",
+                        "Warning" => "border-l-yellow-500",
+                        "Danger" => "border-l-red-500",
+                        _ => "border-l-blue-500"
+                    };
+
+                    <div class="flex items-center p-4 rounded-lg border-l-4 @borderColor @bgColor transition duration-200 cursor-pointer"
+                        @onclick="() => MarkAsRead(notif.Id)">
+
+                        <div class="flex-grow">
+                            <p class="font-medium @(isNew ? "text-gray-900" : "text-gray-600")">@notif.Message</p>
+                            <p class="text-xs text-gray-400 mt-0.5">@notif.Date.ToString("dd MMM yyyy, HH:mm")</p>
+                        </div>
+
+                        <span
+                            class="@(isNew ? "bg-blue-500" : "bg-gray-300") w-2 h-2 rounded-full ml-4 flex-shrink-0"></span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Pengunjung (7 Hari)</h2>
+            <div class="h-48 flex items-center justify-center">
+                <svg width="100%" height="100%" viewBox="0 0 100 100">
+                    <polyline fill="none" stroke="#1f6feb" stroke-width="2"
+                        points="5,80 20,70 35,85 50,60 65,75 80,50 95,30" />
+                    <text x="50" y="50" text-anchor="middle" font-size="6" fill="#1f6feb">Quick Visitor Trend</text>
+                </svg>
+            </div>
+            <p class="text-sm text-gray-500 text-center mt-2">Tren kedatangan 7 hari terakhir.</p>
+        </div>
+
+    </div>
+
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Aktivitas Terbaru</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Kamar/Gedung</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waktu
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Jono</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">12 (Gedung B)</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600">Occupant</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">30 Sep 2025</td>
+                        <td class="px-6 py-4 whitespace-nowrap"><span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Aktif</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Santi (Pengunjung)
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Kamar 101</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">Visitor</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1 Okt 2025, 10:30</td>
+                        <td class="px-6 py-4 whitespace-nowrap"><span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Check-In</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    @* private string username = "";
+
+    protected override async Task OnInitializedAsync()
     {
-        string[] mobileDevices = new[] { "iphone", "android", "ipad", "mobile", "blackberry", "windows phone" };
-        userAgent = userAgent.ToLower();
-        return mobileDevices.Any(d => userAgent.Contains(d));
-    }
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = state.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            username = user.Identity.Name;
+        }
+    } *@
 }
