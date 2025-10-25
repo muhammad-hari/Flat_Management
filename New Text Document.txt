@@ -250,3 +250,5 @@ if (!app.Environment.IsDevelopment())
 
 docker exec -it <new_app-web-1> printenv | grep ASPNETCORE
 docker exec -it <web-1> printenv | grep ASPNETCORE
+
+apa aja yamh akama [asasklaksalkslas ]

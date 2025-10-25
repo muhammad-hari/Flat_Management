@@ -3,32 +3,12 @@ version: "3.9"
 services:
   web:
     build: .
-    depends_on:
-      db:
-        condition: service_healthy
     ports:
       - "5050:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:8080
-      - ConnectionStrings__DefaultConnection=server=db;database=FMS_DB;user=root;password=Passw0rd
-
-  db:
-    image: mysql:8.0
-    container_name: flat_management_db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: Passw0rd
-      MYSQL_DATABASE: FMS_DB
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    ports:
-      - "3306:3306"
-    volumes:
-      - db_data:/var/lib/mysql
-
-volumes:
-  db_data:
+      - DB_HOST=host.docker.internal
+      - DB_PORT=3306
+      - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+    restart: unless-stopped

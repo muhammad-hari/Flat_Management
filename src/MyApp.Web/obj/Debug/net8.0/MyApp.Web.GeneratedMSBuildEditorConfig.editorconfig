@@ -9,217 +9,217 @@ build_property.EnforceExtendedAnalyzerRules =
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = MyApp.Web
 build_property.RootNamespace = MyApp.Web
-build_property.ProjectDir = D:\Projects\Densus88\new_app\src\MyApp.Web\
+build_property.ProjectDir = d:\Projects\Densus88\new_app\src\MyApp.Web\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = D:\Projects\Densus88\new_app\src\MyApp.Web
+build_property.MSBuildProjectDirectory = d:\Projects\Densus88\new_app\src\MyApp.Web
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/App.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/App.razor]
 build_metadata.AdditionalFiles.TargetPath = QXBwLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Account/Login.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Account/Login.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWNjb3VudFxMb2dpbi5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Alsus/AlsusPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Alsus/AlsusPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWxzdXNcQWxzdXNQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Auth.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Auth.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXV0aC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/AvatarHeader.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/AvatarHeader.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXZhdGFySGVhZGVyLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Building/MaintenenceRequestPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Building/MaintenenceRequestPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQnVpbGRpbmdcTWFpbnRlbmVuY2VSZXF1ZXN0UGFnZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Building/RoomPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Building/RoomPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQnVpbGRpbmdcUm9vbVBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Building/VendorPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Building/VendorPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQnVpbGRpbmdcVmVuZG9yUGFnZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Device/AccessControlPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Device/AccessControlPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRGV2aWNlXEFjY2Vzc0NvbnRyb2xQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Device/AccessControlSettingsModal.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Device/AccessControlSettingsModal.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRGV2aWNlXEFjY2Vzc0NvbnRyb2xTZXR0aW5nc01vZGFsLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Device/GatesAccess.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Device/GatesAccess.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRGV2aWNlXEdhdGVzQWNjZXNzLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Employee/EmployeePage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Employee/EmployeePage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRW1wbG95ZWVcRW1wbG95ZWVQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Helper.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Helper.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSGVscGVyLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Index.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Index.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW5kZXgucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Inventory/InventoryHistoryPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Inventory/InventoryHistoryPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW52ZW50b3J5XEludmVudG9yeUhpc3RvcnlQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Inventory/InventoryPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Inventory/InventoryPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW52ZW50b3J5XEludmVudG9yeVBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Inventory/RequestInventoryPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Inventory/RequestInventoryPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW52ZW50b3J5XFJlcXVlc3RJbnZlbnRvcnlQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/BuildingPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/BuildingPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcQnVpbGRpbmdQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/InventoryTypePage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/InventoryTypePage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcSW52ZW50b3J5VHlwZVBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/PositionPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/PositionPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcUG9zaXRpb25QYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/RankPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/RankPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcUmFua1BhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/RepositoryPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/RepositoryPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcUmVwb3NpdG9yeVBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/RolePage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/RolePage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcUm9sZVBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/RoomCategoryPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/RoomCategoryPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcUm9vbUNhdGVnb3J5UGFnZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/RoomConditionPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/RoomConditionPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcUm9vbUNvbmRpdGlvblBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/RoomStatusPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/RoomStatusPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcUm9vbVN0YXR1c1BhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/UserTypePage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Master-Data/UserTypePage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFzdGVyLURhdGFcVXNlclR5cGVQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Occupant/OccupantHistoriesPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Occupant/OccupantHistoriesPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcT2NjdXBhbnRcT2NjdXBhbnRIaXN0b3JpZXNQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Occupant/OccupantPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Occupant/OccupantPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcT2NjdXBhbnRcT2NjdXBhbnRQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Occupant/Report.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Occupant/Report.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcT2NjdXBhbnRcUmVwb3J0LnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Occupant/VisitorPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Occupant/VisitorPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcT2NjdXBhbnRcVmlzaXRvclBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/User/UserPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/User/UserPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcVXNlclxVc2VyUGFnZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Weapons/WeaponsPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Weapons/WeaponsPage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcV2VhcG9uc1xXZWFwb25zUGFnZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Shared/AuthLayout.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/AuthLayout.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXEF1dGhMYXlvdXQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Shared/Components/NotificationDropdown.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/Components/NotificationDropdown.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXENvbXBvbmVudHNcTm90aWZpY2F0aW9uRHJvcGRvd24ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Shared/Components/Sidebar.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/Components/Sidebar.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXENvbXBvbmVudHNcU2lkZWJhci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Shared/FeatureOnProgressPage.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/FeatureOnProgressPage.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXEZlYXR1cmVPblByb2dyZXNzUGFnZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Shared/Forbidden.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/Forbidden.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXEZvcmJpZGRlbi5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Shared/Icon.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/Icon.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXEljb24ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Shared/IdleScreen/IdleOverlay.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/IdleScreen/IdleOverlay.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXElkbGVTY3JlZW5cSWRsZU92ZXJsYXkucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Shared/MinimalLayout.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/MinimalLayout.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXE1pbmltYWxMYXlvdXQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Shared/MobileNotAllowed.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/MobileNotAllowed.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXE1vYmlsZU5vdEFsbG93ZWQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Shared/RedirectToFeatureOnProgress.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/RedirectToFeatureOnProgress.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXFJlZGlyZWN0VG9GZWF0dXJlT25Qcm9ncmVzcy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Shared/RedirectToLogin.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/RedirectToLogin.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXFJlZGlyZWN0VG9Mb2dpbi5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Shared/SurveyPrompt.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/SurveyPrompt.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXFN1cnZleVByb21wdC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Shared/ToastContainer.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/ToastContainer.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXFRvYXN0Q29udGFpbmVyLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/_Imports.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/_Imports.razor]
 build_metadata.AdditionalFiles.TargetPath = X0ltcG9ydHMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Shared/MainLayout.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/MainLayout.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXE1haW5MYXlvdXQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-4myg44hc2b
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Shared/NavMenu.razor]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Shared/NavMenu.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXE5hdk1lbnUucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-kv1as40s91
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Error.cshtml]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRXJyb3IuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/Projects/Densus88/new_app/src/MyApp.Web/Pages/_Host.cshtml]
+[d:/Projects/Densus88/new_app/src/MyApp.Web/Pages/_Host.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcX0hvc3QuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
