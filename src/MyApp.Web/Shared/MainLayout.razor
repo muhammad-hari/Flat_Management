@@ -23,15 +23,13 @@
     </div>
 
     <!-- Sidebar -->
-    <div class="@(isSidebarOpen ? "block" : "hidden") lg:block fixed inset-0 z-20 lg:relative lg:z-0">
+    <div class="@(isSidebarOpen ? "block" : "hidden") lg:block fixed inset-0 z-20">
         <div class="absolute inset-0 bg-black/50 lg:hidden" @onclick="ToggleSidebar"></div>
-        <div class="relative h-full lg:h-screen">
-            <Sidebar />
-        </div>
+        <Sidebar />
     </div>
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col min-h-screen">
+    <div class="flex-1 flex flex-col min-h-screen lg:ml-72">
         <!-- Desktop Top Bar -->
         <div class="hidden lg:flex items-center justify-end bg-white shadow px-6 py-3">
             <!-- Bell Icon -->
