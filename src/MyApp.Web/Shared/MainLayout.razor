@@ -43,11 +43,13 @@
 
         <!-- Body Content -->
         <div class="flex-1 p-4 lg:p-8 relative overflow-auto">
-            <div class="absolute inset-0 flex justify-center items-center pointer-events-none">
+            <div class="absolute inset-0 flex justify-center items-center pointer-events-none z-0">
                 <img src="assets/images/mock-polri.png" class="max-w-[40%] max-h-[40%] opacity-15" alt="watermark">
             </div>
-            <IdleOverlay />
-            @Body
+            <div class="relative z-20">
+                <IdleOverlay />
+                @Body
+            </div>
         </div>
     </div>
 </div>
