@@ -12,15 +12,24 @@ namespace MyApp.Infrastructure.Data
         {
             using var scope = serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
 
             try
             {
-                if (await context.Menus.AnyAsync())
+                // Check if menus already exist
+                var existingMenus = await context.Menus.AnyAsync();
+                if (existingMenus)
                 {
-                    Console.WriteLine("Menu already exists");
+                    Console.WriteLine("Menus already exist, checking permissions...");
+                    
+                    // Check if we need to seed permissions
+                    await SeedPermissionsAsync(context, roleManager);
                     return;
                 }
 
+                Console.WriteLine("Starting menu seeding...");
+
+                // Seed parent menus
                 var menus = new List<Menu>
                 {
                     new() { Code = "dashboard", Name = "Dashboard", IconName = "layout-dashboard", Color = "text-yellow-400", Url = "/dashboard", Order = 1 },
@@ -38,6 +47,7 @@ namespace MyApp.Infrastructure.Data
 
                 await context.Menus.AddRangeAsync(menus);
                 await context.SaveChangesAsync();
+                Console.WriteLine("Parent menus seeded successfully");
 
                 // Add submenus - Occupants Management
                 var occupantsParent = await context.Menus.FirstAsync(m => m.Code == "occupants-management");
@@ -46,7 +56,6 @@ namespace MyApp.Infrastructure.Data
                     new() { Code = "occupants", Name = "Occupants", IconName = "calendar", Color = "text-teal-400", Url = "/occupants", Order = 1, ParentId = occupantsParent.Id },
                     new() { Code = "history", Name = "Histories", IconName = "calendar", Color = "text-teal-400", Url = "/occupant-history", Order = 2, ParentId = occupantsParent.Id }
                 };
-
                 await context.Menus.AddRangeAsync(occupantsSubmenus);
 
                 // Add submenus - Visitors Management
@@ -56,7 +65,6 @@ namespace MyApp.Infrastructure.Data
                     new() { Code = "visitors", Name = "Visitors", IconName = "user-check", Color = "text-teal-400", Url = "/visitors", Order = 1, ParentId = visitorsParent.Id },
                     new() { Code = "visitor-analytics", Name = "Analytics", IconName = "calendar", Color = "text-teal-400", Url = "/visitor-analytics", Order = 2, ParentId = visitorsParent.Id }
                 };
-
                 await context.Menus.AddRangeAsync(visitorsSubmenus);
 
                 // Add submenus - Building Management
@@ -68,7 +76,6 @@ namespace MyApp.Infrastructure.Data
                     new() { Code = "maintenance-requests", Name = "Maintenance Requests", IconName = "clipboard-list", Color = "text-teal-400", Url = "/maintenance-requests", Order = 3, ParentId = buildingParent.Id },
                     new() { Code = "vendors", Name = "Vendors", IconName = "truck", Color = "text-teal-400", Url = "/vendors", Order = 4, ParentId = buildingParent.Id }
                 };
-
                 await context.Menus.AddRangeAsync(buildingSubmenus);
 
                 // Add submenus - Inventory Management
@@ -79,7 +86,6 @@ namespace MyApp.Infrastructure.Data
                     new() { Code = "inventory-checks", Name = "Request Item", IconName = "clipboard-list", Color = "text-teal-400", Url = "/inventory-checks", Order = 2, ParentId = inventoryParent.Id },
                     new() { Code = "inventory-reports", Name = "Histories", IconName = "clipboard-list", Color = "text-teal-400", Url = "/inventory-reports", Order = 3, ParentId = inventoryParent.Id }
                 };
-
                 await context.Menus.AddRangeAsync(inventorySubmenus);
 
                 // Add submenus - Master Data
@@ -95,42 +101,110 @@ namespace MyApp.Infrastructure.Data
                     new() { Code = "room-condition", Name = "Room Condition", IconName = "building", Color = "text-teal-400", Url = "/master-data/room-condition", Order = 7, ParentId = masterDataParent.Id },
                     new() { Code = "inventory-type", Name = "Inventory Type", IconName = "user-circle", Color = "text-teal-400", Url = "/master-data/inventory-type", Order = 8, ParentId = masterDataParent.Id }
                 };
-
                 await context.Menus.AddRangeAsync(masterDataSubmenus);
                 await context.SaveChangesAsync();
 
-                // Seed Admin permissions (full access to all menus)
-                var adminRole = await context.Set<IdentityRole<int>>()
-                    .FirstOrDefaultAsync(r => r.Name == "Admin");
-
-                if (adminRole != null)
-                {
-                    var allMenus = await context.Menus.ToListAsync();
-                    
-                    foreach (var menu in allMenus)
-                    {
-                        await context.MenuPermissions.AddAsync(new MenuPermission
-                        {
-                            MenuId = menu.Id,
-                            RoleId = adminRole.Id,
-                            CanView = true,
-                            CanCreate = true,
-                            CanUpdate = true,
-                            CanDelete = true
-                        });
-                    }
-
-                    await context.SaveChangesAsync();
-                }
-                else
-                {
-                    Console.WriteLine("Admin role not found, skipping permission seeding");
-                }
+                // Seed permissions for all roles
+                await SeedPermissionsAsync(context, roleManager);
 
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error during menu seeding");
+                throw;
+            }
+        }
+
+        private static async Task SeedPermissionsAsync(
+            AppDbContext context, 
+            RoleManager<IdentityRole<int>> roleManager)
+        {
+            try
+            {
+                // Get all menus
+                var allMenus = await context.Menus.ToListAsync();
+
+                // ===== SEED ADMIN PERMISSIONS (Full Access) =====
+                var adminRole = await roleManager.FindByNameAsync("Admin");
+                if (adminRole != null)
+                {
+                    
+                    // Check if Admin already has permissions
+                    var existingAdminPermissions = await context.MenuPermissions
+                        .Where(mp => mp.RoleId == adminRole.Id)
+                        .CountAsync();
+
+                    if (existingAdminPermissions == 0)
+                    {
+                        var adminPermissions = new List<MenuPermission>();
+                        foreach (var menu in allMenus)
+                        {
+                            adminPermissions.Add(new MenuPermission
+                            {
+                                MenuId = menu.Id,
+                                RoleId = adminRole.Id,
+                                CanView = true,
+                                CanCreate = true,
+                                CanUpdate = true,
+                                CanDelete = true
+                            });
+                        }
+
+                        await context.MenuPermissions.AddRangeAsync(adminPermissions);
+                        await context.SaveChangesAsync();
+                    }
+                    else
+                    {
+                    }
+                }
+                else
+                {
+                }
+
+                // ===== SEED MANAGER PERMISSIONS (All except Users) =====
+                var managerRole = await roleManager.FindByNameAsync("Manager");
+                if (managerRole != null)
+                {
+                    
+                    // Check if Manager already has permissions
+                    var existingManagerPermissions = await context.MenuPermissions
+                        .Where(mp => mp.RoleId == managerRole.Id)
+                        .CountAsync();
+
+                    if (existingManagerPermissions == 0)
+                    {
+                        var managerPermissions = new List<MenuPermission>();
+                        foreach (var menu in allMenus)
+                        {
+                            // Skip "users" menu for Manager
+                            if (menu.Code == "users")
+                            {
+                                continue;
+                            }
+
+                            managerPermissions.Add(new MenuPermission
+                            {
+                                MenuId = menu.Id,
+                                RoleId = managerRole.Id,
+                                CanView = true,
+                                CanCreate = true,
+                                CanUpdate = true,
+                                CanDelete = true
+                            });
+                        }
+
+                        await context.MenuPermissions.AddRangeAsync(managerPermissions);
+                        await context.SaveChangesAsync();
+                    }
+                    else
+                    {
+                    }
+                }
+                else
+                {
+                }
+            }
+            catch (Exception ex)
+            {
                 throw;
             }
         }

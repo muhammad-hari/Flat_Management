@@ -142,16 +142,19 @@ using (var scope = app.Services.CreateScope())
 
         context.Database.Migrate();
 
-        // --- Seed Role Admin ---
-        const string adminRoleName = "Admin";
-        var adminRoleExists = await roleManager.RoleExistsAsync(adminRoleName);
-        if (!adminRoleExists)
+        // --- Seed Roles ---
+        var rolesToSeed = new[] { "Admin", "Manager" };
+        foreach (var roleName in rolesToSeed)
         {
-            await roleManager.CreateAsync(new IdentityRole<int>(adminRoleName));
-            logger.LogInformation("Admin role created");
+            var roleExists = await roleManager.RoleExistsAsync(roleName);
+            if (!roleExists)
+            {
+                await roleManager.CreateAsync(new IdentityRole<int>(roleName));
+                logger.LogInformation($"{roleName} role created");
+            }
         }
 
-        // --- Seed User Admin ---
+        // --- Seed Admin User ---
         var adminUserName = config["AdminUser:UserName"] ?? throw new Exception("AdminUser:UserName not configured");
         var adminEmail = config["AdminUser:Email"] ?? throw new Exception("AdminUser:Email not configured");
         var adminPassword = config["AdminUser:Password"] ?? throw new Exception("AdminUser:Password not configured");
@@ -169,12 +172,39 @@ using (var scope = app.Services.CreateScope())
             var result = await userManager.CreateAsync(newUser, adminPassword);
             if (result.Succeeded)
             {
-                await userManager.AddToRoleAsync(newUser, adminRoleName);
+                await userManager.AddToRoleAsync(newUser, "Admin");
                 logger.LogInformation("Admin user created and assigned to Admin role");
             }
             else
             {
                 throw new Exception($"Failed to create admin user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            }
+        }
+
+        // --- Seed Manager User ---
+        var managerUserName = config["ManagerUser:UserName"] ?? "manager";
+        var managerEmail = config["ManagerUser:Email"] ?? "manager@flatmanagement.com";
+        var managerPassword = config["ManagerUser:Password"] ?? "Manager@123";
+
+        var managerUser = await userManager.FindByNameAsync(managerUserName);
+        if (managerUser == null)
+        {
+            var newManager = new ApplicationUser
+            {
+                UserName = managerUserName,
+                Email = managerEmail,
+                EmailConfirmed = true
+            };
+
+            var result = await userManager.CreateAsync(newManager, managerPassword);
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(newManager, "Manager");
+                logger.LogInformation("Manager user created and assigned to Manager role");
+            }
+            else
+            {
+                logger.LogWarning($"Failed to create manager user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
         }
 
