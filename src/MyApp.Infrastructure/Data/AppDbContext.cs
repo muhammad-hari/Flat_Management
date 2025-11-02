@@ -12,8 +12,6 @@ namespace MyApp.Infrastructure.Data
             : base(options) { }
 
         // Identity entities sudah otomatis dari IdentityDbContext
-        // AspNetUsers, AspNetRoles, AspNetUserClaims, AspNetUserRoles, AspNetRoleClaims, AspNetUserLogins, AspNetUserTokens
-
         public DbSet<FileUpload> Files { get; set; } = default!;
         public DbSet<Position> Positions { get; set; } = default!;
         public DbSet<Role> Roles { get; set; } = default!;
@@ -33,10 +31,14 @@ namespace MyApp.Infrastructure.Data
         public DbSet<InventoryType> InventoryTypes { get; set; } = default!;
         public DbSet<Repository> Repositories { get; set; } = default!;
         public DbSet<Inventory> Inventories { get; set; } = default!;
+        
+        // Menu Management
+        public DbSet<Menu> Menus { get; set; } = default!;
+        public DbSet<MenuPermission> MenuPermissions { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder); // Penting! untuk Identity configuration
+            base.OnModelCreating(modelBuilder);
 
             // Atur kolom binary agar bisa menampung file besar
             modelBuilder.Entity<Occupant>()
@@ -64,6 +66,35 @@ namespace MyApp.Infrastructure.Data
             modelBuilder.Entity<Visitor>().Property(v => v.Id).ValueGeneratedOnAdd();
             modelBuilder.Entity<Vendor>().Property(v => v.Id).ValueGeneratedOnAdd();
             modelBuilder.Entity<MaintenanceRequest>().Property(v => v.Id).ValueGeneratedOnAdd();
+
+            // Menu Configuration
+            modelBuilder.Entity<Menu>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                entity.Property(e => e.Code).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+                entity.HasIndex(e => e.Code).IsUnique();
+
+                entity.HasOne(e => e.Parent)
+                    .WithMany(e => e.Children)
+                    .HasForeignKey(e => e.ParentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // MenuPermission Configuration
+            modelBuilder.Entity<MenuPermission>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                
+                entity.HasOne(e => e.Menu)
+                    .WithMany(e => e.MenuPermissions)
+                    .HasForeignKey(e => e.MenuId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => new { e.MenuId, e.RoleId }).IsUnique();
+            });
         }
     }
 }

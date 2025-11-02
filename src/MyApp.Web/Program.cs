@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using MyApp.Core.Interfaces;
 using MyApp.Infrastructure;
 using MyApp.Infrastructure.Data;
 using MyApp.Infrastructure.Identity;
+using MyApp.Infrastructure.Services;
 using MyApp.Web.Authentication;
 using MyApp.Web.Data;
 using MyApp.Web.Helpers;
@@ -48,7 +50,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LogoutPath = "/logout";
     options.AccessDeniedPath = "/forbidden";
     options.Cookie.Name = "MyApp.Auth";
-    options.Cookie.HttpOnly = true;
+    options.Cookie.HttpOnly = false;
 
     if (builder.Environment.IsDevelopment())
     {
@@ -136,6 +138,7 @@ using (var scope = app.Services.CreateScope())
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole<int>>>();
         var config = services.GetRequiredService<IConfiguration>();
+        var logger = services.GetRequiredService<ILogger<Program>>();
 
         context.Database.Migrate();
 
@@ -145,6 +148,7 @@ using (var scope = app.Services.CreateScope())
         if (!adminRoleExists)
         {
             await roleManager.CreateAsync(new IdentityRole<int>(adminRoleName));
+            logger.LogInformation("Admin role created");
         }
 
         // --- Seed User Admin ---
@@ -166,12 +170,16 @@ using (var scope = app.Services.CreateScope())
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(newUser, adminRoleName);
+                logger.LogInformation("Admin user created and assigned to Admin role");
             }
             else
             {
                 throw new Exception($"Failed to create admin user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
         }
+
+        // --- Seed Menus ---
+        await MenuSeeder.SeedMenusAsync(services);
     }
     catch (Exception ex)
     {

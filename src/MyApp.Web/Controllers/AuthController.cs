@@ -40,7 +40,7 @@ namespace MyApp.Web.Controllers
                 if (string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.Password))
                 {
                     _logger.LogWarning("Login attempt with empty credentials");
-                    return BadRequest(new LoginResponse 
+                    return BadRequest(new MyApp.Core.Domain.LoginResponse 
                     { 
                         Success = false, 
                         Message = "Username and password are required" 
@@ -54,7 +54,7 @@ namespace MyApp.Web.Controllers
                 if (user == null)
                 {
                     _logger.LogWarning($"Login attempt with non-existent user: {request.UserName}");
-                    return Unauthorized(new LoginResponse 
+                    return Unauthorized(new MyApp.Core.Domain.LoginResponse 
                     { 
                         Success = false, 
                         Message = "Invalid username or password" 
@@ -65,7 +65,7 @@ namespace MyApp.Web.Controllers
                 if (!user.IsActive)
                 {
                     _logger.LogWarning($"Login attempt for inactive user: {user.UserName} (ID: {user.Id})");
-                    return Unauthorized(new LoginResponse 
+                    return Unauthorized(new MyApp.Core.Domain.LoginResponse 
                     { 
                         Success = false, 
                         Message = "User account is inactive. Please contact administrator." 
@@ -99,19 +99,24 @@ namespace MyApp.Web.Controllers
                     user.UpdatedAt = DateTime.UtcNow;
                     await _userManager.UpdateAsync(user);
 
-                    return Ok(new LoginResponse
+                    var roles = await _userManager.GetRolesAsync(user);
+
+                    return Ok(new MyApp.Core.Domain.LoginResponse
                     {
                         Success = true,
                         Message = "Login successful",
                         RedirectUrl = "/",
                         UserName = user.UserName,
-                        Email = user.Email
+                        Roles = roles.ToList(),
+                        Email = user.Email,
+                        UserId = user.Id
+
                     });
                 }
                 else if (result.IsLockedOut)
                 {
                     _logger.LogWarning($"User {user.UserName} account is locked out");
-                    return Unauthorized(new LoginResponse 
+                    return Unauthorized(new MyApp.Core.Domain.LoginResponse 
                     { 
                         Success = false, 
                         Message = "Account is locked due to multiple failed login attempts. Please try again later." 
@@ -120,7 +125,7 @@ namespace MyApp.Web.Controllers
                 else if (result.RequiresTwoFactor)
                 {
                     _logger.LogInformation($"User {user.UserName} requires two-factor authentication");
-                    return Ok(new LoginResponse 
+                    return Ok(new MyApp.Core.Domain.LoginResponse 
                     { 
                         Success = false, 
                         Message = "Two-factor authentication required",
@@ -130,7 +135,7 @@ namespace MyApp.Web.Controllers
                 else
                 {
                     _logger.LogWarning($"Failed login attempt for user {request.UserName} - Invalid password");
-                    return Unauthorized(new LoginResponse 
+                    return Unauthorized(new MyApp.Core.Domain.LoginResponse 
                     { 
                         Success = false, 
                         Message = "Invalid username or password" 
@@ -140,7 +145,7 @@ namespace MyApp.Web.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"❌ Login error for user {request.UserName}: {ex.Message}\nStackTrace: {ex.StackTrace}");
-                return StatusCode(500, new LoginResponse 
+                return StatusCode(500, new MyApp.Core.Domain.LoginResponse 
                 { 
                     Success = false, 
                     Message = "An error occurred during login. Please try again later." 
@@ -306,23 +311,5 @@ namespace MyApp.Web.Controllers
                 });
             }
         }
-    }
-
-    public class RegisterRequest
-    {
-        public string UserName { get; set; } = "";
-        public string Email { get; set; } = "";
-        public string Password { get; set; } = "";
-        public int RoleId { get; set; } = 0;
-    }
-
-    public class LoginResponse
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = "";
-        public string RedirectUrl { get; set; } = "/";
-        public string? UserName { get; set; }
-        public string? Email { get; set; }
-        public bool RequiresTwoFactor { get; set; }
     }
 }

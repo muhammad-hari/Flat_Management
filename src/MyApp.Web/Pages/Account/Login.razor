@@ -5,6 +5,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using MyApp.Core.Domain
 @using MyApp.Infrastructure.Identity
+@using MyApp.Shared.Models
 @using MyApp.Web.Authentication
 @using static System.Net.WebRequestMethods
 
@@ -134,7 +135,7 @@
         ErrorMessage = "";
         isLoading = true;
         StateHasChanged();
-        
+
         try
         {
             // Input validation
@@ -145,19 +146,16 @@
                 return;
             }
 
-            // Call Auth API endpoint
-            var loginRequest = new LoginModel
+            var response = await Http.PostAsJsonAsync("api/auth/login", new LoginRequest()
             {
                 UserName = loginModel.UserName,
                 Password = loginModel.Password,
                 RememberMe = loginModel.RememberMe
-            };
-
-            var response = await Http.PostAsJsonAsync("api/auth/login", loginRequest);
+            });
             
             if (response.IsSuccessStatusCode)
             {
-                var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
+                var loginResponse = await response.Content.ReadFromJsonAsync<MyApp.Core.Domain.LoginResponse>();
                 
                 if (loginResponse?.Success == true)
                 {
@@ -167,7 +165,10 @@
                         Username = loginResponse.UserName!,
                         Email = loginResponse.Email,
                         ExpiresAt = loginModel.RememberMe ? 
-                            DateTime.UtcNow.AddDays(1) : DateTime.UtcNow.AddHours(1)
+                            DateTime.UtcNow.AddDays(1) : DateTime.UtcNow.AddHours(3),
+                        Roles = loginResponse.Roles ?? new List<string>(),
+                        LoginTime = DateTime.UtcNow,
+                        UserId = loginResponse.UserId.ToString(),
                     };
 
                     // Update authentication state
@@ -183,7 +184,7 @@
             }
             else
             {
-                var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
+                var loginResponse = await response.Content.ReadFromJsonAsync<MyApp.Core.Domain.LoginResponse>();
                 ErrorMessage = loginResponse?.Message ?? "Invalid username or password";
                 ToastService?.ShowWarning(ErrorMessage);
             }
@@ -211,15 +212,5 @@
         public string UserName { get; set; } = "";
         public string Password { get; set; } = "";
         public bool RememberMe { get; set; } = false;
-    }
-
-    private class LoginResponse
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = "";
-        public string RedirectUrl { get; set; } = "/";
-        public string? UserName { get; set; }
-        public string? Email { get; set; }
-        public bool RequiresTwoFactor { get; set; }
     }
 }

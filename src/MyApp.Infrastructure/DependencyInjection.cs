@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MyApp.Core.Interfaces;
 using MyApp.Infrastructure.Data;
 using MyApp.Infrastructure.Redis;
+using MyApp.Infrastructure.Services;
 using StackExchange.Redis;
 
 namespace MyApp.Infrastructure
@@ -51,6 +52,7 @@ namespace MyApp.Infrastructure
             services.AddScoped<IInventoryTypeRepository, InventoryTypeRepository>();
             services.AddScoped<IRepositoryRepository, RepositoryRepository>();
             services.AddScoped<IInventoryRepository, InventoryRepository>();
+            services.AddScoped<IMenuService, MenuService>();
 
             return services;
         }
