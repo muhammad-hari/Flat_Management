@@ -7,85 +7,85 @@
 @inject IJSRuntime JS
 @attribute [Authorize]
 
-<div class="min-h-screen flex flex-col lg:flex-row bg-gray-50">
-    <div class="lg:hidden">
-        <!-- Mobile Header -->
-        <div class="bg-white shadow px-4 py-2 flex items-center justify-between">
-            <button @onclick="ToggleSidebar" class="p-2 rounded-lg hover:bg-gray-100">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-            </button>
-            <div class="flex items-center space-x-4">
-                <NotificationDropdown />
-                <div class="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-300">
-                    <img src="assets/images/avatar.png" alt="User Avatar" class="w-full h-full object-cover" />
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Sidebar -->
-    <div class="@(isSidebarOpen ? "block z-[150]" : "hidden") lg:block lg:z-20 fixed inset-0 overflow-hidden">
-        <div class="absolute inset-0 bg-black/50 lg:hidden" @onclick="ToggleSidebar"></div>
-        <div class="h-full overflow-hidden">
-            <Sidebar />
-        </div>
-    </div>
-
-    <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col min-h-screen lg:ml-72">
-        <!-- Desktop Top Bar -->
-        <div class="hidden lg:flex items-center justify-end bg-white shadow px-6 py-3 z-50">
-            <!-- Bell Icon -->
-            <NotificationDropdown />
-
-            <!-- Avatar Dropdown -->
-            <div class="relative">
-                <div @onclick="ToggleAvatarMenu" id="avatarTrigger" class="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition-colors">
-                    <img src="assets/images/avatar.png" alt="User Avatar" class="w-full h-full object-cover" />
-                </div>
-
-                @if (showAvatarMenu)
-                {
-                    <div id="avatarMenu" class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-[100]">
-                        <!-- User Info Section -->
-                        <div class="px-4 py-3 border-b border-gray-100">
-                            <p class="text-sm font-semibold text-gray-800">@(userSession?.Username ?? "User Name")</p>
-                            <p class="text-xs text-gray-500">@(userSession?.Roles?.FirstOrDefault() ?? "Role")</p>
-                        </div>
-                        
-                        <!-- Menu Items -->
-                        <a href="/profile" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                            <i class="fas fa-user w-5 mr-2"></i>
-                            Profile
-                        </a>
-                        <a href="/change-password" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                            <i class="fas fa-key w-5 mr-2"></i>
-                            Change Password
-                        </a>
-                        <div class="border-t border-gray-100 my-1"></div>
-                        <button @onclick="LogoutUser" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-50">
-                            <i class="fas fa-sign-out-alt w-5 mr-2"></i>
-                            Logout
-                        </button>
+<SessionCheck>
+    <div class="min-h-screen flex flex-col lg:flex-row bg-gray-50">
+        <div class="lg:hidden">
+            <!-- Mobile Header -->
+            <div class="bg-white shadow px-4 py-2 flex items-center justify-between">
+                <button @onclick="ToggleSidebar" class="p-2 rounded-lg hover:bg-gray-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <div class="flex items-center space-x-4">
+                    <NotificationDropdown />
+                    <div class="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-300">
+                        <img src="assets/images/avatar.png" alt="User Avatar" class="w-full h-full object-cover" />
                     </div>
-                }
+                </div>
             </div>
         </div>
 
-        <!-- Body Content -->
-        <div class="flex-1 p-4 lg:p-8 relative overflow-auto">
-            <div class="absolute inset-0 flex justify-center items-center pointer-events-none z-0">
-                <img src="assets/images/mock-polri.png" class="max-w-[40%] max-h-[40%] opacity-15" alt="watermark">
+        <!-- Sidebar -->
+        <div class="@(isSidebarOpen ? "block z-[150]" : "hidden") lg:block lg:z-20 fixed inset-0 overflow-hidden">
+            <div class="absolute inset-0 bg-black/50 lg:hidden" @onclick="ToggleSidebar"></div>
+            <div class="h-full overflow-hidden">
+                <Sidebar />
             </div>
-            <div class="relative z-20">
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col min-h-screen lg:ml-72">
+            <!-- Desktop Top Bar -->
+            <div class="hidden lg:flex items-center justify-end bg-white shadow px-6 py-3 z-50">
+                <!-- Bell Icon -->
+                <NotificationDropdown />
+
+                <!-- Avatar Dropdown -->
+                <div class="relative">
+                    <div @onclick="ToggleAvatarMenu" id="avatarTrigger" class="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition-colors">
+                        <img src="assets/images/avatar.png" alt="User Avatar" class="w-full h-full object-cover" />
+                    </div>
+
+                    @if (showAvatarMenu)
+                    {
+                        <div id="avatarMenu" class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-[100]">
+                            <!-- User Info Section -->
+                            <div class="px-4 py-3 border-b border-gray-100">
+                                <p class="text-sm font-semibold text-gray-800">@(userSession?.Username ?? "User Name")</p>
+                                <p class="text-xs text-gray-500">@(userSession?.Roles?.FirstOrDefault() ?? "Role")</p>
+                            </div>
+                            
+                            <!-- Menu Items -->
+                            <a href="/profile" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                <i class="fas fa-user w-5 mr-2"></i>
+                                Profile
+                            </a>
+                            <a href="/change-password" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                <i class="fas fa-key w-5 mr-2"></i>
+                                Change Password
+                            </a>
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <button @onclick="LogoutUser" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-50">
+                                <i class="fas fa-sign-out-alt w-5 mr-2"></i>
+                                Logout
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Body Content -->
+            <div class="flex-1 p-4 lg:p-8 relative overflow-auto">
+                <div class="absolute inset-0 flex justify-center items-center pointer-events-none z-0">
+                    <img src="assets/images/mock-polri.png" class="max-w-[40%] max-h-[40%] opacity-15" alt="watermark">
+                </div>
                 <IdleOverlay />
                 @Body
             </div>
         </div>
     </div>
-</div>
+</SessionCheck>
 
 @code {
     private bool isSidebarOpen = false;
@@ -122,7 +122,7 @@
     private async Task LogoutUser()
     {
         await AuthStateProvider.NotifyUserLogout();
-        NavManager.NavigateTo("/login", true);
+        NavManager.NavigateTo("/login");
     }
 
     // Handle global click event from JS

@@ -4,6 +4,8 @@
 @using MyApp.Core.Entities
 @inject IRankRepository RankService
 @inject ToastService ToastService
+@inject NavigationManager NavigationManager
+@inject IPermissionService PermissionService
 
 <div class="bg-white rounded-lg shadow-sm p-6">
     <div class="flex items-center justify-between mb-6">
@@ -12,11 +14,14 @@
             <p class="text-gray-600 mt-1">Manage User Rank and Privillage</p>
         </div>
         <div class="flex items-center">
-            <button
-                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-                @onclick="ShowAddRankModal">
-                + Add Rank
-            </button>
+            @if (CanCreate)
+            {
+                <button
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                    @onclick="ShowAddRankModal">
+                    + Add Rank
+                </button>
+            }
         </div>
     </div>
 
@@ -35,10 +40,13 @@
                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
                         Status
                     </th>
-                    <th
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
-                        Action
-                    </th>
+                    @if (CanUpdate || CanDelete)
+                    {
+                        <th
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
+                            Action
+                        </th>
+                    }
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -71,16 +79,25 @@
                                     @(Rank.IsActive ? "Active" : "Inactive")
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap space-x-2">
-                                <button class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm"
-                                    @onclick="() => EditRank(Rank)">
-                                    Edit
-                                </button>
-                                <button class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
-                                    @onclick="() => ConfirmDelete(Rank.Id, Rank.Name)">
-                                    Delete
-                                </button>
-                            </td>
+                            @if (CanUpdate || CanDelete)
+                            {
+                                <td class="px-6 py-4 whitespace-nowrap space-x-2">
+                                    @if (CanUpdate)
+                                    {
+                                        <button class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm"
+                                            @onclick="() => EditRank(Rank)">
+                                            Edit
+                                        </button>
+                                    }
+                                    @if (CanDelete)
+                                    {
+                                        <button class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
+                                            @onclick="() => ConfirmDelete(Rank.Id, Rank.Name)">
+                                            Delete
+                                        </button>
+                                    }
+                                </td>
+                            }
                         </tr>
                     }
                 }
@@ -133,8 +150,11 @@
     </div>
 }
 
-
 @code {
+    private bool CanView = false;
+    private bool CanCreate = false;
+    private bool CanUpdate = false;
+    private bool CanDelete = false;
 
     private List<Rank>? Ranks;
     private bool ShowAddModal = false;
@@ -145,12 +165,37 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Check permissions first
+        CanView = await PermissionService.HasPermissionAsync("rank", "view");  // Changed from ranks to rank
+        if (!CanView)
+        {
+            NavigationManager.NavigateTo("/unauthorized");
+            return;
+        }
+
+        CanCreate = await PermissionService.HasPermissionAsync("rank", "create"); // Changed from ranks to rank
+        CanUpdate = await PermissionService.HasPermissionAsync("rank", "update"); // Changed from ranks to rank
+        CanDelete = await PermissionService.HasPermissionAsync("rank", "delete"); // Changed from ranks to rank
+
+        // Load data only if user has view permission
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
         Ranks = await RankService.GetAllAsync();
         ShowAddModal = false;
     }
+
     private void ShowAddRankModal()
     {
-        NewRank = new Rank(); // reset form
+        if (!CanCreate)
+        {
+            ToastService.ShowError("You don't have permission to add new ranks");
+            return;
+        }
+
+        NewRank = new Rank();
         ShowAddModal = true;
     }
 
@@ -161,6 +206,12 @@
 
     private void EditRank(Rank Rank)
     {
+        if (!CanUpdate)
+        {
+            ToastService.ShowError("You don't have permission to edit ranks");
+            return;
+        }
+
         NewRank = new Rank
         {
             Id = Rank.Id,
@@ -173,6 +224,12 @@
 
     private void ConfirmDelete(int id, string name)
     {
+        if (!CanDelete)
+        {
+            ToastService.ShowError("You don't have permission to delete ranks");
+            return;
+        }
+
         RankIdToDelete = id;
         ConfirmMessage = $"Are you sure you want to delete the Rank \"{name}\"?";
         ShowConfirmModal = true;
@@ -180,8 +237,14 @@
 
     private async Task DeleteConfirmed()
     {
+        if (!CanDelete)
+        {
+            ToastService.ShowError("You don't have permission to delete ranks");
+            return;
+        }
+
         await RankService.DeleteAsync(RankIdToDelete);
-        Ranks = await RankService.GetAllAsync();
+        await LoadData();
         ShowConfirmModal = false;
         ToastService.ShowSuccess("Success deleted!");
     }
@@ -193,19 +256,37 @@
 
     private async Task SaveNewRank()
     {
-        if (NewRank.Id == 0)
-            await RankService.AddAsync(NewRank);
-        else
-            await RankService.UpdateAsync(NewRank);
+        if (NewRank.Id == 0 && !CanCreate)
+        {
+            ToastService.ShowError("You don't have permission to create new ranks");
+            return;
+        }
+        else if (NewRank.Id != 0 && !CanUpdate)
+        {
+            ToastService.ShowError("You don't have permission to update ranks");
+            return;
+        }
 
-        Ranks = await RankService.GetAllAsync();
-        NewRank = new Rank();
-        ShowAddModal = false;
-        ToastService.ShowSuccess("Data Saved!");
+        try
+        {
+            if (NewRank.Id == 0)
+                await RankService.AddAsync(NewRank);
+            else
+                await RankService.UpdateAsync(NewRank);
+
+            await LoadData();
+            NewRank = new Rank();
+            ShowAddModal = false;
+            ToastService.ShowSuccess("Data Saved!");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error: {ex.Message}");
+        }
     }
 
     private string GetStatusClasses(bool isActive) =>
-    isActive
-    ? "inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
-    : "inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800";
+        isActive
+            ? "inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
+            : "inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800";
 }

@@ -1,0 +1,32 @@
+@using MyApp.Web.Authentication
+@inject CustomAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+@if (_isChecking)
+{
+    <div class="flex items-center justify-center h-screen">
+        <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-red-700"></div>
+    </div>
+}
+else
+{
+    @ChildContent
+}
+
+@code {
+    private bool _isChecking = true;
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var isAuthenticated = await AuthStateProvider.IsAuthenticatedAsync();
+        if (!isAuthenticated && !Navigation.Uri.Contains("/login"))
+        {
+            Navigation.NavigateTo("/login");            
+            return;
+        }
+        _isChecking = false;
+    }
+}

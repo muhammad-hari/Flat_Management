@@ -259,4 +259,6 @@ app.MapRazorPages();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.Run();

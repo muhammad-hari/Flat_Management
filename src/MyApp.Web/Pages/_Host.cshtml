@@ -71,14 +71,6 @@
             });
         });
     </script>
-     <script>
-        // Redirect ke login jika tidak authenticated
-        Blazor.addEventListener('enhancedload', function (e) {
-            if (e.detail.statusCode === 401) {
-                window.location.href = '/login';
-            }
-        });
-    </script>
 </body>
 
 </html>

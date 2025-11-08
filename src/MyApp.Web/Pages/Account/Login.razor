@@ -79,7 +79,7 @@
                                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                                        disabled="@isLoading" />
                         <label for="rememberMe" class="ml-2 text-sm font-medium text-gray-300">
-                            Remember me (1 day)
+                            Remember me 
                         </label>
                     </div>
 
@@ -122,11 +122,19 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var isAuthenticated = await AuthStateProvider.IsAuthenticatedAsync();
-        if (isAuthenticated)
+        try 
         {
-            Logger.LogInformation("User already authenticated, redirecting to home");
-            Navigation.NavigateTo("/", replace: true);
+            
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated == true)
+            {
+                Navigation.NavigateTo("/", replace: true);
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error checking authentication state");
         }
     }
 
@@ -159,7 +167,6 @@
                 
                 if (loginResponse?.Success == true)
                 {
-                    // Create user session
                     var userSession = new UserSession
                     {
                         Username = loginResponse.UserName!,
@@ -171,12 +178,13 @@
                         UserId = loginResponse.UserId.ToString(),
                     };
 
-                    // Update authentication state
-                    await AuthStateProvider.NotifyUserAuthentication(userSession);
-                    
-                    ToastService?.ShowSuccess($"Welcome back, {loginResponse.UserName}!");
-                    Navigation.NavigateTo(loginResponse.RedirectUrl, forceLoad: true);
-                    return;
+                    var success = await AuthStateProvider.NotifyUserAuthentication(userSession);
+                    if (success)
+                    {
+                        ToastService?.ShowSuccess($"Welcome back, {loginResponse.UserName}!");
+                        Navigation.NavigateTo(loginResponse.RedirectUrl, replace: true);
+                        return;
+                    }
                 }
                 
                 ErrorMessage = loginResponse?.Message ?? "Login failed";

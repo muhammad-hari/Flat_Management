@@ -4,19 +4,24 @@
 @using MyApp.Core.Entities
 @inject IRoomCategoryRepository RoomCategoryService
 @inject ToastService ToastService
+@inject NavigationManager NavigationManager
+@inject IPermissionService PermissionService
 
 <div class="bg-white rounded-lg shadow-sm p-6">
     <div class="flex items-center justify-between mb-6">
         <div>
             <h2 class="text-2xl font-semibold text-gray-800">Room Category Management</h2>
-            <p class="text-gray-600 mt-1">Manage User Room Category and Privillage</p>
+            <p class="text-gray-600 mt-1">Manage Room Category</p>
         </div>
         <div class="flex items-center">
-            <button
-                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-                @onclick="ShowAddRoomCategoryModal">
-                + Add RoomCategory
-            </button>
+            @if (CanCreate)
+            {
+                <button
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                    @onclick="ShowAddRoomCategoryModal">
+                    + Add Room Category
+                </button>
+            }
         </div>
     </div>
 
@@ -24,21 +29,21 @@
         <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
             <thead class="bg-gradient-to-b from-red-700  to-black">
                 <tr>
-                    <th
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
-                        RoomCategory Name
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
+                        Room Category Name
                     </th>
-                    <th
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
-                        Details</th>
-                    <th
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
+                        Details
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
                         Status
                     </th>
-                    <th
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
-                        Action
-                    </th>
+                    @if (CanUpdate || CanDelete)
+                    {
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
+                            Action
+                        </th>
+                    }
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -72,14 +77,20 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap space-x-2">
-                                <button class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm"
-                                    @onclick="() => EditRoomCategory(RoomCategory)">
-                                    Edit
-                                </button>
-                                <button class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
-                                    @onclick="() => ConfirmDelete(RoomCategory.Id, RoomCategory.Name)">
-                                    Delete
-                                </button>
+                                @if (CanUpdate)
+                                {
+                                    <button class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm"
+                                        @onclick="() => EditRoomCategory(RoomCategory)">
+                                        Edit
+                                    </button>
+                                }
+                                @if (CanDelete)
+                                {
+                                    <button class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
+                                        @onclick="() => ConfirmDelete(RoomCategory.Id, RoomCategory.Name)">
+                                        Delete
+                                    </button>
+                                }
                             </td>
                         </tr>
                     }
@@ -138,6 +149,11 @@
 <ToastContainer @ref="toastContainer" />
 
 @code {
+    private bool CanView = false;
+    private bool CanCreate = false;
+    private bool CanUpdate = false;
+    private bool CanDelete = false;
+
     private ToastContainer? toastContainer;
 
     private List<RoomCategory>? RoomCategorys;
@@ -149,12 +165,35 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Check permissions first
+        CanView = await PermissionService.HasPermissionAsync("room-category", "view");
+        if (!CanView)
+        {
+            NavigationManager.NavigateTo("/unauthorized");
+            return;
+        }
+
+        CanCreate = await PermissionService.HasPermissionAsync("room-category", "create");
+        CanUpdate = await PermissionService.HasPermissionAsync("room-category", "update");
+        CanDelete = await PermissionService.HasPermissionAsync("room-category", "delete");
+
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
         RoomCategorys = await RoomCategoryService.GetAllAsync();
         ShowAddModal = false;
     }
 
     private void ShowAddRoomCategoryModal()
     {
+        if (!CanCreate)
+        {
+            ToastService.ShowError("You don't have permission to add new room categories");
+            return;
+        }
+
         NewRoomCategory = new RoomCategory(); // reset form
         ShowAddModal = true;
     }
@@ -164,49 +203,92 @@
         ShowAddModal = false;
     }
 
-    private void EditRoomCategory(RoomCategory RoomCategory)
+    private void EditRoomCategory(RoomCategory roomCategory)
     {
+        if (!CanUpdate)
+        {
+            ToastService.ShowError("You don't have permission to edit room categories");
+            return;
+        }
+
         NewRoomCategory = new RoomCategory
         {
-            Id = RoomCategory.Id,
-            Name = RoomCategory.Name,
-            Details = RoomCategory.Details,
-            IsActive = RoomCategory.IsActive
+            Id = roomCategory.Id,
+            Name = roomCategory.Name,
+            Details = roomCategory.Details,
+            IsActive = roomCategory.IsActive
         };
         ShowAddModal = true;
     }
 
     private void ConfirmDelete(int id, string name)
     {
+        if (!CanDelete)
+        {
+            ToastService.ShowError("You don't have permission to delete room categories");
+            return;
+        }
+
         RoomCategoryIdToDelete = id;
-        ConfirmMessage = $"Are you sure you want to delete the RoomCategory \"{name}\"?";
+        ConfirmMessage = $"Are you sure you want to delete the Room Category \"{name}\"?";
         ShowConfirmModal = true;
     }
 
     private async Task DeleteConfirmed()
     {
-        await RoomCategoryService.DeleteAsync(RoomCategoryIdToDelete);
-        RoomCategorys = await RoomCategoryService.GetAllAsync();
-        ShowConfirmModal = false;
-        ToastService.ShowInfo("Data Deleted!");
+        if (!CanDelete)
+        {
+            ToastService.ShowError("You don't have permission to delete room categories");
+            return;
+        }
+
+        try
+        {
+            await RoomCategoryService.DeleteAsync(RoomCategoryIdToDelete);
+            await LoadData();
+            ShowConfirmModal = false;
+            ToastService.ShowSuccess("Success deleted!");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error: {ex.Message}");
+        }
+    }
+
+    private async Task SaveNewRoomCategory()
+    {
+        if (NewRoomCategory.Id == 0 && !CanCreate)
+        {
+            ToastService.ShowError("You don't have permission to create new room categories");
+            return;
+        }
+        else if (NewRoomCategory.Id != 0 && !CanUpdate)
+        {
+            ToastService.ShowError("You don't have permission to update room categories");
+            return;
+        }
+
+        try
+        {
+            if (NewRoomCategory.Id == 0)
+                await RoomCategoryService.AddAsync(NewRoomCategory);
+            else
+                await RoomCategoryService.UpdateAsync(NewRoomCategory);
+
+            await LoadData();
+            NewRoomCategory = new RoomCategory();
+            ShowAddModal = false;
+            ToastService.ShowSuccess("Data Saved!");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error: {ex.Message}");
+        }
     }
 
     private void CancelDelete()
     {
         ShowConfirmModal = false;
-    }
-
-    private async Task SaveNewRoomCategory()
-    {
-        if (NewRoomCategory.Id == 0)
-            await RoomCategoryService.AddAsync(NewRoomCategory);
-        else
-            await RoomCategoryService.UpdateAsync(NewRoomCategory);
-
-        RoomCategorys = await RoomCategoryService.GetAllAsync();
-        NewRoomCategory = new RoomCategory();
-        ShowAddModal = false;
-        ToastService.ShowSuccess("Data Saved!");
     }
 
     private string GetStatusClasses(bool isActive) =>

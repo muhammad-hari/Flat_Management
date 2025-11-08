@@ -4,6 +4,8 @@
 @using MyApp.Core.Entities
 @inject IRoomConditionRepository RoomConditionService
 @inject ToastService ToastService
+@inject NavigationManager NavigationManager
+@inject IPermissionService PermissionService
 
 <div class="bg-white rounded-lg shadow-sm p-6">
     <div class="flex items-center justify-between mb-6">
@@ -12,11 +14,14 @@
             <p class="text-gray-600 mt-1">Manage User Room Condition and Privillage</p>
         </div>
         <div class="flex items-center">
-            <button
-                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-                @onclick="ShowAddRoomConditionModal">
-                + Add RoomCondition
-            </button>
+            @if (CanCreate)
+            {
+                <button
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                    @onclick="ShowAddRoomConditionModal">
+                    + Add Room Condition
+                </button>
+            }
         </div>
     </div>
 
@@ -24,21 +29,21 @@
         <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
             <thead class="bg-gradient-to-b from-red-700  to-black">
                 <tr>
-                    <th
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
                         Room Condition Name
                     </th>
-                    <th
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
-                        Details</th>
-                    <th
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
+                        Details
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
                         Status
                     </th>
-                    <th
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
-                        Action
-                    </th>
+                    @if (CanUpdate || CanDelete)
+                    {
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">
+                            Action
+                        </th>
+                    }
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -72,14 +77,20 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap space-x-2">
-                                <button class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm"
-                                    @onclick="() => EditRoomCondition(RoomCondition)">
-                                    Edit
-                                </button>
-                                <button class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
-                                    @onclick="() => ConfirmDelete(RoomCondition.Id, RoomCondition.Name)">
-                                    Delete
-                                </button>
+                                @if (CanUpdate)
+                                {
+                                    <button class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm"
+                                        @onclick="() => EditRoomCondition(RoomCondition)">
+                                        Edit
+                                    </button>
+                                }
+                                @if (CanDelete)
+                                {
+                                    <button class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
+                                        @onclick="() => ConfirmDelete(RoomCondition.Id, RoomCondition.Name)">
+                                        Delete
+                                    </button>
+                                }
                             </td>
                         </tr>
                     }
@@ -138,8 +149,12 @@
 <ToastContainer @ref="toastContainer" />
 
 @code {
+    private bool CanView = false;
+    private bool CanCreate = false;
+    private bool CanUpdate = false;
+    private bool CanDelete = false;
+    
     private ToastContainer? toastContainer;
-
     private List<RoomCondition>? RoomConditions;
     private bool ShowAddModal = false;
     private RoomCondition NewRoomCondition = new RoomCondition();
@@ -149,13 +164,31 @@
 
     protected override async Task OnInitializedAsync()
     {
-        RoomConditions = await RoomConditionService.GetAllAsync();
-        ShowAddModal = false;
+        // Check permissions first
+        CanView = await PermissionService.HasPermissionAsync("room-condition", "view");
+        if (!CanView)
+        {
+            NavigationManager.NavigateTo("/unauthorized");
+            return;
+        }
+
+        CanCreate = await PermissionService.HasPermissionAsync("room-condition", "create");
+        CanUpdate = await PermissionService.HasPermissionAsync("room-condition", "update");
+        CanDelete = await PermissionService.HasPermissionAsync("room-condition", "delete");
+
+        // Load data only if user has view permission
+        await LoadData();
     }
 
     private void ShowAddRoomConditionModal()
     {
-        NewRoomCondition = new RoomCondition(); // reset form
+        if (!CanCreate)
+        {
+            ToastService.ShowError("You don't have permission to add new room conditions");
+            return;
+        }
+
+        NewRoomCondition = new RoomCondition();
         ShowAddModal = true;
     }
 
@@ -164,31 +197,49 @@
         ShowAddModal = false;
     }
 
-    private void EditRoomCondition(RoomCondition RoomCondition)
+    private void EditRoomCondition(RoomCondition roomCondition)
     {
+        if (!CanUpdate)
+        {
+            ToastService.ShowError("You don't have permission to edit room conditions");
+            return;
+        }
+
         NewRoomCondition = new RoomCondition
         {
-            Id = RoomCondition.Id,
-            Name = RoomCondition.Name,
-            Details = RoomCondition.Details,
-            IsActive = RoomCondition.IsActive
+            Id = roomCondition.Id,
+            Name = roomCondition.Name,
+            Details = roomCondition.Details,
+            IsActive = roomCondition.IsActive
         };
         ShowAddModal = true;
     }
 
     private void ConfirmDelete(int id, string name)
     {
+        if (!CanDelete)
+        {
+            ToastService.ShowError("You don't have permission to delete room conditions");
+            return;
+        }
+
         RoomConditionIdToDelete = id;
-        ConfirmMessage = $"Are you sure you want to delete the RoomCondition \"{name}\"?";
+        ConfirmMessage = $"Are you sure you want to delete the Room Condition \"{name}\"?";
         ShowConfirmModal = true;
     }
 
     private async Task DeleteConfirmed()
     {
+        if (!CanDelete)
+        {
+            ToastService.ShowError("You don't have permission to delete room conditions");
+            return;
+        }
+
         await RoomConditionService.DeleteAsync(RoomConditionIdToDelete);
-        RoomConditions = await RoomConditionService.GetAllAsync();
+        await LoadData();
         ShowConfirmModal = false;
-        ToastService.ShowInfo("Data Deleted!");
+        ToastService.ShowSuccess("Success deleted!");
     }
 
     private void CancelDelete()
@@ -198,15 +249,38 @@
 
     private async Task SaveNewRoomCondition()
     {
-        if (NewRoomCondition.Id == 0)
-            await RoomConditionService.AddAsync(NewRoomCondition);
-        else
-            await RoomConditionService.UpdateAsync(NewRoomCondition);
+        if (NewRoomCondition.Id == 0 && !CanCreate)
+        {
+            ToastService.ShowError("You don't have permission to create new room conditions");
+            return;
+        }
+        else if (NewRoomCondition.Id != 0 && !CanUpdate)
+        {
+            ToastService.ShowError("You don't have permission to update room conditions");
+            return;
+        }
 
+        try
+        {
+            if (NewRoomCondition.Id == 0)
+                await RoomConditionService.AddAsync(NewRoomCondition);
+            else
+                await RoomConditionService.UpdateAsync(NewRoomCondition);
+
+            await LoadData();
+            NewRoomCondition = new RoomCondition();
+            ShowAddModal = false;
+            ToastService.ShowSuccess("Data Saved!");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error: {ex.Message}");
+        }
+    }
+
+    private async Task LoadData()
+    {
         RoomConditions = await RoomConditionService.GetAllAsync();
-        NewRoomCondition = new RoomCondition();
-        ShowAddModal = false;
-        ToastService.ShowSuccess("Data Saved!");
     }
 
     private string GetStatusClasses(bool isActive) =>
