@@ -41,7 +41,7 @@ namespace MyApp.Infrastructure.Data
                     new() { Code = "weapon-management", Name = "Weapon Management", IconName = "shield", Color = "text-red-400", Url = "/weapons", Order = 7 },
                     new() { Code = "alsus-management", Name = "Alsus Management", IconName = "shield", Color = "text-red-400", Url = "/alsus", Order = 8 },
                     new() { Code = "inventory-management", Name = "Inventory Management", IconName = "package", Color = "text-indigo-400", Order = 9 },
-                    new() { Code = "access-control", Name = "Access Control", IconName = "key", Color = "text-emerald-400", Url = "/access-control", Order = 10 },
+                    new() { Code = "access-control", Name = "Access Control", IconName = "key", Color = "text-emerald-400", Order = 10 },
                     new() { Code = "access-menu", Name = "Access Menu", IconName = "key", Color = "text-emerald-400", Url = "/access-menu", Order = 11 },
                     new() { Code = "master-data", Name = "Master Data", IconName = "folder-open", Color = "text-amber-400", Order = 12 }
                 };
@@ -69,6 +69,16 @@ namespace MyApp.Infrastructure.Data
                     new() { Code = "system-settings", Name = "System Settings", IconName = "cogs", Color = "text-teal-400", Url = "/system-settings", Order = 4, ParentId = administrationParent.Id },
                 };
                 await context.Menus.AddRangeAsync(administrationSubmenus);
+
+                // Add submenus - Access Control Management
+                var accessControlParent = await context.Menus.FirstAsync(m => m.Code == "access-control");
+                var accessControlSubmenus = new List<Menu>
+                {
+                    new() { Code = "handle-locks", Name = "Handle Lock Access", IconName = "shield", Color = "text-teal-400", Url = "/access-control/handle-locks", Order = 1, ParentId = accessControlParent.Id },
+                    new() { Code = "gates", Name = "Gate Access", IconName = "shield", Color = "text-teal-400", Url = "/access-control/gates", Order = 2, ParentId = accessControlParent.Id }
+                };
+                await context.Menus.AddRangeAsync(accessControlSubmenus);
+
 
                 // Add submenus - Visitors Management
                 var visitorsParent = await context.Menus.FirstAsync(m => m.Code == "visitors-management");
