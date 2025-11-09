@@ -3,6 +3,8 @@
 @using MyApp.Core.Interfaces
 @inject IAlsusRepository AlsusService
 @inject ToastService ToastService
+@inject IPermissionService PermissionService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Alsus</PageTitle>
 
@@ -13,7 +15,11 @@
             <p class="text-gray-500">Manage alsus with document and photo.</p>
         </div>
         <div>
-            <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg" @onclick="OpenNew">New Alsus</button>
+            @if (CanCreate)
+            {
+                <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg" 
+                        @onclick="OpenNew">New Alsus</button>
+            }
         </div>
     </div>
 
@@ -35,9 +41,21 @@
                         <td class="px-6 py-4">@w.Code</td>
                         <td class="px-6 py-4">@(w.IsAvailable ? "Yes" : "No")</td>
                         <td class="px-6 py-4 text-right">
-                            <button class="text-indigo-600 hover:text-indigo-900 p-2 rounded-lg hover:bg-indigo-100" @onclick="() => Edit(w)">Edit</button>
-                            <button class="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-100" @onclick="() => Delete(w.Id)">Delete</button>
-                            <button class="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-100" @onclick="() => ShowDetail(w)">Detail</button>
+                            @if (CanView)
+                            {
+                                <button class="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-100" 
+                                        @onclick="() => ShowDetail(w)">Detail</button>
+                            }
+                            @if (CanUpdate)
+                            {
+                                <button class="text-indigo-600 hover:text-indigo-900 p-2 rounded-lg hover:bg-indigo-100" 
+                                        @onclick="() => Edit(w)">Edit</button>
+                            }
+                            @if (CanDelete)
+                            {
+                                <button class="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-100" 
+                                        @onclick="() => Delete(w.Id)">Delete</button>
+                            }
                         </td>
                     </tr>
                 }
@@ -127,19 +145,49 @@
     private bool ShowModal = false;
     private bool ShowEditModal = false;
 
+    private bool CanView = false;
+    private bool CanCreate = false;
+    private bool CanUpdate = false;
+    private bool CanDelete = false;
+
     protected override async Task OnInitializedAsync()
     {
+        // Check permissions first
+        CanView = await PermissionService.HasPermissionAsync("alsus", "view");
+        if (!CanView)
+        {
+            NavigationManager.NavigateTo("/unauthorized");
+            return;
+        }
+
+        CanCreate = await PermissionService.HasPermissionAsync("alsus", "create");
+        CanUpdate = await PermissionService.HasPermissionAsync("alsus", "update");
+        CanDelete = await PermissionService.HasPermissionAsync("alsus", "delete");
+
+        // Only load data if user has view permission
         Alsuses = await AlsusService.GetAllAsync();
     }
 
     private void OpenNew()
     {
+        if (!CanCreate)
+        {
+            ToastService.ShowError("You don't have permission to create new alsus");
+            return;
+        }
+
         Selected = new Alsus();
         ShowEditModal = true;
     }
 
     private async Task Save()
     {
+        if ((Selected.Id == 0 && !CanCreate) || (Selected.Id != 0 && !CanUpdate))
+        {
+            await ToastService.ShowError("You don't have permission to perform this action");
+            return;
+        }
+
         Selected.UpdatedAt = DateTime.UtcNow;
         if (Selected.Id == 0)
         {
@@ -158,19 +206,41 @@
 
     private async Task Edit(Alsus w)
     {
+        if (!CanUpdate)
+        {
+            await ToastService.ShowError("You don't have permission to edit alsus");
+            return;
+        }
+
         Selected = w;
         ShowEditModal = true;
     }
 
     private async Task Delete(int id)
     {
+        if (!CanDelete)
+        {
+            await ToastService.ShowError("You don't have permission to delete alsus");
+            return;
+        }
+
         var ok = await AlsusService.DeleteAsync(id);
-        if (ok) await ToastService.ShowSuccess("Deleted"); else await ToastService.ShowWarning("Delete failed");
+        if (ok) 
+            await ToastService.ShowSuccess("Deleted"); 
+        else 
+            await ToastService.ShowWarning("Delete failed");
+        
         Alsuses = await AlsusService.GetAllAsync();
     }
 
     private void ShowDetail(Alsus w)
     {
+        if (!CanView)
+        {
+            ToastService.ShowError("You don't have permission to view alsus details");
+            return;
+        }
+
         Selected = w;
         ShowModal = true;
     }

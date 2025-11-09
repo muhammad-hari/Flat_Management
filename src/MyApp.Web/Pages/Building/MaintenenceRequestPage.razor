@@ -10,6 +10,8 @@
 
 @using Microsoft.AspNetCore.Components.Forms 
 @inject ToastService ToastService
+@inject IPermissionService PermissionService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Maintenance Request Management</PageTitle>
 
@@ -28,11 +30,14 @@
                     placeholder="Search Title, Location, Status..." />
                 <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
             </div>
-            <button class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2 rounded-xl 
-                                shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
-                                @onclick="AddRequest">
-                <i class="fas fa-plus"></i> New Request
-            </button>
+            @if (CanCreate)
+            {
+                <button class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2 rounded-xl 
+                        shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                        @onclick="AddRequest">
+                    <i class="fas fa-plus"></i> New Request
+                </button>
+            }
         </div>
     </div>
 
@@ -99,14 +104,28 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                <button class="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-green-100 transition"
-                                    @onclick="() => ShowDetail(r)"><i class="fas fa-eye mr-1"></i> Detail</button>
-                                <button class="text-indigo-600 hover:text-indigo-900 p-2 rounded-lg hover:bg-indigo-100 transition" @onclick="() => EditRequest(r)" disabled="@(r.Status == "Completed" || r.Status == "Cancelled")">
-                                    <i class="fas fa-edit"></i> Edit
-                                </button>
-                                <button class="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-100 transition" @onclick="() => ConfirmDelete(r.Id, r.Title)">
-                                    <i class="fas fa-trash-alt mr-1"></i> Delete
-                                </button>
+                                @if (CanView)
+                                {
+                                    <button class="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-green-100 transition"
+                                            @onclick="() => ShowDetail(r)">
+                                        <i class="fas fa-eye mr-1"></i> Detail
+                                    </button>
+                                }
+                                @if (CanUpdate)
+                                {
+                                    <button class="text-indigo-600 hover:text-indigo-900 p-2 rounded-lg hover:bg-indigo-100 transition" 
+                                            @onclick="() => EditRequest(r)" 
+                                            disabled="@(r.Status == "Completed" || r.Status == "Cancelled")">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                }
+                                @if (CanDelete)
+                                {
+                                    <button class="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-100 transition" 
+                                            @onclick="() => ConfirmDelete(r.Id, r.Title)">
+                                        <i class="fas fa-trash-alt mr-1"></i> Delete
+                                    </button>
+                                }
                             </td>
                         </tr>
                     }
@@ -235,12 +254,31 @@
     private IEnumerable<Room> AvailableRooms => 
         AllRooms.Where(r => r.BuildingId == Selected.BuildingId);
 
+    // Permission properties
+    private bool CanView = false;
+    private bool CanCreate = false;
+    private bool CanUpdate = false;  
+    private bool CanDelete = false;
+
     protected override async Task OnInitializedAsync()
     {
-    await LoadSupportingData();
-    Vendors = await VendorService.GetAllAsync();
-    await LoadRequests();
-    Loading = false;
+        // Check permissions first
+        CanView = await PermissionService.HasPermissionAsync("maintenance-requests", "view");
+        if (!CanView)
+        {
+            NavigationManager.NavigateTo("/unauthorized");
+            return;
+        }
+
+        CanCreate = await PermissionService.HasPermissionAsync("maintenance-requests", "create");
+        CanUpdate = await PermissionService.HasPermissionAsync("maintenance-requests", "update"); 
+        CanDelete = await PermissionService.HasPermissionAsync("maintenance-requests", "delete");
+
+        // Only load data if user has view permission
+        await LoadSupportingData();
+        Vendors = await VendorService.GetAllAsync();
+        await LoadRequests();
+        Loading = false;
     }
 
     private async Task LoadSupportingData()
@@ -275,17 +313,21 @@
     
     private async Task AddRequest()
     {
+        if (!CanCreate)
+        {
+            await ToastService.ShowError("You don't have permission to create maintenance requests");
+            return;
+        }
+
         var claims = await SessionStorage.GetAsync<Dictionary<string, string>>("claims");
         string? username = null;
         claims.Value?.TryGetValue(ClaimTypes.Name, out username);
-        @* claims.Value?.TryGetValue(ClaimTypes.Name, out string? username); *@
-
 
         Selected = new MaintenanceRequest
         {
             RequestedBy = username ?? "unknown",
             CreatedBy = username ?? "unknown",
-            BuildingId = Buildings.FirstOrDefault()?.Id ?? 0, // Default Building
+            BuildingId = Buildings.FirstOrDefault()?.Id ?? 0,
             StartDate = DateTime.Today,
             EndDate = DateTime.Today.AddDays(1),
             IsRoomAffected = true,
@@ -297,7 +339,12 @@
 
     private void EditRequest(MaintenanceRequest r)
     {
-        // Clone object
+        if (!CanUpdate)
+        {
+            ToastService.ShowError("You don't have permission to edit maintenance requests");
+            return;
+        }
+
         Selected = new MaintenanceRequest
         {
             Id = r.Id,
@@ -320,8 +367,13 @@
 
     private async Task SaveRequest()
     {
+        if ((Selected.Id == 0 && !CanCreate) || (Selected.Id != 0 && !CanUpdate))
+        {
+            await ToastService.ShowError("You don't have permission to perform this action");
+            return;
+        }
+
         bool isNew = Selected.Id == 0;
-        
         Selected.UpdatedAt = DateTime.UtcNow;
 
         // Validasi dasar: BuildingId harus diisi
@@ -414,7 +466,13 @@
 
     private async Task DeleteConfirmed()
     {
-        if (RequestIdToDelete == 0) return; 
+        if (!CanDelete)
+        {
+            await ToastService.ShowError("You don't have permission to delete maintenance requests");
+            return;
+        }
+
+        if (RequestIdToDelete == 0) return;
         
         // Asumsi DeleteAsync mengembalikan bool sukses/gagal
         var success = await MaintenanceService.DeleteAsync(RequestIdToDelete);

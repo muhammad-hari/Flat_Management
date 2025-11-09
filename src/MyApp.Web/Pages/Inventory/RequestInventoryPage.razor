@@ -7,6 +7,8 @@
 @inject IInventoryRequestRepository RequestService
 @inject IInventoryHistoryRepository InventoryHistoryService
 @inject ToastService ToastService
+@inject IPermissionService PermissionService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Inventory Requests</PageTitle>
 
@@ -42,10 +44,17 @@
         </div>
         <div class="mt-4 md:mt-0 flex items-center gap-3 w-full md:w-auto">
             <div class="relative w-full md:w-72">
-                <input class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="Search by code, name, status" value="@search" @oninput="OnSearch" />
+                <input class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" 
+                       placeholder="Search by code, name, status" 
+                       value="@search" 
+                       @oninput="OnSearch" />
                 <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
             </div>
-            <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg ml-2 shadow" @onclick="OpenNewRequest">New Request</button>
+            @if (CanCreate)
+            {
+                <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg ml-2 shadow" 
+                        @onclick="OpenNewRequest">New Request</button>
+            }
         </div>
     </div>
 
@@ -77,17 +86,26 @@
                             <span class="px-2 py-1 rounded-full text-sm font-semibold @(loan.Status == "Borrowed" ? "bg-yellow-100 text-yellow-800" : loan.Status == "Returned" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800")">@loan.Status</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                            <button class="text-indigo-600 hover:text-indigo-900 p-2 rounded-lg hover:bg-indigo-100 transition" @onclick="() => ShowDetail(loan)">
-                                <i class="fas fa-eye mr-1"></i> Detail
-                            </button>
-                            <button class="text-gray-600 hover:text-gray-800 p-2 rounded-lg hover:bg-gray-100 transition" @onclick="() => ShowEdit(loan)">
-                                <i class="fas fa-edit mr-1"></i> Edit
-                            </button>
-                            @if (loan.Status == "Borrowed")
+                            @if (CanView)
                             {
-                                <button class="text-yellow-600 hover:text-yellow-900 p-2 rounded-lg hover:bg-yellow-100 transition" @onclick="() => ReturnRequest(loan)">
-                                    <i class="fas fa-undo mr-1"></i> Return
+                                <button class="text-indigo-600 hover:text-indigo-900 p-2 rounded-lg hover:bg-indigo-100 transition" 
+                                        @onclick="() => ShowDetail(loan)">
+                                    <i class="fas fa-eye mr-1"></i> Detail
                                 </button>
+                            }
+                            @if (CanUpdate)
+                            {
+                                <button class="text-gray-600 hover:text-gray-800 p-2 rounded-lg hover:bg-gray-100 transition" 
+                                        @onclick="() => ShowEdit(loan)">
+                                    <i class="fas fa-edit mr-1"></i> Edit
+                                </button>
+                                @if (loan.Status == "Borrowed")
+                                {
+                                    <button class="text-yellow-600 hover:text-yellow-900 p-2 rounded-lg hover:bg-yellow-100 transition" 
+                                            @onclick="() => ReturnRequest(loan)">
+                                        <i class="fas fa-undo mr-1"></i> Return
+                                    </button>
+                                }
                             }
                         </td>
                     </tr>
@@ -255,6 +273,19 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Check permissions first
+        CanView = await PermissionService.HasPermissionAsync("inventory-requests", "view");
+        if (!CanView)
+        {
+            NavigationManager.NavigateTo("/unauthorized");
+            return;
+        }
+
+        CanCreate = await PermissionService.HasPermissionAsync("inventory-requests", "create");
+        CanUpdate = await PermissionService.HasPermissionAsync("inventory-requests", "update");
+        CanDelete = await PermissionService.HasPermissionAsync("inventory-requests", "delete");
+
+        // Only load data if user has view permission
         Inventories = await InventoryService.GetAllAsync();
         Requests = await RequestService.GetAllAsync();
     }
@@ -267,12 +298,24 @@
 
     private void OpenNewRequest()
     {
+        if (!CanCreate)
+        {
+            ToastService.ShowError("You don't have permission to create new requests");
+            return;
+        }
+
         NewRequest = new InventoryRequest { StartDate = DateTime.Today, RequestedBy = "unknown" };
         ShowRequestModal = true;
     }
 
     private async Task SubmitRequest()
     {
+        if (!CanCreate)
+        {
+            await ToastService.ShowError("You don't have permission to create requests");
+            return;
+        }
+
         try
         {
             // Basic validation
@@ -376,13 +419,24 @@
 
     private void ShowDetail(InventoryRequest r)
     {
+        if (!CanView)
+        {
+            ToastService.ShowError("You don't have permission to view request details");
+            return;
+        }
+
         SelectedRequest = r;
         ShowDetailModal = true;
     }
 
     private void ShowEdit(InventoryRequest r)
     {
-        // Create a shallow clone to edit in the modal (avoid directly editing list item until save)
+        if (!CanUpdate)
+        {
+            ToastService.ShowError("You don't have permission to edit requests");
+            return;
+        }
+
         SelectedRequest = new InventoryRequest
         {
             Id = r.Id,
@@ -400,6 +454,12 @@
 
     private async Task SaveEdit()
     {
+        if (!CanUpdate)
+        {
+            await ToastService.ShowError("You don't have permission to update requests");
+            return;
+        }
+
         if (SelectedRequest == null) return;
 
         try
@@ -419,6 +479,12 @@
 
     private async Task ReturnRequest(InventoryRequest r)
     {
+        if (!CanUpdate)
+        {
+            await ToastService.ShowError("You don't have permission to return requests");
+            return;
+        }
+
         try
         {
             // Load latest from repository to avoid stale/tracking issues
@@ -478,4 +544,9 @@
             await ToastService.ShowError($"Failed to return item: {ex.Message}");
         }
     }
+
+    private bool CanView = false;
+private bool CanCreate = false;
+private bool CanUpdate = false;
+private bool CanDelete = false;
 }

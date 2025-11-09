@@ -38,11 +38,12 @@ namespace MyApp.Infrastructure.Data
                     new() { Code = "visitors-management", Name = "Visitors Management", IconName = "user-check", Color = "text-orange-400", Order = 4 },
                     new() { Code = "employees", Name = "Employees", IconName = "briefcase", Color = "text-cyan-400", Url = "/employees", Order = 5 },
                     new() { Code = "building-management", Name = "Building Management", IconName = "building", Color = "text-yellow-400", Order = 6 },
-                    new() { Code = "weapon-alus", Name = "Weapon and Alus", IconName = "shield", Color = "text-red-400", Url = "/weapon-alsus", Order = 7 },
-                    new() { Code = "inventory-management", Name = "Inventory Management", IconName = "package", Color = "text-indigo-400", Order = 8 },
-                    new() { Code = "access-control", Name = "Access Control", IconName = "key", Color = "text-emerald-400", Url = "/access-control", Order = 9 },
-                    new() { Code = "access-menu", Name = "Access Menu", IconName = "key", Color = "text-emerald-400", Url = "/access-menu", Order = 10 },
-                    new() { Code = "master-data", Name = "Master Data", IconName = "folder-open", Color = "text-amber-400", Order = 11 }
+                    new() { Code = "weapon-management", Name = "Weapon Management", IconName = "shield", Color = "text-red-400", Url = "/weapons", Order = 7 },
+                    new() { Code = "alsus-management", Name = "Alsus Management", IconName = "shield", Color = "text-red-400", Url = "/alsus", Order = 8 },
+                    new() { Code = "inventory-management", Name = "Inventory Management", IconName = "package", Color = "text-indigo-400", Order = 9 },
+                    new() { Code = "access-control", Name = "Access Control", IconName = "key", Color = "text-emerald-400", Url = "/access-control", Order = 10 },
+                    new() { Code = "access-menu", Name = "Access Menu", IconName = "key", Color = "text-emerald-400", Url = "/access-menu", Order = 11 },
+                    new() { Code = "master-data", Name = "Master Data", IconName = "folder-open", Color = "text-amber-400", Order = 12 }
                 };
 
                 await context.Menus.AddRangeAsync(menus);
@@ -58,7 +59,7 @@ namespace MyApp.Infrastructure.Data
                 };
                 await context.Menus.AddRangeAsync(occupantsSubmenus);
 
-                 // Add submenus - Menu Management
+                // Add submenus - Menu Management
                 var administrationParent = await context.Menus.FirstAsync(m => m.Code == "administration");
                 var administrationSubmenus = new List<Menu>
                 {
