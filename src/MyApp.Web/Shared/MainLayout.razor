@@ -3,9 +3,11 @@
 @using MyApp.Web.Shared.Components
 @using MyApp.Web.Shared.IdleScreen
 @using MyApp.Core.Domain
+@using Blazored.Toast.Services
 @inject NavigationManager NavManager
 @inject MyApp.Web.Authentication.CustomAuthenticationStateProvider AuthStateProvider
 @inject IJSRuntime JS
+@inject IToastService ToastService
 @attribute [Authorize]
 
 <SessionCheck>
@@ -20,8 +22,18 @@
                 </button>
                 <div class="flex items-center space-x-4">
                     <NotificationDropdown />
+                    <!-- Mobile Avatar -->
                     <div class="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-300">
-                        <img src="assets/images/avatar.png" alt="User Avatar" class="w-full h-full object-cover" />
+                        @if (!string.IsNullOrEmpty(userSession?.PhotoUrl))
+                        {
+                            <img src="@userSession.PhotoUrl" alt="User Avatar" class="w-full h-full object-cover" />
+                        }
+                        else
+                        {
+                            <div class="w-full h-full avatar-fallback">
+                                <span class="text-sm">@(userSession?.Username?.Substring(0, 1).ToUpper() ?? "U")</span>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -44,8 +56,18 @@
 
                 <!-- Avatar Dropdown -->
                 <div class="relative">
-                    <div @onclick="ToggleAvatarMenu" id="avatarTrigger" class="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition-colors">
-                        <img src="assets/images/avatar.png" alt="User Avatar" class="w-full h-full object-cover" />
+                    <div @onclick="ToggleAvatarMenu" id="avatarTrigger" 
+                         class="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition-colors">
+                        @if (!string.IsNullOrEmpty(userSession?.PhotoUrl))
+                        {
+                            <img src="@userSession.PhotoUrl" alt="User Avatar" class="w-full h-full object-cover" />
+                        }
+                        else
+                        {
+                            <div class="w-full h-full avatar-fallback">
+                                <span class="text-lg">@(userSession?.Username?.Substring(0, 1).ToUpper() ?? "U")</span>
+                            </div>
+                        }
                     </div>
 
                     @if (showAvatarMenu)
@@ -94,6 +116,7 @@
 </SessionCheck>
 
 <ChangePasswordModal @bind-IsVisible="showChangePasswordModal" OnPasswordChanged="HandlePasswordChanged" />
+<ToastContainer />
 
 @code {
     private bool isSidebarOpen = false;
@@ -167,8 +190,26 @@
 
     private async Task HandlePasswordChanged()
     {
-        // Optionally handle password change success
-        await AuthStateProvider.GetUserSessionAsync();
+        try
+        {
+            await AuthStateProvider.GetUserSessionAsync();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("Failed to update session. Please log in again.");
+        }
     }
 }
+<style>
+    /* Add this to your site.css or appropriate stylesheet */
+    .avatar-fallback {
+        background: linear-gradient(45deg, #4F46E5, #3B82F6);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+</style>
 

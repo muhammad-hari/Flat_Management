@@ -15,5 +15,6 @@ namespace MyApp.Core.Domain
         public Dictionary<string, string> Claims { get; set; } = new();
         public DateTime LoginTime { get; set; }
         public DateTime? ExpiresAt { get; set; }
+        public string? PhotoUrl { get; set; }
     }
 }

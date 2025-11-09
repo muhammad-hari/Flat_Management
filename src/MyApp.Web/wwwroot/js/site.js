@@ -11,7 +11,10 @@ window.downloadFileFromStream = async (fileName, contentStreamReference) => {
 };
 
 window.removeGlobalClickHandler = function () {
-    document.removeEventListener('click', window.globalClickHandler);
+    if (window.globalClickHandler) {
+        document.removeEventListener('click', window.globalClickHandler);
+        window.globalClickHandler = null;
+    }
 };
 
 window.addGlobalClickHandler = function () {
@@ -20,8 +23,17 @@ window.addGlobalClickHandler = function () {
     
     // Create and store the handler
     window.globalClickHandler = function (e) {
-        const elementId = e.target.id || e.target.parentElement.id;
-        DotNet.invokeMethodAsync('MyApp.Web', 'HandleGlobalClick', elementId);
+        try {
+            const path = e.composedPath();
+            const elementIds = path
+                .map(el => el.id || '')
+                .filter(id => id)
+                .join(',');
+                
+            DotNet.invokeMethodAsync('MyApp.Web', 'HandleGlobalClick', elementIds);
+        } catch (error) {
+            console.error('Error in global click handler:', error);
+        }
     };
     
     // Add the handler
