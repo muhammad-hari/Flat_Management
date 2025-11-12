@@ -28,6 +28,10 @@
   <PackageReference Include="ZXing.Net.Bindings.SkiaSharp" Version="0.16.21" />
 </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="backups\" />
+  </ItemGroup>
+
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>

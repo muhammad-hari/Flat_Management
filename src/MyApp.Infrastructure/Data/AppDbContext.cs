@@ -42,6 +42,8 @@ namespace MyApp.Infrastructure.Data
         public DbSet<Menu> Menus { get; set; } = default!;
         public DbSet<MenuPermission> MenuPermissions { get; set; } = default!;
         public DbSet<SystemSetting> SystemSettings { get; set; } = default!;
+        public DbSet<BackupSchedule> BackupSchedules { get; set; } = default!;
+        public DbSet<BackupHistory> BackupHistories { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -120,6 +122,35 @@ namespace MyApp.Infrastructure.Data
                 
                 entity.Property(e => e.Description).HasMaxLength(500);
                 entity.HasIndex(e => e.Key).IsUnique();
+            });
+
+            // BackupSchedule Configuration
+            modelBuilder.Entity<BackupSchedule>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Frequency).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.BackupPath).HasMaxLength(500).IsRequired();
+                
+                entity.HasMany(e => e.BackupHistories)
+                    .WithOne(e => e.BackupSchedule)
+                    .HasForeignKey(e => e.BackupScheduleId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // BackupHistory Configuration
+            modelBuilder.Entity<BackupHistory>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                entity.Property(e => e.BackupType).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.FileName).HasMaxLength(500).IsRequired();
+                entity.Property(e => e.FilePath).HasMaxLength(1000).IsRequired();
+                entity.Property(e => e.Status).HasMaxLength(50).IsRequired();
+                
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => e.StartedAt);
             });
         }
     }

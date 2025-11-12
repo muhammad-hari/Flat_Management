@@ -14,10 +14,13 @@ namespace MyApp.Infrastructure
     {
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            // Register MySQL
-            services.AddDbContext<AppDbContext>(options =>
+            // Get connection string once
+            var connectionString = configuration.GetConnectionString("DefaultConnection") 
+                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+            
+            // FIX: Use only AddDbContextFactory instead of both AddDbContext and AddPooledDbContextFactory
+            services.AddDbContextFactory<AppDbContext>(options =>
             {
-                var connectionString = configuration.GetConnectionString("DefaultConnection");
                 options.UseMySql(connectionString,
                     ServerVersion.AutoDetect(connectionString),
                     mySqlOptions =>
@@ -27,7 +30,14 @@ namespace MyApp.Infrastructure
                             maxRetryDelay: TimeSpan.FromSeconds(5),
                             errorNumbersToAdd: null);
                     });
-            }, ServiceLifetime.Scoped);
+            });
+
+            // Also add regular DbContext for services that need it (like repositories)
+            services.AddScoped<AppDbContext>(sp =>
+            {
+                var factory = sp.GetRequiredService<IDbContextFactory<AppDbContext>>();
+                return factory.CreateDbContext();
+            });
 
             // Register Redis Connection
             services.AddSingleton<IConnectionMultiplexer>(sp =>
@@ -40,7 +50,6 @@ namespace MyApp.Infrastructure
 
             // Redis Cache Service
             services.AddSingleton<IRedisService, RedisService>();
-
 
             // ======================================================
             // DEPENDENCY INJECTION REPOSITORIES
@@ -74,6 +83,12 @@ namespace MyApp.Infrastructure
             services.AddScoped<ICardRepository, CardRepository>();
             services.AddScoped<IGateDeviceRepository, GateDeviceRepository>();
             services.AddScoped<ISystemSettingService, SystemSettingService>();
+
+            services.AddScoped<IBackupScheduleService, BackupScheduleService>();
+            services.AddScoped<IBackupService, BackupService>();
+
+            // Add this to your service registration
+            services.AddHostedService<BackupProcessorHostedService>();
 
             return services;
         }

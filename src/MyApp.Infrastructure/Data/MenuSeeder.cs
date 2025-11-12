@@ -44,7 +44,8 @@ namespace MyApp.Infrastructure.Data
                     new() { Code = "inventory-management", Name = "Inventory Management", IconName = "package", Color = "text-indigo-400", Order = 9 },
                     new() { Code = "access-control", Name = "Access Control", IconName = "key", Color = "text-emerald-400", Order = 10 },
                     new() { Code = "access-menu", Name = "Access Menu", IconName = "key", Color = "text-emerald-400", Url = "/access-menu", Order = 11 },
-                    new() { Code = "master-data", Name = "Master Data", IconName = "folder-open", Color = "text-amber-400", Order = 12 }
+                    new() { Code = "master-data", Name = "Master Data", IconName = "folder-open", Color = "text-amber-400", Order = 12 },
+                    new() { Code = "data-care", Name = "Data Care", IconName = "folder-open", Color = "text-amber-400", Order = 13 }
                 };
 
                 await context.Menus.AddRangeAsync(menus);
@@ -79,6 +80,15 @@ namespace MyApp.Infrastructure.Data
                     new() { Code = "gates", Name = "Gate Access", IconName = "shield", Color = "text-teal-400", Url = "/access-control/gates", Order = 2, ParentId = accessControlParent.Id }
                 };
                 await context.Menus.AddRangeAsync(accessControlSubmenus);
+
+                // Add submenus - Data Management
+                var dataParent = await context.Menus.FirstAsync(m => m.Code == "data-care");
+                var dataSubmenus = new List<Menu>
+                {
+                    new() { Code = "backup-data", Name = "Backup", IconName = "user-check", Color = "text-teal-400", Url = "/data-care/backup-data", Order = 1, ParentId = dataParent.Id },
+                    new() { Code = "restore-data", Name = "Restore", IconName = "calendar", Color = "text-teal-400", Url = "/data-care/restore-data", Order = 2, ParentId = dataParent.Id }
+                };
+                await context.Menus.AddRangeAsync(dataSubmenus);
 
 
                 // Add submenus - Visitors Management

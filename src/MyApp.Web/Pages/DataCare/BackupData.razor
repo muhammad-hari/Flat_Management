@@ -1,0 +1,969 @@
+@page "/data-care/backup-data"
+@using MyApp.Core.Entities
+@using MyApp.Core.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Security.Claims
+@inject IBackupScheduleService BackupScheduleService
+@inject IBackupService BackupService
+@inject IPermissionService PermissionService
+@inject ToastService ToastService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Backup Data</PageTitle>
+
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between">
+            <div>
+                <h2 class="text-3xl font-extrabold text-gray-800 tracking-tight flex items-center gap-3">
+                    <i class="fas fa-database text-blue-600"></i>
+                    Backup Data Management
+                </h2>
+                <p class="text-gray-500 mt-1">Schedule and manage your database backups</p>
+            </div>
+            
+            @if (CanCreate)
+            {
+                <div class="flex gap-3 mt-4 md:mt-0">
+                    <button @onclick="ExecuteManualBackup" 
+                            disabled="@IsBackingUp"
+                            class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                        @if (IsBackingUp)
+                        {
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>Backing up...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-play"></i>
+                            <span>Backup Now</span>
+                        }
+                    </button>
+                    <button @onclick="OpenCreateModal" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg">
+                        <i class="fas fa-plus"></i>
+                        <span>New Schedule</span>
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl shadow-lg text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-blue-100 text-sm font-medium">Total Schedules</p>
+                    <h3 class="text-3xl font-bold mt-2">@Schedules.Count</h3>
+                </div>
+                <div class="bg-white/20 p-4 rounded-lg">
+                    <i class="fas fa-calendar-alt fa-2x"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl shadow-lg text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-green-100 text-sm font-medium">Active Schedules</p>
+                    <h3 class="text-3xl font-bold mt-2">@Schedules.Count(s => s.IsEnabled)</h3>
+                </div>
+                <div class="bg-white/20 p-4 rounded-lg">
+                    <i class="fas fa-check-circle fa-2x"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-xl shadow-lg text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-purple-100 text-sm font-medium">Total Backups</p>
+                    <h3 class="text-3xl font-bold mt-2">@BackupHistories.Count</h3>
+                </div>
+                <div class="bg-white/20 p-4 rounded-lg">
+                    <i class="fas fa-database fa-2x"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-xl shadow-lg text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-orange-100 text-sm font-medium">Success Rate</p>
+                    <h3 class="text-3xl font-bold mt-2">@GetSuccessRate()%</h3>
+                </div>
+                <div class="bg-white/20 p-4 rounded-lg">
+                    <i class="fas fa-chart-line fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100">
+        <div class="border-b border-gray-200">
+               <nav class="flex -mb-px">
+        <button @onclick="SelectSchedulesTab"
+                class="@(ActiveTab == "schedules" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300") whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-all duration-200">
+            <i class="fas fa-calendar-check mr-2"></i>
+            Backup Schedules
+        </button>
+
+        <button @onclick="SelectHistoryTab"
+                class="@(ActiveTab == "history" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300") whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-all duration-200">
+            <i class="fas fa-history mr-2"></i>
+            Backup History
+        </button>
+    </nav>
+        </div>
+
+        <div class="p-6">
+            @if (ActiveTab == "schedules")
+            {
+                <div class="space-y-4">
+                    @if (!Schedules.Any())
+                    {
+                        <div class="text-center py-12">
+                            <i class="fas fa-calendar-times fa-4x text-gray-300 mb-4"></i>
+                            <p class="text-gray-500 text-lg">No backup schedules configured yet.</p>
+                            @if (CanCreate)
+                            {
+                                <button @onclick="OpenCreateModal" 
+                                        class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg">
+                                    <i class="fas fa-plus mr-2"></i>Create First Schedule
+                                </button>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var schedule in Schedules)
+                        {
+                            <div class="bg-gray-50 p-6 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-3 mb-3">
+                                            <h3 class="text-xl font-bold text-gray-800">@schedule.Name</h3>
+                                            <span class="@(schedule.IsEnabled ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800") px-3 py-1 rounded-full text-xs font-semibold">
+                                                @(schedule.IsEnabled ? "Active" : "Inactive")
+                                            </span>
+                                        </div>
+                                        
+                                        @if (!string.IsNullOrEmpty(schedule.Description))
+                                        {
+                                            <p class="text-gray-600 mb-3">@schedule.Description</p>
+                                        }
+
+                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                            <div>
+                                                <span class="text-gray-500">Frequency:</span>
+                                                <p class="font-semibold text-gray-800">@schedule.Frequency</p>
+                                            </div>
+                                            <div>
+                                                <span class="text-gray-500">Time:</span>
+                                                <p class="font-semibold text-gray-800">@GetScheduledTimeDisplay(schedule.ScheduledTime)</p>
+                                            </div>
+                                            <div>
+                                                <span class="text-gray-500">Retention:</span>
+                                                <p class="font-semibold text-gray-800">@schedule.RetentionDays days</p>
+                                            </div>
+                                            <div>
+                                                <span class="text-gray-500">Path:</span>
+                                                <p class="font-semibold text-gray-800 truncate">@schedule.BackupPath</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    @if (CanUpdate || CanDelete)
+                                    {
+                                        <div class="flex gap-2 ml-4">
+                                            @if (CanUpdate)
+                                            {
+                                                <button @onclick="() => ToggleSchedule(schedule)" 
+                                                        class="@(schedule.IsEnabled ? "bg-orange-100 text-orange-600 hover:bg-orange-200" : "bg-green-100 text-green-600 hover:bg-green-200") p-3 rounded-lg transition-all duration-200"
+                                                        title="@(schedule.IsEnabled ? "Disable" : "Enable")">
+                                                    <i class="fas @(schedule.IsEnabled ? "fa-pause" : "fa-play")"></i>
+                                                </button>
+                                                <button @onclick="() => OpenEditModal(schedule)" 
+                                                        class="bg-blue-100 text-blue-600 hover:bg-blue-200 p-3 rounded-lg transition-all duration-200"
+                                                        title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            }
+                                            @if (CanDelete)
+                                            {
+                                                <button @onclick="() => DeleteSchedule(schedule.Id)" 
+                                                        class="bg-red-100 text-red-600 hover:bg-red-200 p-3 rounded-lg transition-all duration-200"
+                                                        title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="space-y-4">
+                    @if (!BackupHistories.Any())
+                    {
+                        <div class="text-center py-12">
+                            <i class="fas fa-history fa-4x text-gray-300 mb-4"></i>
+                            <p class="text-gray-500 text-lg">No backup history available.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File Name</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @foreach (var history in BackupHistories)
+                                    {
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                <i class="fas fa-file-archive mr-2 text-blue-500"></i>
+                                                @history.FileName
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <span class="@(history.BackupType == "Manual" ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800") px-2 py-1 rounded text-xs font-semibold">
+                                                    @history.BackupType
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                @FormatFileSize(history.FileSize)
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="@GetStatusBadgeClass(history.Status) px-2 py-1 rounded text-xs font-semibold">
+                                                    @history.Status
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                @FormatDateTime(history.StartedAt)
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                @history.DurationSeconds s
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <div class="flex gap-2">
+                                                    @if (CanUpdate && history.Status == "Success")
+                                                    {
+                                                        <!-- Simple direct download link -->
+                                                        <a href="@GetDownloadUrl(history)" 
+                                                           target="_blank"
+                                                           download
+                                                           class="text-blue-600 hover:text-blue-900"
+                                                           title="Download">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                        
+                                                        <button @onclick="() => RestoreBackup(history.Id, history.FileName)" 
+                                                                class="text-green-600 hover:text-green-900"
+                                                                title="Restore">
+                                                            <i class="fas fa-undo"></i>
+                                                        </button>
+                                                    }
+                                                    @if (CanDelete)
+                                                    {
+                                                        <button @onclick="() => DeleteBackupHistory(history.Id)" 
+                                                                class="text-red-600 hover:text-red-900"
+                                                                title="Delete">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal Create/Edit Schedule -->
+@if (ShowModal)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @onclick="CloseModal">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" @onclick:stopPropagation>
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-2xl font-bold text-gray-800">
+                        <i class="fas fa-@(IsEditMode ? "edit" : "plus-circle") mr-2 text-blue-600"></i>
+                        @(IsEditMode ? "Edit Backup Schedule" : "Create New Backup Schedule")
+                    </h3>
+                    <button @onclick="CloseModal" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times fa-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <EditForm Model="@CurrentSchedule" OnValidSubmit="SaveSchedule">
+                <DataAnnotationsValidator />
+                <div class="p-6 space-y-6">
+                    
+                    <!-- Basic Information Section -->
+                    <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
+                        <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-info-circle text-blue-600"></i>
+                            Basic Information
+                        </h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Name -->
+                            <div class="md:col-span-2">
+                                <label class="block text-gray-700 text-sm font-medium mb-2">
+                                    <i class="fas fa-signature mr-1"></i> Schedule Name *
+                                </label>
+                                <InputText @bind-Value="CurrentSchedule.Name" 
+                                    class="w-full border border-gray-300 px-4 py-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
+                                    placeholder="e.g., Daily Production Backup" />
+                                <ValidationMessage For="@(() => CurrentSchedule.Name)" class="text-red-600 text-sm mt-1" />
+                            </div>
+
+                            <!-- Description -->
+                            <div class="md:col-span-2">
+                                <label class="block text-gray-700 text-sm font-medium mb-2">
+                                    <i class="fas fa-comment mr-1"></i> Description
+                                </label>
+                                <InputTextArea @bind-Value="CurrentSchedule.Description" 
+                                    class="w-full border border-gray-300 px-4 py-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
+                                    rows="3"
+                                    placeholder="Optional description for this backup schedule" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Schedule Configuration Section -->
+                    <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
+                        <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-calendar-alt text-green-600"></i>
+                            Schedule Configuration
+                        </h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Frequency -->
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-2">
+                                    <i class="fas fa-redo mr-1"></i> Frequency *
+                                </label>
+                                <InputSelect @bind-Value="CurrentSchedule.Frequency" 
+                                    class="w-full border border-gray-300 px-4 py-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+                                    <option value="Daily">Daily</option>
+                                    <option value="Weekly">Weekly</option>
+                                    <option value="Monthly">Monthly</option>
+                                    <option value="Custom">Custom</option>
+                                </InputSelect>
+                            </div>
+
+                            <!-- Scheduled Time -->
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-2">
+                                    <i class="fas fa-clock mr-1"></i> Scheduled Time *
+                                </label>
+                                <div class="flex gap-2">
+                                    <input type="time" 
+                                        value="@ScheduledTimeString" 
+                                        @onchange="OnTimeChanged"
+                                        class="flex-1 border border-gray-300 px-4 py-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+                                
+                                    <!-- Quick Test Buttons -->
+                                    <button type="button" 
+                                            @onclick="SetTimeNowPlus1Min"
+                                            class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+                                            title="Set to 1 minute from now">
+                                        +1m
+                                    </button>
+                                    <button type="button" 
+                                            @onclick="SetTimeNowPlus2Min"
+                                            class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+                                            title="Set to 2 minutes from now">
+                                        +2m
+                                    </button>
+                                    <button type="button" 
+                                            @onclick="SetTimeNowPlus5Min"
+                                            class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+                                            title="Set to 5 minutes from now">
+                                        +5m
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Current time: <span class="font-semibold">@DateTime.Now.ToString("HH:mm:ss")</span>
+                                </p>
+                            </div>
+
+                            <!-- Day of Week (for Weekly) -->
+                            @if (CurrentSchedule.Frequency == "Weekly")
+                            {
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-medium mb-2">
+                                        <i class="fas fa-calendar-week mr-1"></i> Day of Week *
+                                    </label>
+                                    <InputSelect @bind-Value="CurrentSchedule.DayOfWeek" 
+                                        class="w-full border border-gray-300 px-4 py-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+                                        <option value="0">Sunday</option>
+                                        <option value="1">Monday</option>
+                                        <option value="2">Tuesday</option>
+                                        <option value="3">Wednesday</option>
+                                        <option value="4">Thursday</option>
+                                        <option value="5">Friday</option>
+                                        <option value="6">Saturday</option>
+                                    </InputSelect>
+                                </div>
+                            }
+
+                            <!-- Day of Month (for Monthly) -->
+                            @if (CurrentSchedule.Frequency == "Monthly")
+                            {
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-medium mb-2">
+                                        <i class="fas fa-calendar-day mr-1"></i> Day of Month *
+                                    </label>
+                                    <InputNumber @bind-Value="CurrentSchedule.DayOfMonth" 
+                                        class="w-full border border-gray-300 px-4 py-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
+                                        min="1" max="31" />
+                                    <p class="text-xs text-gray-500 mt-1">Day 1-31 of the month</p>
+                                </div>
+                            }
+
+                            <!-- Custom Cron Expression (for Custom) -->
+                            @if (CurrentSchedule.Frequency == "Custom")
+                            {
+                                <div class="md:col-span-2">
+                                    <label class="block text-gray-700 text-sm font-medium mb-2">
+                                        <i class="fas fa-code mr-1"></i> Custom Cron Expression *
+                                    </label>
+                                    <InputText @bind-Value="CurrentSchedule.CustomCronExpression" 
+                                        class="w-full border border-gray-300 px-4 py-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
+                                        placeholder="e.g., EVERY 6 HOUR" />
+                                    <p class="text-xs text-gray-500 mt-1">MySQL Event Scheduler syntax</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Backup Options Section -->
+                    <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
+                        <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-cog text-purple-600"></i>
+                            Backup Options
+                        </h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Backup Path -->
+                            <div class="md:col-span-2">
+                                <label class="block text-gray-700 text-sm font-medium mb-2">
+                                    <i class="fas fa-folder mr-1"></i> Backup Path *
+                                </label>
+                                <InputText @bind-Value="CurrentSchedule.BackupPath" 
+                                    class="w-full border border-gray-300 px-4 py-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
+                                    placeholder="e.g., ./backups or C:\Backups" />
+                                <ValidationMessage For="@(() => CurrentSchedule.BackupPath)" class="text-red-600 text-sm mt-1" />
+                            </div>
+
+                            <!-- Retention Days -->
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-2">
+                                    <i class="fas fa-history mr-1"></i> Retention Days *
+                                </label>
+                                <InputNumber @bind-Value="CurrentSchedule.RetentionDays" 
+                                    class="w-full border border-gray-300 px-4 py-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
+                                    min="1" />
+                                <p class="text-xs text-gray-500 mt-1">Days to keep backup files</p>
+                            </div>
+
+                            <!-- Checkboxes -->
+                            <div class="space-y-3">
+                                <div class="flex items-center">
+                                    <InputCheckbox @bind-Value="CurrentSchedule.IncludeSchema" 
+                                        class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
+                                        id="includeSchema" />
+                                    <label for="includeSchema" class="ml-2 text-sm text-gray-700">
+                                        Include Database Schema
+                                    </label>
+                                </div>
+
+                                <div class="flex items-center">
+                                    <InputCheckbox @bind-Value="CurrentSchedule.IncludeData" 
+                                        class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
+                                        id="includeData" />
+                                    <label for="includeData" class="ml-2 text-sm text-gray-700">
+                                        Include Database Data
+                                    </label>
+                                </div>
+
+                                <div class="flex items-center">
+                                    <InputCheckbox @bind-Value="CurrentSchedule.IsEnabled" 
+                                        class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
+                                        id="isEnabled" />
+                                    <label for="isEnabled" class="ml-2 text-sm text-gray-700">
+                                        Enable Schedule
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="p-6 border-t border-gray-200 flex justify-end gap-3 bg-gray-50">
+                    <button type="button" @onclick="CloseModal" 
+                            class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-6 py-3 rounded-lg transition-all duration-200">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
+                    <button type="submit" 
+                            disabled="@IsSaving"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
+                        @if (IsSaving)
+                        {
+                            <i class="fas fa-spinner fa-spin mr-2"></i>
+                            <span>Saving...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-save mr-2"></i>
+                            <span>Save Schedule</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    private List<BackupSchedule> Schedules = new();
+    private List<BackupHistory> BackupHistories = new();
+    private BackupSchedule CurrentSchedule = new();
+    
+    private bool ShowModal = false;
+    private bool IsEditMode = false;
+    private bool IsSaving = false;
+    private bool IsBackingUp = false;
+    private string ActiveTab = "schedules";
+    private string ScheduledTimeString = "00:00";
+    
+    private bool CanView = false;
+    private bool CanCreate = false;
+    private bool CanUpdate = false;
+    private bool CanDelete = false;
+    private int? CurrentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check permissions
+        CanView = await PermissionService.HasPermissionAsync("backup-data", "view");
+        if (!CanView)
+        {
+            NavigationManager.NavigateTo("/unauthorized");
+            return;
+        }
+
+        CanCreate = await PermissionService.HasPermissionAsync("backup-data", "create");
+        CanUpdate = await PermissionService.HasPermissionAsync("backup-data", "update");
+        CanDelete = await PermissionService.HasPermissionAsync("backup-data", "delete");
+
+        // Get current user ID
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userIdClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+        {
+            CurrentUserId = userId;
+        }
+
+        await LoadData();
+        
+        // Debug: Check Event Scheduler status
+        await CheckEventSchedulerStatus();
+    }
+
+    private async Task CheckEventSchedulerStatus()
+    {
+        try
+        {
+            
+            // This will be logged in console
+            await JSRuntime.InvokeVoidAsync("console.log", "Event Scheduler check completed");
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowWarning($"Event Scheduler check failed: {ex.Message}");
+        }
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            Schedules = await BackupScheduleService.GetAllSchedulesAsync();
+            BackupHistories = await BackupService.GetBackupHistoryAsync(1, 50);
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowError($"Error loading data: {ex.Message}");
+        }
+    }
+
+    private void OpenCreateModal()
+    {
+        if (!CanCreate) return;
+
+        CurrentSchedule = new BackupSchedule
+        {
+            Frequency = "Daily",
+            ScheduledTime = new TimeOnly(0, 0),
+            RetentionDays = 30,
+            BackupPath = "./backups",
+            IncludeSchema = true,
+            IncludeData = true,
+            IsEnabled = true,
+            CreatedBy = CurrentUserId ?? 0
+        };
+        
+        ScheduledTimeString = "00:00";
+        IsEditMode = false;
+        ShowModal = true;
+    }
+
+    private void OpenEditModal(BackupSchedule schedule)
+    {
+        if (!CanUpdate) return;
+
+        CurrentSchedule = new BackupSchedule
+        {
+            Id = schedule.Id,
+            Name = schedule.Name,
+            Description = schedule.Description,
+            Frequency = schedule.Frequency,
+            ScheduledTime = schedule.ScheduledTime,
+            DayOfWeek = schedule.DayOfWeek,
+            DayOfMonth = schedule.DayOfMonth,
+            CustomCronExpression = schedule.CustomCronExpression,
+            BackupPath = schedule.BackupPath,
+            IncludeSchema = schedule.IncludeSchema,
+            IncludeData = schedule.IncludeData,
+            RetentionDays = schedule.RetentionDays,
+            IsEnabled = schedule.IsEnabled,
+            CreatedBy = schedule.CreatedBy,
+            UpdatedBy = CurrentUserId
+        };
+        
+        ScheduledTimeString = schedule.ScheduledTime?.ToString("HH:mm") ?? "00:00";
+        IsEditMode = true;
+        ShowModal = true;
+    }
+
+    private void CloseModal()
+    {
+        ShowModal = false;
+        CurrentSchedule = new();
+    }
+
+    // Handle time input change
+    private void OnTimeChanged(ChangeEventArgs e)
+    {
+        if (e.Value != null)
+        {
+            ScheduledTimeString = e.Value.ToString() ?? "00:00";
+        }
+    }
+
+    private async Task SaveSchedule()
+    {
+        if (!CanCreate && !CanUpdate) return;
+
+        IsSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            // Parse time string to TimeOnly
+            if (TimeOnly.TryParse(ScheduledTimeString, out TimeOnly time))
+            {
+                CurrentSchedule.ScheduledTime = time;
+            }
+
+            if (IsEditMode)
+            {
+                CurrentSchedule.UpdatedBy = CurrentUserId;
+                await BackupScheduleService.UpdateScheduleAsync(CurrentSchedule);
+                await ToastService.ShowSuccess("Backup schedule updated successfully!");
+            }
+            else
+            {
+                CurrentSchedule.CreatedBy = CurrentUserId ?? 0;
+                await BackupScheduleService.CreateScheduleAsync(CurrentSchedule);
+                await ToastService.ShowSuccess("Backup schedule created successfully!");
+            }
+
+            await LoadData();
+            CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowError($"Error saving schedule: {ex.Message}");
+        }
+        finally
+        {
+            IsSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ToggleSchedule(BackupSchedule schedule)
+    {
+        if (!CanUpdate) return;
+
+        try
+        {
+            var success = await BackupScheduleService.ToggleScheduleAsync(schedule.Id, !schedule.IsEnabled);
+            if (success)
+            {
+                await ToastService.ShowSuccess($"Schedule {(!schedule.IsEnabled ? "enabled" : "disabled")} successfully!");
+                await LoadData();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowError($"Error toggling schedule: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteSchedule(int id)
+    {
+        if (!CanDelete) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this backup schedule?");
+        if (!confirmed) return;
+
+        try
+        {
+            await BackupScheduleService.DeleteScheduleAsync(id);
+            await ToastService.ShowSuccess("Backup schedule deleted successfully!");
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowError($"Error deleting schedule: {ex.Message}");
+        }
+    }
+
+    private async Task ExecuteManualBackup()
+    {
+        if (!CanCreate || IsBackingUp) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Execute manual backup now?");
+        if (!confirmed) return;
+
+        IsBackingUp = true;
+        StateHasChanged();
+
+        try
+        {
+            await BackupService.ExecuteBackupAsync(null, CurrentUserId, "Manual");
+            await ToastService.ShowSuccess("Backup completed successfully!");
+            await LoadData();
+            ActiveTab = "history"; // Switch to history tab
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowError($"Backup failed: {ex.Message}");
+        }
+        finally
+        {
+            IsBackingUp = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DownloadBackup(int historyId)
+    {
+        try
+        {
+            // Get download URL dari service
+            var downloadUrl = await BackupService.DownloadBackupAsync(historyId);
+            
+            // Langsung buka URL di tab baru atau trigger download
+            await JSRuntime.InvokeVoidAsync("open", downloadUrl, "_blank");
+            
+            await ToastService.ShowSuccess("Download started!");
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowError($"Download failed: {ex.Message}");
+        }
+    }
+
+    // Atau lebih sederhana lagi, tanpa perlu JavaScript
+    private string GetDownloadUrl(BackupHistory history)
+    {
+        var fileName = Path.GetFileName(history.FilePath);
+        return $"/backups/{fileName}";
+    }
+
+    private async Task RestoreBackup(int historyId, string fileName)
+    {
+        try
+        {
+            // Validate backup menggunakan API
+            var validationUrl = $"/api/datacare/restore/validate/{historyId}";
+            var response = await JSRuntime.InvokeAsync<object>("fetch", validationUrl);
+            
+            // Simple confirmation
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+                $"⚠️ WARNING: Restore database from backup?\n\n" +
+                $"File: {fileName}\n" +
+                $"This will replace ALL current data!\n\n" +
+                $"Continue?");
+            
+            if (!confirmed) return;
+
+            await ToastService.ShowInfo("Restoring database...");
+
+            // Call restore API
+            using var httpClient = new HttpClient();
+            var restoreResponse = await httpClient.PostAsync($"/api/datacare/restore/{historyId}", null);
+            
+            if (restoreResponse.IsSuccessStatusCode)
+            {
+                await ToastService.ShowSuccess("✅ Database restored successfully! Page will reload...");
+                
+                // Reload page after 2 seconds
+                await Task.Delay(2000);
+                NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+            }
+            else
+            {
+                var error = await restoreResponse.Content.ReadAsStringAsync();
+                await ToastService.ShowError($"❌ Restore failed: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowError($"❌ Restore failed: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteBackupHistory(int historyId)
+    {
+        if (!CanDelete) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Delete this backup file?");
+        if (!confirmed) return;
+
+        try
+        {
+            var success = await BackupService.DeleteBackupFileAsync(historyId);
+            if (success)
+            {
+                await ToastService.ShowSuccess("Backup file deleted successfully!");
+                await LoadData();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowError($"Delete failed: {ex.Message}");
+        }
+    }
+
+    // Helper methods
+    private string GetScheduledTimeDisplay(TimeOnly? time)
+    {
+        return time?.ToString("HH:mm") ?? "N/A";
+    }
+
+    private string FormatDateTime(DateTime dateTime)
+    {
+        return dateTime.ToString("dd MMM yyyy HH:mm");
+    }
+
+    private string GetSuccessRate()
+    {
+        if (!BackupHistories.Any()) return "0";
+        var successCount = BackupHistories.Count(h => h.Status == "Success");
+        return Math.Round((double)successCount / BackupHistories.Count * 100, 1).ToString();
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Success" => "bg-green-100 text-green-800",
+            "Failed" => "bg-red-100 text-red-800",
+            "Pending" => "bg-yellow-100 text-yellow-800",
+            _ => "bg-gray-100 text-gray-800"
+        };
+    }
+
+    private void SetActiveTab(string tab)
+    {
+        ActiveTab = tab;
+    }
+
+    private void SelectSchedulesTab()
+    {
+        ActiveTab = "schedules";
+    }
+
+    private void SelectHistoryTab()
+    {
+        ActiveTab = "history";
+    }
+
+    private void SetTimeNowPlus1Min()
+    {
+        var now = DateTime.Now;
+        var targetTime = now.AddMinutes(1);
+        ScheduledTimeString = targetTime.ToString("HH:mm");
+    }
+
+    private void SetTimeNowPlus2Min()
+    {
+        var now = DateTime.Now;
+        var targetTime = now.AddMinutes(2);
+        ScheduledTimeString = targetTime.ToString("HH:mm");
+    }
+
+    private void SetTimeNowPlus5Min()
+    {
+        var now = DateTime.Now;
+        var targetTime = now.AddMinutes(5);
+        ScheduledTimeString = targetTime.ToString("HH:mm");
+    }
+
+}
