@@ -10,16 +10,16 @@ using System.IO.Compression;
 
 namespace MyApp.Infrastructure.Services
 {
-    public class BackupService : IBackupService
+    public class DataCareService : IDataCareService
     {
         private readonly IConfiguration _configuration;
-        private readonly ILogger<BackupService> _logger;
+        private readonly ILogger<DataCareService> _logger;
         private readonly string _connectionString;
         private readonly IDbContextFactory<AppDbContext> _contextFactory;
 
-        public BackupService(
+        public DataCareService(
             IConfiguration configuration,
-            ILogger<BackupService> logger,
+            ILogger<DataCareService> logger,
             IDbContextFactory<AppDbContext> contextFactory)
         {
             _configuration = configuration;
@@ -478,11 +478,20 @@ namespace MyApp.Infrastructure.Services
 
         public async Task<bool> RestoreBackupFromFileAsync(string filePath, int userId)
         {
+            var startTime = DateTime.Now;
+            string fileName = Path.GetFileName(filePath);
+            string status = "Success";
+            string? errorMessage = null;
+            int? duration = null;
+            int? fileSize = null;
+
             try
             {
                 if (!File.Exists(filePath))
                 {
                     _logger.LogError($"Backup file not found: {filePath}");
+                    status = "Failed";
+                    errorMessage = "Backup file not found";
                     return false;
                 }
 
@@ -503,13 +512,55 @@ namespace MyApp.Infrastructure.Services
                     File.Delete(restoreFile);
 
                 _logger.LogInformation($"✅ Database restored successfully from uploaded file: {Path.GetFileName(filePath)}");
+                fileSize = (int)new FileInfo(filePath).Length;
+                duration = (int)(DateTime.Now - startTime).TotalSeconds;
                 return true;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "❌ Restore from upload failed");
+                status = "Failed";
+                errorMessage = ex.Message;
                 return false;
             }
+            finally
+            {
+                // Save restore history
+                try
+                {
+                    await using var context = await _contextFactory.CreateDbContextAsync();
+                    var user = await context.Users.FindAsync(userId);
+                    context.RestoreHistories.Add(new RestoreHistory
+                    {
+                        FileName = fileName,
+                        FilePath = filePath,
+                        FileSize = fileSize,
+                        RestoredBy = userId,
+                        UserName = user?.UserName ?? user.Email,
+                        Status = status,
+                        StartedAt = startTime,
+                        CompletedAt = DateTime.Now,
+                        DurationSeconds = duration,
+                        ErrorMessage = errorMessage
+                    });
+                    await context.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "❌ Failed to save restore history");
+                }
+            }
+        }
+
+        public async Task<List<RestoreHistory>> GetRestoreHistoryAsync(int pageNumber = 1, int pageSize = 20)
+        {
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.RestoreHistories
+                .AsNoTracking()
+                .OrderByDescending(h => h.StartedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
         }
 
         private string FormatBytes(long bytes)

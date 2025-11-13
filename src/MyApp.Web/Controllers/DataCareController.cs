@@ -5,16 +5,15 @@ using System.Security.Claims;
 
 namespace MyApp.Web.Controllers
 {
-    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class DataCareController : ControllerBase
     {
-        private readonly IBackupService _backupService;
+        private readonly IDataCareService _backupService;
         private readonly ILogger<DataCareController> _logger;
 
         public DataCareController(
-            IBackupService backupService, 
+            IDataCareService backupService, 
             ILogger<DataCareController> logger)
         {
             _backupService = backupService;
@@ -170,7 +169,7 @@ namespace MyApp.Web.Controllers
                 }
 
                 // Call restore logic
-                var backupService = HttpContext.RequestServices.GetRequiredService<IBackupService>();
+                var backupService = HttpContext.RequestServices.GetRequiredService<IDataCareService>();
                 var result = await backupService.RestoreBackupFromFileAsync(tempFilePath, userId);
 
                 // Clean up temp file

@@ -4,7 +4,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Security.Claims
 @inject IBackupScheduleService BackupScheduleService
-@inject IBackupService BackupService
+@inject IDataCareService BackupService
 @inject IPermissionService PermissionService
 @inject ToastService ToastService
 @inject NavigationManager NavigationManager
@@ -46,11 +46,6 @@
                             class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg">
                         <i class="fas fa-plus"></i>
                         <span>New Schedule</span>
-                    </button>
-                    <button @onclick="OpenRestoreModal"
-                            class="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg">
-                        <i class="fas fa-upload"></i>
-                        <span>Restore from File</span>
                     </button>
                 </div>
             }
@@ -482,10 +477,10 @@
                                 <label class="block text-gray-700 text-sm font-medium mb-2">
                                     <i class="fas fa-folder mr-1"></i> Backup Path *
                                 </label>
-                                <InputText @bind-Value="CurrentSchedule.BackupPath" 
-                                    class="w-full border border-gray-300 px-4 py-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
-                                    placeholder="e.g., ./backups or C:\Backups" />
-                                <ValidationMessage For="@(() => CurrentSchedule.BackupPath)" class="text-red-600 text-sm mt-1" />
+                                <InputText @bind-Value="CurrentSchedule.BackupPath"
+                                           class="w-full border border-gray-300 px-4 py-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                           placeholder="e.g., ./backups or C:\Backups"
+                                           disabled />
                             </div>
 
                             <!-- Retention Days -->
@@ -622,7 +617,6 @@
     private bool CanCreate = false;
     private bool CanUpdate = false;
     private bool CanDelete = false;
-    private bool CanRestoreFromUpload = false;
     private int? CurrentUserId;
 
     private IBrowserFile? RestoreFile;
@@ -640,7 +634,6 @@
         CanCreate = await PermissionService.HasPermissionAsync("backup-data", "create");
         CanUpdate = await PermissionService.HasPermissionAsync("backup-data", "update");
         CanDelete = await PermissionService.HasPermissionAsync("backup-data", "delete");
-        CanRestoreFromUpload = await PermissionService.HasPermissionAsync("backup-data", "restore-from-upload");
 
         // Get current user ID
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();

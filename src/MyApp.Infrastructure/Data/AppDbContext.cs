@@ -44,6 +44,7 @@ namespace MyApp.Infrastructure.Data
         public DbSet<SystemSetting> SystemSettings { get; set; } = default!;
         public DbSet<BackupSchedule> BackupSchedules { get; set; } = default!;
         public DbSet<BackupHistory> BackupHistories { get; set; } = default!;
+        public DbSet<RestoreHistory> RestoreHistories { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -149,6 +150,18 @@ namespace MyApp.Infrastructure.Data
                 entity.Property(e => e.FilePath).HasMaxLength(1000).IsRequired();
                 entity.Property(e => e.Status).HasMaxLength(50).IsRequired();
                 
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => e.StartedAt);
+            });
+
+            // RestoreHistory Configuration
+            modelBuilder.Entity<RestoreHistory>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                entity.Property(e => e.FileName).HasMaxLength(500).IsRequired();
+                entity.Property(e => e.FilePath).HasMaxLength(1000).IsRequired();
+                entity.Property(e => e.Status).HasMaxLength(50).IsRequired();
                 entity.HasIndex(e => e.Status);
                 entity.HasIndex(e => e.StartedAt);
             });

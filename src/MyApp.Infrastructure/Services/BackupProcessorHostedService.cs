@@ -52,7 +52,7 @@ namespace MyApp.Infrastructure.Services
        {
             using var scope = _serviceProvider.CreateScope();
             var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
-            var backupService = scope.ServiceProvider.GetRequiredService<IBackupService>();
+            var backupService = scope.ServiceProvider.GetRequiredService<IDataCareService>();
 
             await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
