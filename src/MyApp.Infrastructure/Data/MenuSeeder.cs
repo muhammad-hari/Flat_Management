@@ -40,7 +40,7 @@ namespace MyApp.Infrastructure.Data
                     new() { Code = "employees", Name = "Employees", IconName = "briefcase", Color = "text-cyan-400", Url = "/employees", Order = 5 },
                     new() { Code = "building-management", Name = "Building Management", IconName = "building", Color = "text-yellow-400", Order = 6 },
                     new() { Code = "weapon-management", Name = "Weapon Management", IconName = "shield", Color = "text-red-400", Order = 7 },
-                    new() { Code = "alsus-management", Name = "Alsus Management", IconName = "shield", Color = "text-red-400", Url = "/alsus", Order = 8 },
+                    new() { Code = "alsus-management", Name = "Alsus Management", IconName = "shield", Color = "text-red-400", Order = 8 },
                     new() { Code = "inventory-management", Name = "Inventory Management", IconName = "package", Color = "text-indigo-400", Order = 9 },
                     new() { Code = "access-control", Name = "Access Control", IconName = "key", Color = "text-emerald-400", Order = 10 },
                     new() { Code = "access-menu", Name = "Access Menu", IconName = "key", Color = "text-emerald-400", Url = "/access-menu", Order = 11 },
@@ -69,6 +69,15 @@ namespace MyApp.Infrastructure.Data
                     new() { Code = "weapons-assignment", Name = "Weapon Assignment", IconName = "calendar", Color = "text-teal-400", Url = "/weapons/assignment", Order = 2, ParentId = waeponParent.Id },
                 };
                 await context.Menus.AddRangeAsync(weaponSubmenus);
+
+                // Add submenus - Weapon Management
+                var alsusParent = await context.Menus.FirstAsync(m => m.Code == "alsus-management");
+                var alsusSubmenus = new List<Menu>
+                {
+                    new() { Code = "alsus", Name = "Alsus", IconName = "calendar", Color = "text-teal-400", Url = "/alsus", Order = 1, ParentId = alsusParent.Id },
+                    new() { Code = "alsus-assignment", Name = "Alsus Assignment", IconName = "calendar", Color = "text-teal-400", Url = "/alsus/assignment", Order = 2, ParentId = alsusParent.Id },
+                };
+                await context.Menus.AddRangeAsync(alsusSubmenus);
 
                 // Add submenus - Menu Management
                 var administrationParent = await context.Menus.FirstAsync(m => m.Code == "administration");
@@ -285,6 +294,335 @@ namespace MyApp.Infrastructure.Data
             catch (Exception ex)
             {
                 throw;
+            }
+        }
+
+        public static async Task SeedMasterDataAsync(AppDbContext context)
+        {
+            // Seed Positions
+            if (!await context.Positions.AnyAsync())
+            {
+                var positions = new List<Position>
+                {
+                    new() { Name = "Kapolres", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true },
+                    new() {Name = "Wakapolres", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Kasat Reskrim", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Kasat Intelkam", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Kasat Lantas", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Kasat Sabhara", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Kasat Binmas", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Kanit Reskrim", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Kanit Intelkam", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Kanit Lantas", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Kanit Sabhara", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Kanit Binmas", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Bhabinkamtibmas", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Operator", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true}
+                };
+                await context.Positions.AddRangeAsync(positions);
+            }
+
+            // Seed Ranks
+            if (!await context.Ranks.AnyAsync())
+            {
+                var ranks = new List<Rank>
+                {
+                    new() {Name = "Jenderal Polisi", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Komjen Polisi", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Irjen Polisi", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Brigjen Polisi", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Kombes Polisi", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "AKBP", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Kompol", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "AKP", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Iptu", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Ipda", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Aiptu", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Aipda", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Bripka", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Brigadir", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Briptu", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Bripda", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true}
+                };
+                await context.Ranks.AddRangeAsync(ranks);
+            }
+
+            // Seed Room Categories
+            if (!await context.RoomCategories.AnyAsync())
+            {
+                var categories = new List<RoomCategory>
+                {
+                    new() {Name = "Ruang Kapolres", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() { Name = "Ruang Wakapolres" , CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() { Name = "Ruang Sat Reskrim", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true },
+                    new() {Name = "Ruang Sat Intelkam", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Ruang Sat Lantas", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Ruang Sat Sabhara", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Ruang Sat Binmas", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Ruang Tahanan", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Ruang Rapat", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Ruang Arsip", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Ruang Senjata", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Ruang Inventaris", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true}
+                };
+                await context.RoomCategories.AddRangeAsync(categories);
+            }
+
+            // Seed Room Status
+            if (!await context.RoomStatus.AnyAsync())
+            {
+                var status = new List<RoomStatus>
+                {
+                    new() {Name = "Tersedia", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Terpakai", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Dalam Perbaikan", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {Name = "Tidak Layak", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true}
+                };
+                await context.RoomStatus.AddRangeAsync(status);
+            }
+
+            // Seed Room Condition
+            if (!await context.RoomConditions.AnyAsync())
+            {
+                var conditions = new List<RoomCondition>
+                {
+                    new() { Name = "Baik", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true },
+                    new() { Name = "Cukup", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true },
+                    new() { Name = "Rusak Ringan", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true },
+                    new() {Name = "Rusak Berat", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true}
+                };
+                await context.RoomConditions.AddRangeAsync(conditions);
+            }
+
+            // Seed Inventory Types
+            if (!await context.InventoryTypes.AnyAsync())
+            {
+                var inventoryTypes = new List<InventoryType>
+                {
+                    new() { TypeName = "Senjata Api", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true },
+                    new() {TypeName = "Amunisi", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {TypeName = "Kendaraan Dinas", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {TypeName = "Peralatan Komunikasi", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {TypeName = "Peralatan Kantor", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {TypeName = "Peralatan IT", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {TypeName = "Dokumen", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true},
+                    new() {TypeName = "Seragam", CreatedBy = "system", CreatedAt = DateTime.UtcNow, IsActive = true}
+                };
+                await context.InventoryTypes.AddRangeAsync(inventoryTypes);
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        public static async Task SeedEmployeesAsync(AppDbContext context)
+        {
+            if (!await context.Employees.AnyAsync())
+            {
+                var ranks = await context.Ranks.ToListAsync();
+                var positions = await context.Positions.ToListAsync();
+
+                var employees = new List<Employee>
+                {
+                    new()
+                    {
+                        Name = "AKBP Budi Santoso",
+                        NRP = "76010101",
+                        Gender = "Laki-laki",
+                        Email = "budi.santoso@polri.go.id",
+                        DateOfBirth = new DateOnly(1976, 1, 1),
+                        Status = "Aktif",
+                        RankId = ranks.FirstOrDefault(r => r.Name == "AKBP")?.Id ?? ranks.First().Id,
+                        PositionId = positions.FirstOrDefault(p => p.Name == "Kapolres")?.Id ?? positions.First().Id,
+                        Address = "Jl. Sudirman No. 1, Jakarta",
+                        Phone = "081234567890",
+                        JoinDate = new DateOnly(2000, 1, 1),
+                        IsActive = true,
+                        CreatedBy = "system",
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        Position = positions.FirstOrDefault(p => p.Name == "Kapolres"),
+                        Rank = ranks.FirstOrDefault(r => r.Name == "AKBP"),
+                    },
+                    new()
+                    {
+                        Name = "Kompol Siti Aminah",
+                        NRP = "80020202",
+                        Gender = "Perempuan",
+                        Email = "siti.aminah@polri.go.id",
+                        DateOfBirth = new DateOnly(1980, 2, 2),
+                        Status = "Aktif",
+                        RankId = ranks.FirstOrDefault(r => r.Name == "Kompol")?.Id ?? ranks.First().Id,
+                        PositionId = positions.FirstOrDefault(p => p.Name == "Kasat Reskrim")?.Id ?? positions.First().Id,
+                        Address = "Jl. Thamrin No. 2, Bandung",
+                        Phone = "081298765432",
+                        JoinDate = new DateOnly(2005, 2, 2),
+                        IsActive = true,
+                        CreatedBy = "system",
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        Position = positions.FirstOrDefault(p => p.Name == "Kasat Reskrim"),
+                        Rank = ranks.FirstOrDefault(r => r.Name == "Kompol"),
+                    },
+                    new()
+                    {
+                        Name = "AKP Andi Wijaya",
+                        NRP = "85030303",
+                        Gender = "Laki-laki",
+                        Email = "andi.wijaya@polri.go.id",
+                        DateOfBirth = new DateOnly(1985, 3, 3),
+                        Status = "Aktif",
+                        RankId = ranks.FirstOrDefault(r => r.Name == "AKP")?.Id ?? ranks.First().Id,
+                        PositionId = positions.FirstOrDefault(p => p.Name == "Kasat Intelkam")?.Id ?? positions.First().Id,
+                        Address = "Jl. Merdeka No. 3, Surabaya",
+                        Phone = "081212345678",
+                        JoinDate = new DateOnly(2010, 3, 3),
+                        IsActive = true,
+                        CreatedBy = "system",
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        Position = positions.FirstOrDefault(p => p.Name == "Kasat Intelkam"),
+                        Rank = ranks.FirstOrDefault(r => r.Name == "AKP"),
+                    },
+                    new()
+                    {
+                        Name = "Iptu Rina Dewi",
+                        NRP = "90040404",
+                        Gender = "Perempuan",
+                        Email = "rina.dewi@polri.go.id",
+                        DateOfBirth = new DateOnly(1990, 4, 4),
+                        Status = "Aktif",
+                        RankId = ranks.FirstOrDefault(r => r.Name == "Iptu")?.Id ?? ranks.First().Id,
+                        PositionId = positions.FirstOrDefault(p => p.Name == "Kanit Lantas")?.Id ?? positions.First().Id,
+                        Address = "Jl. Diponegoro No. 4, Semarang",
+                        Phone = "081223344556",
+                        JoinDate = new DateOnly(2015, 4, 4),
+                        IsActive = true,
+                        CreatedBy = "system",
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        Position = positions.FirstOrDefault(p => p.Name == "Kanit Lantas"),
+                        Rank = ranks.FirstOrDefault(r => r.Name == "Iptu"),
+                    },
+                    new()
+                    {
+                        Name = "Aiptu Joko Prasetyo",
+                        NRP = "95050505",
+                        Gender = "Laki-laki",
+                        Email = "joko.prasetyo@polri.go.id",
+                        DateOfBirth = new DateOnly(1995, 5, 5),
+                        Status = "Aktif",
+                        RankId = ranks.FirstOrDefault(r => r.Name == "Aiptu")?.Id ?? ranks.First().Id,
+                        PositionId = positions.FirstOrDefault(p => p.Name == "Bhabinkamtibmas")?.Id ?? positions.First().Id,
+                        Address = "Jl. Gajah Mada No. 5, Yogyakarta",
+                        Phone = "081234567891",
+                        JoinDate = new DateOnly(2020, 5, 5),
+                        IsActive = true,
+                        CreatedBy = "system",
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        Position = positions.FirstOrDefault(p => p.Name == "Bhabinkamtibmas"),
+                        Rank = ranks.FirstOrDefault(r => r.Name == "Aiptu"),
+                    }
+                };
+
+                await context.Employees.AddRangeAsync(employees);
+                await context.SaveChangesAsync();
+            }
+        }
+
+        public static async Task SeedWeaponsAsync(AppDbContext context)
+        {
+            if (!await context.Weapons.AnyAsync())
+            {
+                var weapons = new List<Weapon>
+                {
+                    new()
+                    {
+                        Name = "Pistol Glock 17",
+                        Code = "GLK17-001",
+                        Description = "Senjata api standar Polri, kaliber 9mm.",
+                        IsAvailable = true,
+                        CreatedBy = "system",
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        DocumentName = "Glock17_Manual.pdf",
+                        DocumentContentType = "application/pdf",
+                    },
+                    new()
+                    {
+                        Name = "Revolver S&W",
+                        Code = "SW-002",
+                        Description = "Senjata api revolver Smith & Wesson, kaliber .38.",
+                        IsAvailable = true,
+                        CreatedBy = "system",
+                        DocumentName = "SW_Revolver_Manual.pdf",
+                        DocumentContentType = "application/pdf",
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    },
+                    new()
+                    {
+                        Name = "Senapan SS1-V1",
+                        Code = "SS1-003",
+                        Description = "Senapan serbu SS1-V1, kaliber 5.56mm.",
+                        IsAvailable = true,
+                        CreatedBy = "system",
+                        DocumentName = "SS1V1_Manual.pdf",
+                        DocumentContentType = "application/pdf",
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    },
+                    new()
+                    {
+                        Name = "Shotgun Remington 870",
+                        Code = "REM870-004",
+                        Description = "Senjata api shotgun Remington 870.",
+                        IsAvailable = true,
+                        DocumentContentType = "application/pdf",
+                        DocumentName = "Remington870_Manual.pdf",
+                        CreatedBy = "system",
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    },
+                    new()
+                    {
+                        Name = "Pistol HS-9",
+                        Code = "HS9-005",
+                        Description = "Pistol HS-9, kaliber 9mm.",
+                        DocumentName = "HS9_Specifications.pdf",
+                        IsAvailable = true,
+                        DocumentContentType = "application/pdf",
+                        CreatedBy = "system",
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    }
+                };
+
+                await context.Weapons.AddRangeAsync(weapons);
+                await context.SaveChangesAsync();
+            }
+        }
+
+        public static async Task SeedAlsusAsync(AppDbContext context)
+        {
+            if (!await context.Alsuses.AnyAsync())
+            {
+                var alsusList = new List<Alsus>
+                {
+                    new() { Name = "Rompi Anti Peluru", Code = "ALSUS-001", Description = "Rompi pelindung tubuh dari peluru.", IsAvailable = true, CreatedBy = "system", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                    new() { Name = "Tameng Polisi", Code = "ALSUS-002", Description = "Tameng pelindung untuk pengendalian massa.", IsAvailable = true, CreatedBy = "system", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                    new() { Name = "Helm Taktis", Code = "ALSUS-003", Description = "Helm pelindung kepala untuk operasi khusus.", IsAvailable = true, CreatedBy = "system", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                    new() { Name = "Gas Mask", Code = "ALSUS-004", Description = "Masker pelindung dari gas berbahaya.", IsAvailable = true, CreatedBy = "system", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                    new() { Name = "Baton Polisi", Code = "ALSUS-005", Description = "Tongkat polisi untuk pengamanan.", IsAvailable = true, CreatedBy = "system", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                    new() { Name = "Handcuff", Code = "ALSUS-006", Description = "Borgol untuk penahanan tersangka.", IsAvailable = true, CreatedBy = "system", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                    new() { Name = "Flashlight Taktis", Code = "ALSUS-007", Description = "Senter taktis untuk operasi malam.", IsAvailable = true, CreatedBy = "system", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                    new() { Name = "Megaphone", Code = "ALSUS-008", Description = "Alat pengeras suara untuk komunikasi massa.", IsAvailable = true, CreatedBy = "system", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                    new() { Name = "Body Camera", Code = "ALSUS-009", Description = "Kamera yang dipasang di tubuh untuk dokumentasi.", IsAvailable = true, CreatedBy = "system", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                    new() { Name = "Drone Surveillance", Code = "ALSUS-010", Description = "Drone untuk pemantauan area.", IsAvailable = true, CreatedBy = "system", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
+                };
+
+                await context.Alsuses.AddRangeAsync(alsusList);
+                await context.SaveChangesAsync();
             }
         }
     }

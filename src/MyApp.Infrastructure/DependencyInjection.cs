@@ -88,7 +88,7 @@ namespace MyApp.Infrastructure
             services.AddScoped<IBackupScheduleService, BackupScheduleService>();
             services.AddScoped<IDataCareService, DataCareService>();
             services.AddScoped<IAssignmentWeaponRepository, AssignmentWeaponRepository>();
-
+            services.AddScoped<IAssignmentAlsusRepository, AssignmentAlsusRepository>();
             // Add this to your service registration
             services.AddHostedService<BackupProcessorHostedService>();
 

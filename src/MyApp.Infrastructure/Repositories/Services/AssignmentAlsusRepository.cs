@@ -3,35 +3,35 @@ using MyApp.Core.Entities;
 using MyApp.Core.Interfaces;
 using MyApp.Infrastructure.Data;
 
-namespace MyApp.Infrastructure.Repositories
+namespace MyApp.Infrastructure.Repositories.Services
 {
-    public class AssignmentWeaponRepository : IAssignmentWeaponRepository
+    public class AssignmentAlsusRepository : IAssignmentAlsusRepository
     {
         private readonly AppDbContext _context;
 
-        public AssignmentWeaponRepository(AppDbContext context)
+        public AssignmentAlsusRepository(AppDbContext context)
         {
             _context = context;
         }
 
-        public async Task<List<AssignmentWeapon>> GetAllAsync()
+        public async Task<List<AssignmentAlsus>> GetAllAsync()
         {
-            return await _context.AssignmentWeapons
+            return await _context.AssignmentAlsuses
                 .Include(a => a.Employee)
-                .Include(a => a.Weapon)
+                .Include(a => a.Alsus)
                 .OrderByDescending(a => a.AssignedAt)
                 .ToListAsync();
         }
 
-        public async Task<AssignmentWeapon?> GetByIdAsync(int id)
+        public async Task<AssignmentAlsus?> GetByIdAsync(int id)
         {
-            return await _context.AssignmentWeapons
+            return await _context.AssignmentAlsuses
                 .Include(a => a.Employee)
-                .Include(a => a.Weapon)
+                .Include(a => a.Alsus)
                 .FirstOrDefaultAsync(a => a.Id == id);
         }
 
-        public async Task AddAsync(AssignmentWeapon entity)
+        public async Task AddAsync(AssignmentAlsus entity)
         {
             var strategy = _context.Database.CreateExecutionStrategy();
             await strategy.ExecuteAsync(async () =>
@@ -40,13 +40,13 @@ namespace MyApp.Infrastructure.Repositories
 
                 try
                 {
-                    _context.AssignmentWeapons.Add(entity);
+                    _context.AssignmentAlsuses.Add(entity);
 
-                    var weapon = await _context.Weapons.FindAsync(entity.WeaponId);
-                    if (weapon != null)
+                    var alsus = await _context.Alsuses.FindAsync(entity.AlsusId);
+                    if (alsus != null)
                     {
-                        weapon.IsAvailable = false;
-                        weapon.UpdatedAt = DateTime.UtcNow;
+                        alsus.IsAvailable = false;
+                        alsus.UpdatedAt = DateTime.UtcNow;
                     }
 
                     await _context.SaveChangesAsync();
@@ -60,7 +60,7 @@ namespace MyApp.Infrastructure.Repositories
             });
         }
 
-        public async Task UpdateAsync(AssignmentWeapon entity)
+        public async Task UpdateAsync(AssignmentAlsus entity)
         {
             var strategy = _context.Database.CreateExecutionStrategy();
             await strategy.ExecuteAsync(async () =>
@@ -69,22 +69,22 @@ namespace MyApp.Infrastructure.Repositories
 
                 try
                 {
-                    var existing = await _context.AssignmentWeapons.FindAsync(entity.Id);
+                    var existing = await _context.AssignmentAlsuses.FindAsync(entity.Id);
                     if (existing != null)
                     {
                         existing.EmployeeId = entity.EmployeeId;
-                        existing.WeaponId = entity.WeaponId;
+                        existing.AlsusId = entity.AlsusId;
                         existing.AssignedAt = entity.AssignedAt;
                         existing.ReturnedAt = entity.ReturnedAt;
                         existing.AssignedBy = entity.AssignedBy;
                         existing.ReturnedBy = entity.ReturnedBy;
                         existing.Note = entity.Note;
 
-                        var weapon = await _context.Weapons.FindAsync(entity.WeaponId);
-                        if (weapon != null)
+                        var alsus = await _context.Alsuses.FindAsync(entity.AlsusId);
+                        if (alsus != null)
                         {
-                            weapon.IsAvailable = entity.ReturnedAt != null;
-                            weapon.UpdatedAt = DateTime.UtcNow;
+                            alsus.IsAvailable = entity.ReturnedAt != null;
+                            alsus.UpdatedAt = DateTime.UtcNow;
                         }
 
                         await _context.SaveChangesAsync();
@@ -105,10 +105,10 @@ namespace MyApp.Infrastructure.Repositories
 
         public async Task DeleteAsync(int id)
         {
-            var entity = await _context.AssignmentWeapons.FindAsync(id);
+            var entity = await _context.AssignmentAlsuses.FindAsync(id);
             if (entity != null)
             {
-                _context.AssignmentWeapons.Remove(entity);
+                _context.AssignmentAlsuses.Remove(entity);
                 await _context.SaveChangesAsync();
             }
         }

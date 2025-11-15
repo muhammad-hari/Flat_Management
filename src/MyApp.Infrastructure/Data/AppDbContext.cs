@@ -46,6 +46,8 @@ namespace MyApp.Infrastructure.Data
         public DbSet<BackupHistory> BackupHistories { get; set; } = default!;
         public DbSet<RestoreHistory> RestoreHistories { get; set; } = default!;
         public DbSet<AssignmentWeapon> AssignmentWeapons { get; set; } = default!;
+        
+        public DbSet<AssignmentAlsus> AssignmentAlsuses { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -179,6 +181,23 @@ namespace MyApp.Infrastructure.Data
                 entity.HasOne(e => e.Weapon)
                     .WithMany()
                     .HasForeignKey(e => e.WeaponId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // AssignmentAlsus Configuration
+            modelBuilder.Entity<AssignmentAlsus>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                entity.HasOne(e => e.Employee)
+                    .WithMany()
+                    .HasForeignKey(e => e.EmployeeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Alsus)
+                    .WithMany()
+                    .HasForeignKey(e => e.AlsusId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
         }

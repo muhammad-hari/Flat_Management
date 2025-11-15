@@ -216,6 +216,10 @@ using (var scope = app.Services.CreateScope())
 
         // --- Seed Menus ---
         await MenuSeeder.SeedMenusAsync(services);
+        await MenuSeeder.SeedMasterDataAsync(context);
+        await MenuSeeder.SeedEmployeesAsync(context);
+        await MenuSeeder.SeedWeaponsAsync(context);
+        await MenuSeeder.SeedAlsusAsync(context);
     }
     catch (Exception ex)
     {

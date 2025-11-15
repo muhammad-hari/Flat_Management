@@ -1,0 +1,380 @@
+@page "/alsus/assignment"
+@using MyApp.Core.Entities
+@using MyApp.Core.Interfaces
+@using Blazored.Typeahead
+@inject IAssignmentAlsusRepository AssignmentAlsusService
+@inject IEmployeeRepository EmployeeService
+@inject IAlsusRepository AlsusService
+@inject ToastService ToastService
+@inject IPermissionService PermissionService
+
+<PageTitle>Assignment Alsus</PageTitle>
+
+<div class="space-y-6">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">Assignment Alsus</h2>
+        @if (CanCreate)
+        {
+            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg" @onclick="OpenAddModal">
+                <i class="fas fa-plus mr-1"></i> Assign Alsus
+            </button>
+        }
+    </div>
+
+    <div class="flex items-center space-x-3 mb-4">
+        <div class="relative w-64">
+            <input value="@searchTerm" @oninput="HandleSearchTermChange"
+                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                   placeholder="Search employee, alsus, assigned by..." />
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-6">
+        <div class="overflow-x-auto rounded-xl shadow-md border border-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gradient-to-b from-blue-700 to-black">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Employee</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Alsus</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Assigned At</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Returned At</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Assigned By</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Returned By</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Note</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @if (PagedAssignments.Any())
+                    {
+                        @foreach (var item in PagedAssignments)
+                        {
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">@item.Employee?.Name</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-700">@item.Alsus?.Name</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-700">@item.AssignedAt.ToString("dd MMM yyyy HH:mm")</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-700">@((item.ReturnedAt.HasValue) ? item.ReturnedAt.Value.ToString("dd MMM yyyy HH:mm") : "-")</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-700">@item.AssignedBy</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-700">@item.ReturnedBy</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-700">@item.Note</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                    @if (CanUpdate)
+                                    {
+                                        <button class="text-indigo-600 hover:text-indigo-900 p-2 rounded-lg hover:bg-indigo-100 transition"
+                                                @onclick="() => OpenEditModal(item)">
+                                            <i class="fas fa-edit mr-1"></i> Edit
+                                        </button>
+                                    }
+                                    @if (CanDelete)
+                                    {
+                                        <button class="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-100 transition"
+                                                @onclick="() => ConfirmDelete(item.Id)">
+                                            <i class="fas fa-trash-alt mr-1"></i> Delete
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="py-12 text-center text-gray-400">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p class="text-lg">No assignments found.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (FilteredAssignments.Any())
+        {
+            <div class="mt-6 flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div class="text-sm text-gray-600">
+                    Showing <strong>@((CurrentPage - 1) * PageSize + 1)</strong> to <strong>@(Math.Min(CurrentPage * PageSize, FilteredAssignments.Count()))</strong> of <strong>@FilteredAssignments.Count()</strong> entries
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button class="px-3 py-2 rounded-lg border text-sm @(CurrentPage == 1 ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-white hover:bg-gray-100")" @onclick="() => ChangePage(CurrentPage - 1)" disabled="@(CurrentPage == 1)">Previous</button>
+                    @for (int i = 1; i <= TotalPages; i++)
+                    {
+                        var pageNumber = i;
+                        <button class="px-3 py-2 rounded-lg text-sm font-medium @(i == CurrentPage ? "bg-blue-600 text-white" : "bg-white hover:bg-blue-50 border text-gray-700")" @onclick="() => ChangePage(pageNumber)">@i</button>
+                    }
+                    <button class="px-3 py-2 rounded-lg border text-sm @(CurrentPage == TotalPages ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-white hover:bg-gray-100")" @onclick="() => ChangePage(CurrentPage + 1)" disabled="@(CurrentPage == TotalPages)">Next</button>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (ShowConfirmModal)
+    {
+        <div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 animate-fade-in">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-slide-up">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2 text-red-600">
+                    <i class="fas fa-exclamation-triangle"></i> Confirm Delete
+                </h3>
+                <p class="text-gray-700 mb-6">Are you sure you want to delete this assignment? This action cannot be undone.</p>
+                <div class="flex justify-end space-x-3">
+                    <button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 font-medium"
+                        @onclick="CancelDelete">Cancel</button>
+                    <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
+                        @onclick="DeleteConfirmed">Delete</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Modal Add/Edit -->
+    @if (ShowModal)
+    {
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div class="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-lg" @onclick:stopPropagation>
+                <h2 class="text-xl font-bold mb-4">@ModalTitle</h2>
+                <EditForm Model="@CurrentAssignment" OnValidSubmit="SaveAssignment">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="block font-semibold mb-1">Employee *</label>
+                            <BlazoredTypeahead SearchMethod="SearchEmployees"
+                                               @bind-Value="CurrentAssignment.Employee"
+                                               Placeholder="Search employee..."
+                                               MinimumLength="0"
+                                               Debounce="300"
+                                               Class="w-full px-3 py-2 border rounded">
+                                <SelectedTemplate Context="item">
+                                    @item?.Name
+                                </SelectedTemplate>
+                                <ResultTemplate Context="item">
+                                    <div class="flex items-center gap-2">
+                                        <span>@item.Name</span>
+                                    </div>
+                                </ResultTemplate>
+                            </BlazoredTypeahead>
+
+                            <label class="block font-semibold mb-1">Alsus *</label>
+                            <BlazoredTypeahead SearchMethod="SearchAlsus"
+                                               @bind-Value="CurrentAssignment.Alsus"
+                                               Placeholder="Search alsus..."
+                                               MinimumLength="0"
+                                               Debounce="300"
+                                               Class="w-full px-3 py-2 border rounded">
+                                <SelectedTemplate Context="item">
+                                    @item?.Name
+                                </SelectedTemplate>
+                                <ResultTemplate Context="item">
+                                    <div class="flex items-center gap-2">
+                                        <span>@item.Name</span>
+                                    </div>
+                                </ResultTemplate>
+                            </BlazoredTypeahead>
+
+                            <label class="block font-semibold mb-1">Assigned At *</label>
+                            <InputDate @bind-Value="CurrentAssignment.AssignedAt" class="w-full px-3 py-2 border rounded" />
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block font-semibold mb-1">Returned At</label>
+                            <InputDate @bind-Value="CurrentAssignment.ReturnedAt" class="w-full px-3 py-2 border rounded" />
+
+                            <label class="block font-semibold mb-1">Assigned By *</label>
+                            <InputText @bind-Value="CurrentAssignment.AssignedBy" class="w-full px-3 py-2 border rounded" />
+
+                            <label class="block font-semibold mb-1">Returned By</label>
+                            <InputText @bind-Value="CurrentAssignment.ReturnedBy" class="w-full px-3 py-2 border rounded" />
+
+                            <label class="block font-semibold mb-1">Note</label>
+                            <InputText @bind-Value="CurrentAssignment.Note" class="w-full px-3 py-2 border rounded" />
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-2 mt-6">
+                        <button type="button" class="px-4 py-2 bg-gray-300 rounded" @onclick="CloseModal">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool CanView = false;
+    private bool CanCreate = false;
+    private bool CanUpdate = false;
+    private bool CanDelete = false;
+
+    private List<AssignmentAlsus> AssignmentAlsuses = new();
+    private List<Employee> Employees = new();
+    private List<Alsus> AlsusList = new();
+    private AssignmentAlsus CurrentAssignment = new();
+    private bool ShowModal = false;
+    private string ModalTitle = "";
+
+    // Pagination & Filter
+    private string searchTerm = string.Empty;
+    private const int PageSize = 10;
+    private int CurrentPage = 1;
+
+    private bool ShowConfirmModal = false;
+    private int AssignmentIdToDelete = 0;
+
+    private IEnumerable<AssignmentAlsus> FilteredAssignments =>
+        string.IsNullOrWhiteSpace(searchTerm)
+        ? AssignmentAlsuses
+        : AssignmentAlsuses.Where(a =>
+            (a.Employee?.Name ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            (a.Alsus?.Name ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            (a.AssignedBy ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            (a.ReturnedBy ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+        );
+
+    private int TotalPages => (int)Math.Ceiling(FilteredAssignments.Count() / (double)PageSize);
+
+    private IEnumerable<AssignmentAlsus> PagedAssignments => FilteredAssignments.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
+
+    protected override async Task OnInitializedAsync()
+    {
+        CanView = await PermissionService.HasPermissionAsync("alsus-assignment", "view");
+        CanCreate = await PermissionService.HasPermissionAsync("alsus-assignment", "create");
+        CanUpdate = await PermissionService.HasPermissionAsync("alsus-assignment", "update");
+        CanDelete = await PermissionService.HasPermissionAsync("alsus-assignment", "delete");
+
+        if (!CanView)
+        {
+            ToastService.ShowError("You don't have permission to view assignment alsus data.");
+            return;
+        }
+
+        AssignmentAlsuses = await AssignmentAlsusService.GetAllAsync();
+        Employees = await EmployeeService.GetAllAsync();
+        AlsusList = await AlsusService.GetAllAsync();
+    }
+
+    private void OpenAddModal()
+    {
+        if (!CanCreate)
+        {
+            ToastService.ShowError("You don't have permission to assign alsus.");
+            return;
+        }
+        CurrentAssignment = new AssignmentAlsus { AssignedAt = DateTime.Now };
+        ModalTitle = "Assign Alsus";
+        ShowModal = true;
+    }
+
+    private void OpenEditModal(AssignmentAlsus item)
+    {
+        if (!CanUpdate)
+        {
+            ToastService.ShowError("You don't have permission to edit assignment.");
+            return;
+        }
+        CurrentAssignment = new AssignmentAlsus
+        {
+            Id = item.Id,
+            EmployeeId = item.EmployeeId,
+            AlsusId = item.AlsusId,
+            AssignedAt = item.AssignedAt,
+            ReturnedAt = item.ReturnedAt,
+            AssignedBy = item.AssignedBy,
+            ReturnedBy = item.ReturnedBy,
+            Note = item.Note
+        };
+        ModalTitle = "Edit Assignment";
+        ShowModal = true;
+    }
+
+    private void CloseModal()
+    {
+        ShowModal = false;
+    }
+
+    private async Task SaveAssignment()
+    {
+        if ((CurrentAssignment.Id == 0 && !CanCreate) || (CurrentAssignment.Id != 0 && !CanUpdate))
+        {
+            await ToastService.ShowError("You don't have permission to perform this action.");
+            return;
+        }
+
+        // Set ID dari objek yang dipilih
+        CurrentAssignment.EmployeeId = CurrentAssignment.Employee?.Id ?? 0;
+        CurrentAssignment.AlsusId = CurrentAssignment.Alsus?.Id ?? 0;
+
+        if (CurrentAssignment.Id == 0)
+            await AssignmentAlsusService.AddAsync(CurrentAssignment);
+        else
+            await AssignmentAlsusService.UpdateAsync(CurrentAssignment);
+
+        AssignmentAlsuses = await AssignmentAlsusService.GetAllAsync();
+        ShowModal = false;
+        await ToastService.ShowSuccess("Saved!");
+    }
+
+    private void ConfirmDelete(int id)
+    {
+        AssignmentIdToDelete = id;
+        ShowConfirmModal = true;
+    }
+
+    private async Task DeleteConfirmed()
+    {
+        if (!CanDelete)
+        {
+            await ToastService.ShowError("You don't have permission to delete assignment.");
+            return;
+        }
+        if (AssignmentIdToDelete == 0) return;
+        await AssignmentAlsusService.DeleteAsync(AssignmentIdToDelete);
+        AssignmentAlsuses = await AssignmentAlsusService.GetAllAsync();
+        ShowConfirmModal = false;
+        await ToastService.ShowSuccess("Deleted!");
+    }
+
+    private void CancelDelete()
+    {
+        ShowConfirmModal = false;
+    }
+
+    private void HandleSearchTermChange(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        CurrentPage = 1;
+    }
+
+    private void ChangePage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            CurrentPage = page;
+        }
+    }
+
+    private async Task<IEnumerable<Employee>> SearchEmployees(string searchText)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return Employees;
+        return Employees.Where(e => e.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task<IEnumerable<Alsus>> SearchAlsus(string searchText)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return AlsusList;
+        return AlsusList.Where(a => a.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+    }
+}
