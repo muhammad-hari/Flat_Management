@@ -384,12 +384,38 @@
             return;
         }
 
-        if (string.IsNullOrEmpty(inv.GeneratedBarcodeValue)) return;
+        var base64Data = inv.GeneratedBarcodeValue ?? GeneratedBarcodeBase64;
+        if (string.IsNullOrEmpty(base64Data)) return;
 
-        var base64Data = inv.GeneratedBarcodeValue.Split(',')[1];
-        var bytes = Convert.FromBase64String(base64Data);
-        var fileName = $"{inv.Code}_{inv.BarcodeToGenerate}.png";
+        string fileExtension = "png";
+        string prefixPng = "data:image/png;base64,";
+        string prefixSvg = "data:image/svg+xml;base64,";
 
+        if (base64Data.StartsWith(prefixSvg))
+        {
+            base64Data = base64Data.Substring(prefixSvg.Length);
+            fileExtension = "svg";
+        }
+        else if (base64Data.StartsWith(prefixPng))
+        {
+            base64Data = base64Data.Substring(prefixPng.Length);
+            fileExtension = "png";
+        }
+
+        base64Data = base64Data.Replace("\r", "").Replace("\n", "").Trim();
+
+        byte[] bytes;
+        try
+        {
+            bytes = Convert.FromBase64String(base64Data);
+        }
+        catch
+        {
+            await ToastService.ShowError("Barcode data is invalid or corrupt.");
+            return;
+        }
+
+        var fileName = $"{inv.Code}_{inv.BarcodeToGenerate}.{fileExtension}";
         using var streamRef = new DotNetStreamReference(new MemoryStream(bytes));
         await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
     }
@@ -514,6 +540,9 @@
             bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
             bytes = ms.ToArray();
         }
+
+        Console.WriteLine($"[BARCODE RESULT] - data:image/png;base64,{Convert.ToBase64String(bytes)}");
+
         return $"data:image/png;base64,{Convert.ToBase64String(bytes)}";
     }
 }
