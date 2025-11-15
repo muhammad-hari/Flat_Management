@@ -20,6 +20,11 @@ namespace MyApp.Infrastructure.Repositories.Services
             return await _userManager.FindByIdAsync(id);
         }
 
+        public async Task<ApplicationUser?> GetUserByUsernameAsync(string username)
+        {
+            return await _userManager.FindByNameAsync(username);
+        }
+
         public async Task<List<ApplicationUser>> GetAllUsersAsync()
         {
             return await _userManager.Users.ToListAsync();
@@ -27,12 +32,18 @@ namespace MyApp.Infrastructure.Repositories.Services
 
         public async Task<bool> CreateUserAsync(ApplicationUser user, string password)
         {
+            if (string.IsNullOrEmpty(user.SecurityStamp))
+                user.SecurityStamp = Guid.NewGuid().ToString();
+
             var result = await _userManager.CreateAsync(user, password);
             return result.Succeeded;
         }
 
         public async Task<bool> UpdateUserAsync(ApplicationUser user)
         {
+             if (string.IsNullOrEmpty(user.SecurityStamp))
+                user.SecurityStamp = Guid.NewGuid().ToString();
+                
             var result = await _userManager.UpdateAsync(user);
             return result.Succeeded;
         }
