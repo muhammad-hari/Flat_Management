@@ -89,6 +89,8 @@ namespace MyApp.Infrastructure
             services.AddScoped<IDataCareService, DataCareService>();
             services.AddScoped<IAssignmentWeaponRepository, AssignmentWeaponRepository>();
             services.AddScoped<IAssignmentAlsusRepository, AssignmentAlsusRepository>();
+            services.AddScoped<IInventoryRequestRepository, InventoryRequestRepository>();
+            services.AddScoped<IInventoryHistoryRepository, InventoryHistoryRepository>();
             // Add this to your service registration
             services.AddHostedService<BackupProcessorHostedService>();
 

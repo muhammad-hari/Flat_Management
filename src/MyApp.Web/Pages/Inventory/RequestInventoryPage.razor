@@ -274,16 +274,16 @@
     protected override async Task OnInitializedAsync()
     {
         // Check permissions first
-        CanView = await PermissionService.HasPermissionAsync("inventory-requests", "view");
+        CanView = await PermissionService.HasPermissionAsync("request-inventory", "view");
         if (!CanView)
         {
             NavigationManager.NavigateTo("/unauthorized");
             return;
         }
 
-        CanCreate = await PermissionService.HasPermissionAsync("inventory-requests", "create");
-        CanUpdate = await PermissionService.HasPermissionAsync("inventory-requests", "update");
-        CanDelete = await PermissionService.HasPermissionAsync("inventory-requests", "delete");
+        CanCreate = await PermissionService.HasPermissionAsync("request-inventory", "create");
+        CanUpdate = await PermissionService.HasPermissionAsync("request-inventory", "update");
+        CanDelete = await PermissionService.HasPermissionAsync("request-inventory", "delete");
 
         // Only load data if user has view permission
         Inventories = await InventoryService.GetAllAsync();

@@ -220,6 +220,7 @@ using (var scope = app.Services.CreateScope())
         await MenuSeeder.SeedEmployeesAsync(context);
         await MenuSeeder.SeedWeaponsAsync(context);
         await MenuSeeder.SeedAlsusAsync(context);
+        await MenuSeeder.SeedRepositoriesAsync(context);
     }
     catch (Exception ex)
     {

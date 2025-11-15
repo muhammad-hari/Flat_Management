@@ -92,7 +92,6 @@ namespace MyApp.Infrastructure.Data
                 {
                     new() { Code = "users", Name = "Users", IconName = "users", Color = "text-teal-400", Url = "/users", Order = 1 },
                     new() { Code = "role-permissions", Name = "Roles & Permissions", IconName = "shield", Color = "text-teal-400", Url = "/role-permission", Order = 2 },
-                    new() { Code = "menu-list", Name = "Module List", IconName = "clipboard-list", Color = "text-teal-400", Url = "/menu-list", Order = 3 },
                     new() { Code = "system-settings", Name = "System Settings", IconName = "cogs", Color = "text-teal-400", Url = "/system-settings", Order = 4 }
                 });
 
@@ -130,8 +129,8 @@ namespace MyApp.Infrastructure.Data
                 await SeedSubmenus("inventory-management", new List<Menu>
                 {
                     new() { Code = "inventories", Name = "Inventories", IconName = "package", Color = "text-teal-400", Url = "/inventories", Order = 1 },
-                    new() { Code = "inventory-checks", Name = "Request Item", IconName = "clipboard-list", Color = "text-teal-400", Url = "/inventory-checks", Order = 2 },
-                    new() { Code = "inventory-reports", Name = "Histories", IconName = "clipboard-list", Color = "text-teal-400", Url = "/inventory-reports", Order = 3 }
+                    new() { Code = "request-inventory", Name = "Request Item", IconName = "clipboard-list", Color = "text-teal-400", Url = "/request-inventory", Order = 2 },
+                    new() { Code = "inventory-history", Name = "Histories", IconName = "clipboard-list", Color = "text-teal-400", Url = "/inventory-history", Order = 3 }
                 });
 
                 // Master Data
@@ -144,7 +143,8 @@ namespace MyApp.Infrastructure.Data
                     new() { Code = "room-category", Name = "Room Category", IconName = "building", Color = "text-teal-400", Url = "/master-data/room-category", Order = 5 },
                     new() { Code = "room-status", Name = "Room Status", IconName = "building", Color = "text-teal-400", Url = "/master-data/room-status", Order = 6 },
                     new() { Code = "room-condition", Name = "Room Condition", IconName = "building", Color = "text-teal-400", Url = "/master-data/room-condition", Order = 7 },
-                    new() { Code = "inventory-type", Name = "Inventory Type", IconName = "user-circle", Color = "text-teal-400", Url = "/master-data/inventory-type", Order = 8 }
+                    new() { Code = "inventory-type", Name = "Inventory Type", IconName = "user-circle", Color = "text-teal-400", Url = "/master-data/inventory-type", Order = 8 },
+                    new() { Code = "repositories", Name = "Repository", IconName = "user-circle", Color = "text-teal-400", Url = "/master-data/repository", Order = 8 }
                 });
 
                 // Seed permissions for all roles
@@ -584,6 +584,24 @@ namespace MyApp.Infrastructure.Data
                 };
 
                 await context.Alsuses.AddRangeAsync(alsusList);
+                await context.SaveChangesAsync();
+            }
+        }
+
+        public static async Task SeedRepositoriesAsync(AppDbContext context)
+        {
+            if (!await context.Repositories.AnyAsync())
+            {
+                var repositories = new List<Repository>
+                {
+                    new() { Name = "Repository Intelijen", Details = "Data dan dokumen intelijen kepolisian", IsActive = true, CreatedBy = "system", CreatedAt = DateTime.UtcNow },
+                    new() { Name = "Repository Reskrim", Details = "Dokumen kasus dan penyidikan kriminal", IsActive = true, CreatedBy = "system", CreatedAt = DateTime.UtcNow },
+                    new() { Name = "Repository Lantas", Details = "Data pelanggaran dan kecelakaan lalu lintas", IsActive = true, CreatedBy = "system", CreatedAt = DateTime.UtcNow },
+                    new() { Name = "Repository Sabhara", Details = "Dokumen pengamanan dan patroli Sabhara", IsActive = true, CreatedBy = "system", CreatedAt = DateTime.UtcNow },
+                    new() { Name = "Repository Binmas", Details = "Data pembinaan masyarakat dan kegiatan Binmas", IsActive = true, CreatedBy = "system", CreatedAt = DateTime.UtcNow }
+                };
+
+                await context.Repositories.AddRangeAsync(repositories);
                 await context.SaveChangesAsync();
             }
         }

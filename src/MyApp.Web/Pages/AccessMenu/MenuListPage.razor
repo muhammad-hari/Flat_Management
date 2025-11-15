@@ -1,4 +1,4 @@
-@page "/menu-list"
+@page "/access-menu"
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Forms
 @using MyApp.Core.Entities
@@ -345,16 +345,16 @@
     protected override async Task OnInitializedAsync()
     {
         // Check permissions first
-        CanView = await PermissionService.HasPermissionAsync("menu-list", "view");
+        CanView = await PermissionService.HasPermissionAsync("access-menu", "view");
         if (!CanView)
         {
             NavigationManager.NavigateTo("/unauthorized");
             return;
         }
 
-        CanCreate = await PermissionService.HasPermissionAsync("menu-list", "create");
-        CanUpdate = await PermissionService.HasPermissionAsync("menu-list", "update");
-        CanDelete = await PermissionService.HasPermissionAsync("menu-list", "delete");
+        CanCreate = await PermissionService.HasPermissionAsync("access-menu", "create");
+        CanUpdate = await PermissionService.HasPermissionAsync("access-menu", "update");
+        CanDelete = await PermissionService.HasPermissionAsync("access-menu", "delete");
 
         await LoadMenus();
         Loading = false;
