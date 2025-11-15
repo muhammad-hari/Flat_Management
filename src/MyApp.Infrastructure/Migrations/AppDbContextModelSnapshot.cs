@@ -338,6 +338,217 @@ namespace MyApp.Infrastructure.Migrations
                     b.ToTable("Areas");
                 });
 
+            modelBuilder.Entity("MyApp.Core.Entities.AssignmentAlsus", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AlsusId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("AssignedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("ReturnedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ReturnedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AlsusId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("AssignmentAlsuses");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.AssignmentWeapon", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("AssignedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("ReturnedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ReturnedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("WeaponId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("WeaponId");
+
+                    b.ToTable("AssignmentWeapons");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.BackupHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("BackupScheduleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BackupType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DurationSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BackupScheduleId");
+
+                    b.HasIndex("StartedAt");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("BackupHistories");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.BackupSchedule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BackupPath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CustomCronExpression")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<int?>("DayOfMonth")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DayOfWeek")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("Frequency")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<bool>("IncludeData")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IncludeSchema")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int>("RetentionDays")
+                        .HasColumnType("int");
+
+                    b.Property<TimeOnly?>("ScheduledTime")
+                        .HasColumnType("time(6)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BackupSchedules");
+                });
+
             modelBuilder.Entity("MyApp.Core.Entities.Building", b =>
                 {
                     b.Property<int>("Id")
@@ -1170,6 +1381,59 @@ namespace MyApp.Infrastructure.Migrations
                     b.ToTable("Repositories");
                 });
 
+            modelBuilder.Entity("MyApp.Core.Entities.RestoreHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("DurationSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<int?>("FileSize")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RestoredBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StartedAt");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("RestoreHistories");
+                });
+
             modelBuilder.Entity("MyApp.Core.Entities.Role", b =>
                 {
                     b.Property<int>("Id")
@@ -1395,6 +1659,40 @@ namespace MyApp.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("RoomStatus");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.SystemSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("LONGTEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("SystemSettings");
                 });
 
             modelBuilder.Entity("MyApp.Core.Entities.UserType", b =>
@@ -1671,6 +1969,54 @@ namespace MyApp.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("MyApp.Core.Entities.AssignmentAlsus", b =>
+                {
+                    b.HasOne("MyApp.Core.Entities.Alsus", "Alsus")
+                        .WithMany()
+                        .HasForeignKey("AlsusId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MyApp.Core.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Alsus");
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.AssignmentWeapon", b =>
+                {
+                    b.HasOne("MyApp.Core.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MyApp.Core.Entities.Weapon", "Weapon")
+                        .WithMany()
+                        .HasForeignKey("WeaponId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Weapon");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.BackupHistory", b =>
+                {
+                    b.HasOne("MyApp.Core.Entities.BackupSchedule", "BackupSchedule")
+                        .WithMany("BackupHistories")
+                        .HasForeignKey("BackupScheduleId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("BackupSchedule");
+                });
+
             modelBuilder.Entity("MyApp.Core.Entities.Employee", b =>
                 {
                     b.HasOne("MyApp.Core.Entities.Position", "Position")
@@ -1864,6 +2210,11 @@ namespace MyApp.Infrastructure.Migrations
                     b.Navigation("Occupant");
 
                     b.Navigation("Room");
+                });
+
+            modelBuilder.Entity("MyApp.Core.Entities.BackupSchedule", b =>
+                {
+                    b.Navigation("BackupHistories");
                 });
 
             modelBuilder.Entity("MyApp.Core.Entities.Menu", b =>

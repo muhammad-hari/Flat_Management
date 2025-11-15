@@ -4,6 +4,8 @@
 @using MyApp.Core.Entities
 @inject IRepositoryRepository RepositoryService
 @inject ToastService ToastService
+@inject NavigationManager NavigationManager
+@inject IPermissionService PermissionService
 
 <div class="bg-white rounded-lg shadow-sm p-6">
     <div class="flex items-center justify-between mb-6">
@@ -12,11 +14,14 @@
             <p class="text-gray-600 mt-1">Manage User Repository and Privillage</p>
         </div>
         <div class="flex items-center">
-            <button
-                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-                @onclick="ShowAddRepositoryModal">
-                + Add Repository
-            </button>
+            @if (CanCreate)
+            {
+                <button
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                    @onclick="ShowAddRepositoryModal">
+                    + Add Repository
+                </button>
+            }
         </div>
     </div>
 
@@ -30,8 +35,11 @@
                         Details</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">Status
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">Action
-                    </th>
+                    @if (CanUpdate || CanDelete)
+                    {
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-white">Action
+                        </th>
+                    }
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -64,16 +72,25 @@
                                     @(Repository.IsActive ? "Active" : "Inactive")
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap space-x-2">
-                                <button class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm"
-                                    @onclick="() => EditRepository(Repository)">
-                                    Edit
-                                </button>
-                                <button class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
-                                    @onclick="() => ConfirmDelete(Repository.Id, Repository.Name)">
-                                    Delete
-                                </button>
-                            </td>
+                            @if (CanUpdate || CanDelete)
+                            {
+                                <td class="px-6 py-4 whitespace-nowrap space-x-2">
+                                    @if (CanUpdate)
+                                    {
+                                        <button class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm"
+                                            @onclick="() => EditRepository(Repository)">
+                                            Edit
+                                        </button>
+                                    }
+                                    @if (CanDelete)
+                                    {
+                                        <button class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
+                                            @onclick="() => ConfirmDelete(Repository.Id, Repository.Name)">
+                                            Delete
+                                        </button>
+                                    }
+                                </td>
+                            }
                         </tr>
                     }
                 }
@@ -138,14 +155,38 @@
     private int RepositoryIdToDelete;
     private string ConfirmMessage = "";
 
+    // Permission properties
+    private bool CanView = false;
+    private bool CanCreate = false;
+    private bool CanUpdate = false;
+    private bool CanDelete = false;
+
     protected override async Task OnInitializedAsync()
     {
+        // Check permissions first
+        CanView = await PermissionService.HasPermissionAsync("repositories", "view");
+        if (!CanView)
+        {
+            NavigationManager.NavigateTo("/unauthorized");
+            return;
+        }
+
+        CanCreate = await PermissionService.HasPermissionAsync("repositories", "create");
+        CanUpdate = await PermissionService.HasPermissionAsync("repositories", "update");
+        CanDelete = await PermissionService.HasPermissionAsync("repositories", "delete");
+
         Repositorys = await RepositoryService.GetAllAsync();
         ShowAddModal = false;
     }
 
     private void ShowAddRepositoryModal()
     {
+        if (!CanCreate)
+        {
+            ToastService.ShowError("You don't have permission to add new repository");
+            return;
+        }
+
         NewRepository = new Repository(); // reset form
         ShowAddModal = true;
     }
@@ -157,6 +198,12 @@
 
     private void EditRepository(Repository Repository)
     {
+        if (!CanUpdate)
+        {
+            ToastService.ShowError("You don't have permission to edit repository");
+            return;
+        }
+
         NewRepository = new Repository
         {
             Id = Repository.Id,
@@ -169,6 +216,12 @@
 
     private void ConfirmDelete(int id, string name)
     {
+        if (!CanDelete)
+        {
+            ToastService.ShowError("You don't have permission to delete repository");
+            return;
+        }
+
         RepositoryIdToDelete = id;
         ConfirmMessage = $"Are you sure you want to delete the Repository \"{name}\"?";
         ShowConfirmModal = true;
@@ -176,6 +229,12 @@
 
     private async Task DeleteConfirmed()
     {
+        if (!CanDelete)
+        {
+            ToastService.ShowError("You don't have permission to delete repository");
+            return;
+        }
+
         await RepositoryService.DeleteAsync(RepositoryIdToDelete);
         Repositorys = await RepositoryService.GetAllAsync();
         ShowConfirmModal = false;
@@ -189,6 +248,17 @@
 
     private async Task SaveNewRepository()
     {
+        if (NewRepository.Id == 0 && !CanCreate)
+        {
+            ToastService.ShowError("You don't have permission to create new repository");
+            return;
+        }
+        else if (NewRepository.Id != 0 && !CanUpdate)
+        {
+            ToastService.ShowError("You don't have permission to update repository");
+            return;
+        }
+
         if (NewRepository.Id == 0)
             await RepositoryService.AddAsync(NewRepository);
         else
@@ -201,7 +271,7 @@
     }
 
     private string GetStatusClasses(bool isActive) =>
-    isActive
-    ? "inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
-    : "inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800";
+        isActive
+        ? "inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
+        : "inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800";
 }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using MyApp.Core.Entities;
 using MyApp.Core.Interfaces;
 using MyApp.Infrastructure;
@@ -215,6 +216,11 @@ using (var scope = app.Services.CreateScope())
 
         // --- Seed Menus ---
         await MenuSeeder.SeedMenusAsync(services);
+        await MenuSeeder.SeedMasterDataAsync(context);
+        await MenuSeeder.SeedEmployeesAsync(context);
+        await MenuSeeder.SeedWeaponsAsync(context);
+        await MenuSeeder.SeedAlsusAsync(context);
+        await MenuSeeder.SeedRepositoriesAsync(context);
     }
     catch (Exception ex)
     {
@@ -264,5 +270,20 @@ app.MapRazorPages();
 app.MapFallbackToPage("/_Host");
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// Configure static files untuk folder backups
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "backups")),
+    RequestPath = "/backups",
+    ServeUnknownFileTypes = true,
+    DefaultContentType = "application/octet-stream",
+    OnPrepareResponse = ctx =>
+    {
+        // Add headers untuk force download
+        ctx.Context.Response.Headers.Append("Content-Disposition", "attachment");
+    }
+});
 
 app.Run();

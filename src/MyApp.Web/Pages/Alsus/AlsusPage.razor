@@ -8,135 +8,201 @@
 
 <PageTitle>Alsus</PageTitle>
 
-<div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h2 class="text-3xl font-extrabold text-gray-800">Alsus</h2>
-            <p class="text-gray-500">Manage alsus with document and photo.</p>
-        </div>
-        <div>
-            @if (CanCreate)
-            {
-                <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg" 
-                        @onclick="OpenNew">New Alsus</button>
-            }
-        </div>
-    </div>
-
-    <div class="overflow-x-auto rounded-xl shadow-md border border-gray-200">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gradient-to-b from-blue-700 to-black">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Code</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Available</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @foreach (var w in Alsuses)
-                {
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="px-6 py-4">@w.Name</td>
-                        <td class="px-6 py-4">@w.Code</td>
-                        <td class="px-6 py-4">@(w.IsAvailable ? "Yes" : "No")</td>
-                        <td class="px-6 py-4 text-right">
-                            @if (CanView)
-                            {
-                                <button class="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-100" 
-                                        @onclick="() => ShowDetail(w)">Detail</button>
-                            }
-                            @if (CanUpdate)
-                            {
-                                <button class="text-indigo-600 hover:text-indigo-900 p-2 rounded-lg hover:bg-indigo-100" 
-                                        @onclick="() => Edit(w)">Edit</button>
-                            }
-                            @if (CanDelete)
-                            {
-                                <button class="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-100" 
-                                        @onclick="() => Delete(w.Id)">Delete</button>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-
-    @if (ShowModal && Selected != null)
-    {
-        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-6 overflow-hidden">
-                <div class="border-b px-6 py-4 flex justify-between items-center">
-                    <h2 class="text-2xl font-bold">Alsus Detail</h2>
-                    <button class="text-gray-400 hover:text-gray-600" @onclick="() => ShowModal = false">Close</button>
-                </div>
-                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <p><strong>Name:</strong> @Selected.Name</p>
-                        <p><strong>Code:</strong> @Selected.Code</p>
-                        <p><strong>Description:</strong> @Selected.Description</p>
-                        <p><strong>Available:</strong> @(Selected.IsAvailable ? "Yes" : "No")</p>
-                    </div>
-                    <div>
-                        <p><strong>Document:</strong></p>
-                        @if (Selected.DocumentData != null)
-                        {
-                            <a class="text-blue-600" href="@($"/api/files/alsus/{Selected.Id}/document")">Download Document</a>
-                        }
-                        <p><strong>Photo:</strong></p>
-                        @if (Selected.PhotoData != null)
-                        {
-                            <img src="@($"data:{Selected.PhotoContentType};base64,{Convert.ToBase64String(Selected.PhotoData)}")" class="max-w-full h-48 object-contain" />
-                        }
-                    </div>
-                </div>
-                <div class="mt-6 flex justify-end">
-                    <button class="bg-gray-700 text-white px-5 py-2 rounded" @onclick="() => ShowModal = false">Close</button>
-                </div>
+<div class="space-y-6">
+    <!-- Top summary cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="bg-gradient-to-br from-blue-600 to-blue-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+            <div class="bg-white/20 rounded-full p-3"><i class="fas fa-boxes fa-2x"></i></div>
+            <div>
+                <h2 class="text-lg font-semibold">Total Alsus</h2>
+                <p class="text-2xl font-bold">@Alsuses.Count</p>
             </div>
         </div>
-    }
+        <div class="bg-gradient-to-br from-green-600 to-green-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+            <div class="bg-white/20 rounded-full p-3"><i class="fas fa-check-circle fa-2x"></i></div>
+            <div>
+                <h2 class="text-lg font-semibold">Available</h2>
+                <p class="text-2xl font-bold">@Alsuses.Count(a => a.IsAvailable)</p>
+            </div>
+        </div>
+        <div class="bg-gradient-to-br from-red-600 to-red-900 text-white p-5 rounded-2xl shadow-lg flex items-center gap-4">
+            <div class="bg-white/20 rounded-full p-3"><i class="fas fa-times-circle fa-2x"></i></div>
+            <div>
+                <h2 class="text-lg font-semibold">Unavailable</h2>
+                <p class="text-2xl font-bold">@Alsuses.Count(a => !a.IsAvailable)</p>
+            </div>
+        </div>
+    </div>
 
-    @if (ShowEditModal)
-    {
-        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 overflow-hidden">
-                <div class="border-b px-6 py-4 flex justify-between items-center">
-                    <h2 class="text-xl font-bold">@((Selected.Id == 0) ? "New Alsus" : "Edit Alsus")</h2>
-                    <button class="text-gray-400 hover:text-gray-600" @onclick="() => CloseEdit()">Close</button>
+    <div class="flex items-center space-x-3 mb-4">
+        <div class="relative w-64">
+            <input value="@searchTerm" @oninput="HandleSearchTermChange"
+                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                   placeholder="Search alsus name, code..." />
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-3xl font-extrabold text-gray-800">Alsus</h2>
+                <p class="text-gray-500">Manage alsus with document and photo.</p>
+            </div>
+            <div>
+                @if (CanCreate)
+                {
+                    <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg" 
+                            @onclick="OpenNew">New Alsus</button>
+                }
+            </div>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl shadow-md border border-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gradient-to-b from-blue-700 to-black">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Code</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Available</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @if (PagedAlsus.Any())
+                    {
+                        @foreach (var w in PagedAlsus)
+                        {
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4">@w.Name</td>
+                                <td class="px-6 py-4">@w.Code</td>
+                                <td class="px-6 py-4">@(w.IsAvailable ? "Yes" : "No")</td>
+                                <td class="px-6 py-4 text-right">
+                                    @if (CanView)
+                                    {
+                                        <button class="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-100" 
+                                                @onclick="() => ShowDetail(w)">Detail</button>
+                                    }
+                                    @if (CanUpdate)
+                                    {
+                                        <button class="text-indigo-600 hover:text-indigo-900 p-2 rounded-lg hover:bg-indigo-100" 
+                                                @onclick="() => Edit(w)">Edit</button>
+                                    }
+                                    @if (CanDelete)
+                                    {
+                                        <button class="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-100" 
+                                                @onclick="() => Delete(w.Id)">Delete</button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="py-12 text-center text-gray-400">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p class="text-lg">No alsus found.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (FilteredAlsus.Any())
+        {
+            <div class="mt-6 flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div class="text-sm text-gray-600">
+                    Showing <strong>@((CurrentPage - 1) * PageSize + 1)</strong> to <strong>@(Math.Min(CurrentPage * PageSize, FilteredAlsus.Count()))</strong> of <strong>@FilteredAlsus.Count()</strong> entries
                 </div>
-                <EditForm Model="Selected" OnValidSubmit="Save">
-                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex items-center space-x-2">
+                    <button class="px-3 py-2 rounded-lg border text-sm @(CurrentPage == 1 ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-white hover:bg-gray-100")" @onclick="() => ChangePage(CurrentPage - 1)" disabled="@(CurrentPage == 1)">Previous</button>
+                    @for (int i = 1; i <= TotalPages; i++)
+                    {
+                        var pageNumber = i;
+                        <button class="px-3 py-2 rounded-lg text-sm font-medium @(i == CurrentPage ? "bg-blue-600 text-white" : "bg-white hover:bg-blue-50 border text-gray-700")" @onclick="() => ChangePage(pageNumber)">@i</button>
+                    }
+                    <button class="px-3 py-2 rounded-lg border text-sm @(CurrentPage == TotalPages ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-white hover:bg-gray-100")" @onclick="() => ChangePage(CurrentPage + 1)" disabled="@(CurrentPage == TotalPages)">Next</button>
+                </div>
+            </div>
+        }
+
+        @if (ShowModal && Selected != null)
+        {
+            <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-6 overflow-hidden">
+                    <div class="border-b px-6 py-4 flex justify-between items-center">
+                        <h2 class="text-2xl font-bold">Alsus Detail</h2>
+                        <button class="text-gray-400 hover:text-gray-600" @onclick="() => ShowModal = false">Close</button>
+                    </div>
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="text-sm text-gray-600">Name</label>
-                            <InputText class="w-full border rounded px-3 py-2" @bind-Value="Selected.Name" />
+                            <p><strong>Name:</strong> @Selected.Name</p>
+                            <p><strong>Code:</strong> @Selected.Code</p>
+                            <p><strong>Description:</strong> @Selected.Description</p>
+                            <p><strong>Available:</strong> @(Selected.IsAvailable ? "Yes" : "No")</p>
                         </div>
                         <div>
-                            <label class="text-sm text-gray-600">Code</label>
-                            <InputText class="w-full border rounded px-3 py-2" @bind-Value="Selected.Code" />
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="text-sm text-gray-600">Description</label>
-                            <InputTextArea class="w-full border rounded px-3 py-2" @bind-Value="Selected.Description" />
-                        </div>
-                        <div>
-                            <label class="text-sm text-gray-600">Document</label>
-                            <InputFile OnChange="HandleDocument" />
-                        </div>
-                        <div>
-                            <label class="text-sm text-gray-600">Photo</label>
-                            <InputFile OnChange="HandlePhoto" />
+                            <p><strong>Document:</strong></p>
+                            @if (Selected.DocumentData != null)
+                            {
+                                <span>@Selected.DocumentName</span>
+                            }
+                            <p><strong>Photo:</strong></p>
+                            @if (Selected.PhotoData != null)
+                            {
+                                <img src="@($"data:{Selected.PhotoContentType};base64,{Convert.ToBase64String(Selected.PhotoData)}")" class="max-w-full h-48 object-contain" />
+                            }
                         </div>
                     </div>
                     <div class="mt-6 flex justify-end">
-                        <button type="button" class="bg-gray-200 px-4 py-2 rounded mr-2" @onclick="() => CloseEdit()">Cancel</button>
-                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Save</button>
+                        <button class="bg-gray-700 text-white px-5 py-2 rounded" @onclick="() => ShowModal = false">Close</button>
                     </div>
-                </EditForm>
+                </div>
             </div>
-        </div>
-    }
+        }
+
+        @if (ShowEditModal)
+        {
+            <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 overflow-hidden">
+                    <div class="border-b px-6 py-4 flex justify-between items-center">
+                        <h2 class="text-xl font-bold">@((Selected.Id == 0) ? "New Alsus" : "Edit Alsus")</h2>
+                        <button class="text-gray-400 hover:text-gray-600" @onclick="CloseEdit">Close</button>
+                    </div>
+                    <EditForm Model="Selected" OnValidSubmit="Save">
+                        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm text-gray-600">Name</label>
+                                <InputText class="w-full border rounded px-3 py-2" @bind-Value="Selected.Name" />
+                            </div>
+                            <div>
+                                <label class="text-sm text-gray-600">Code</label>
+                                <InputText class="w-full border rounded px-3 py-2" @bind-Value="Selected.Code" />
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="text-sm text-gray-600">Description</label>
+                                <InputTextArea class="w-full border rounded px-3 py-2" @bind-Value="Selected.Description" />
+                            </div>
+                            <div>
+                                <label class="text-sm text-gray-600">Document</label>
+                                <InputFile OnChange="HandleDocument" />
+                            </div>
+                            <div>
+                                <label class="text-sm text-gray-600">Photo</label>
+                                <InputFile OnChange="HandlePhoto" />
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-end">
+                            <button type="button" class="bg-gray-200 px-4 py-2 rounded mr-2" @onclick="CloseEdit">Cancel</button>
+                            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Save</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        }
+    </div>
 </div>
 
 @code {
@@ -150,9 +216,25 @@
     private bool CanUpdate = false;
     private bool CanDelete = false;
 
+    // Pagination & Search
+    private string searchTerm = string.Empty;
+    private const int PageSize = 10;
+    private int CurrentPage = 1;
+
+    private IEnumerable<Alsus> FilteredAlsus =>
+        string.IsNullOrWhiteSpace(searchTerm)
+        ? Alsuses
+        : Alsuses.Where(a =>
+            (a.Name ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            (a.Code ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+        );
+
+    private int TotalPages => (int)Math.Ceiling(FilteredAlsus.Count() / (double)PageSize);
+
+    private IEnumerable<Alsus> PagedAlsus => FilteredAlsus.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
+
     protected override async Task OnInitializedAsync()
     {
-        // Check permissions first
         CanView = await PermissionService.HasPermissionAsync("alsus", "view");
         if (!CanView)
         {
@@ -164,30 +246,17 @@
         CanUpdate = await PermissionService.HasPermissionAsync("alsus", "update");
         CanDelete = await PermissionService.HasPermissionAsync("alsus", "delete");
 
-        // Only load data if user has view permission
         Alsuses = await AlsusService.GetAllAsync();
     }
 
     private void OpenNew()
     {
-        if (!CanCreate)
-        {
-            ToastService.ShowError("You don't have permission to create new alsus");
-            return;
-        }
-
         Selected = new Alsus();
         ShowEditModal = true;
     }
 
     private async Task Save()
     {
-        if ((Selected.Id == 0 && !CanCreate) || (Selected.Id != 0 && !CanUpdate))
-        {
-            await ToastService.ShowError("You don't have permission to perform this action");
-            return;
-        }
-
         Selected.UpdatedAt = DateTime.UtcNow;
         if (Selected.Id == 0)
         {
@@ -204,43 +273,42 @@
         Alsuses = await AlsusService.GetAllAsync();
     }
 
+    private void CloseEdit()
+    {
+        ShowEditModal = false;
+        Selected = new Alsus();
+    }
+
     private async Task Edit(Alsus w)
     {
-        if (!CanUpdate)
+        Selected = new Alsus
         {
-            await ToastService.ShowError("You don't have permission to edit alsus");
-            return;
-        }
-
-        Selected = w;
+            Id = w.Id,
+            Name = w.Name,
+            Code = w.Code,
+            Description = w.Description,
+            DocumentName = w.DocumentName,
+            DocumentContentType = w.DocumentContentType,
+            DocumentData = w.DocumentData,
+            PhotoName = w.PhotoName,
+            PhotoContentType = w.PhotoContentType,
+            PhotoData = w.PhotoData,
+            IsAvailable = w.IsAvailable,
+            CreatedBy = w.CreatedBy,
+            CreatedAt = w.CreatedAt,
+            UpdatedAt = w.UpdatedAt
+        };
         ShowEditModal = true;
     }
 
     private async Task Delete(int id)
     {
-        if (!CanDelete)
-        {
-            await ToastService.ShowError("You don't have permission to delete alsus");
-            return;
-        }
-
-        var ok = await AlsusService.DeleteAsync(id);
-        if (ok) 
-            await ToastService.ShowSuccess("Deleted"); 
-        else 
-            await ToastService.ShowWarning("Delete failed");
-        
+        await AlsusService.DeleteAsync(id);
         Alsuses = await AlsusService.GetAllAsync();
     }
 
     private void ShowDetail(Alsus w)
     {
-        if (!CanView)
-        {
-            ToastService.ShowError("You don't have permission to view alsus details");
-            return;
-        }
-
         Selected = w;
         ShowModal = true;
     }
@@ -265,5 +333,17 @@
         Selected.PhotoData = ms.ToArray();
     }
 
-    private void CloseEdit() { ShowEditModal = false; }
+    private void HandleSearchTermChange(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        CurrentPage = 1;
+    }
+
+    private void ChangePage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            CurrentPage = page;
+        }
+    }
 }

@@ -7,6 +7,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using MyApp.Core.Interfaces
 @using System.Security.Claims
+@using Microsoft.Extensions.DependencyInjection
 
 @inject NavigationManager NavManager
 @inject SignInManager<ApplicationUser> SignInManager
@@ -14,22 +15,25 @@
 @inject HttpClient Http
 @inject ILogger<Sidebar> Logger
 @inject IMenuService MenuService
+@inject IServiceScopeFactory ScopeFactory
+@inject ISystemSettingService SystemSettingService
+@implements IDisposable
 
 <div class="flex flex-col fixed top-0 left-0 h-screen w-64 lg:w-72 bg-gradient-to-b from-red-800 to-black overflow-hidden">
     <!-- Logo Section -->
     <div class="flex-shrink-0 flex flex-col items-center py-4 lg:py-6 px-3 lg:px-4 border-b border-gray-700">
         <label class="flex flex-col items-center cursor-pointer">
-            <!-- Avatar -->
-            <img src="@avatarUrl" alt="App Logo"
+            <!-- Logo dari System Settings -->
+            <img src="@logoUrl" alt="App Logo"
                  class="w-24 h-24 lg:w-32 lg:h-32 rounded-full border-2 border-blue shadow-md mb-3 object-cover" />
 
             <!-- InputFile tersembunyi; klik label memicu input ini -->
             <InputFile OnChange="HandleSelected" class="hidden" />
         </label>
 
-        <!-- Nama App -->
+        <!-- Nama App dari System Settings -->
         <span class="text-sm font-semibold text-white mt-4 text-center">
-            Flat Management System
+            @siteName
         </span>
     </div>
 
@@ -84,7 +88,11 @@
 </div>
 
 @code {
-    private string avatarUrl = "/assets/images/default-avatar.png";
+    private const string DefaultLogoUrl = "/assets/images/default-avatar.png";
+    private const string DefaultSiteName = "Flat Management System";
+    
+    private string logoUrl = DefaultLogoUrl;
+    private string siteName = DefaultSiteName;
     private string _activeItem = "dashboard";
     private List<string> _expandedMenus = new();
     private bool isLoading = false;
@@ -94,9 +102,14 @@
     {
         try
         {
+            // Load initial settings
+            await LoadSystemSettings();
+            
+            // Subscribe to settings changes - langsung ke injected service
+            SystemSettingService.OnSettingsChanged += OnSettingsChanged;
+            
             await Task.Delay(100);
 
-            // Trigger GetAuthenticationStateAsync untuk memastikan state terupdate
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             
             if (authState.User.Identity?.IsAuthenticated == true)
@@ -126,6 +139,90 @@
         StateHasChanged();
     }
 
+    private async Task LoadSystemSettings()
+    {
+        try
+        {
+            // Load Site Name with default fallback
+            var siteNameSetting = await SystemSettingService.GetSettingValueAsync("SiteName");
+            siteName = !string.IsNullOrWhiteSpace(siteNameSetting) 
+                ? siteNameSetting 
+                : DefaultSiteName;
+
+            // Load Site Logo with default fallback
+            var logoSetting = await SystemSettingService.GetSettingValueAsync("SiteLogo");
+            if (!string.IsNullOrWhiteSpace(logoSetting))
+            {
+                logoUrl = $"data:image/png;base64,{logoSetting}";
+            }
+            else
+            {
+                logoUrl = DefaultLogoUrl;
+            }
+
+            Logger.LogInformation($"Loaded settings - Site: {siteName}, Logo: {(string.IsNullOrWhiteSpace(logoSetting) ? "Default" : "Custom")}");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading system settings, using defaults");
+            siteName = DefaultSiteName;
+            logoUrl = DefaultLogoUrl;
+        }
+    }
+
+    private async void OnSettingsChanged()
+    {
+        Logger.LogInformation("Settings changed event received, reloading...");
+        await LoadSystemSettings();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            try
+            {
+                if (file.Size > 2 * 1024 * 1024)
+                {
+                    Logger.LogWarning("File size exceeds 2MB");
+                    return;
+                }
+
+                using var stream = file.OpenReadStream(maxAllowedSize: 1024 * 1024 * 2);
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+                var bytes = ms.ToArray();
+                var base64 = Convert.ToBase64String(bytes);
+                
+                // Update via service - akan trigger event
+                await SystemSettingService.UpdateSettingAsync("SiteLogo", base64);
+                
+                // Local update untuk immediate feedback
+                logoUrl = $"data:{file.ContentType};base64,{base64}";
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error uploading logo");
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            SystemSettingService.OnSettingsChanged -= OnSettingsChanged;
+            Logger.LogInformation("Unsubscribed from settings changed event");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error unsubscribing from settings changed event");
+        }
+    }
+
     private async Task LogoutAsync()
     {
         try
@@ -151,7 +248,6 @@
                 Logger.LogWarning(ex, "Logout API call failed – proceeding to clear local session anyway");
             }
 
-            // Ensure client-side session and authentication state are cleared
             try
             {
                 await AuthStateProvider.NotifyUserLogout();
@@ -162,10 +258,7 @@
                 Logger.LogError(ex, "Error while clearing local authentication state");
             }
 
-            // Small delay to allow state propagation
             await Task.Delay(300);
-
-            // Force full page reload to login page
             NavManager.NavigateTo("/login", forceLoad: true);
         }
         catch (Exception ex)
@@ -273,19 +366,6 @@
         }
         
         return classes;
-    }
-
-    private async Task HandleSelected(InputFileChangeEventArgs e)
-    {
-        var file = e.File;
-        if (file != null)
-        {
-            using var stream = file.OpenReadStream(maxAllowedSize: 1024 * 1024 * 2);
-            using var ms = new MemoryStream();
-            await stream.CopyToAsync(ms);
-            var bytes = ms.ToArray();
-            avatarUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(bytes)}";
-        }
     }
 
     private string GetIconClasses(MenuDto item)

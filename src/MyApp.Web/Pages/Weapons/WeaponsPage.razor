@@ -97,13 +97,6 @@
 
                             <div class="mt-3 flex justify-between items-center gap-3 pt-3 border-t border-gray-100">
                                 <div class="flex items-center gap-2">
-                                    @if (CanView)
-                                    {
-                                        <button class="flex items-center gap-2 px-4 py-2 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
-                                                @onclick="() => ShowDetail(w)">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    }
                                     @if (CanUpdate)
                                     {
                                         <button class="flex items-center gap-2 px-4 py-2 text-sm bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors" 
@@ -214,48 +207,43 @@
         </div>
     }
 
+    @* Add/Edit Modal *@
     @if (ShowEditModal)
     {
-        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 overflow-y-auto max-h-[90vh]">
-                <div class="border-b px-6 py-4 flex justify-between items-center">
-                    <h2 class="text-xl font-bold">@((Selected.Id == 0) ? "New Weapon" : "Edit Weapon")</h2>
-                    <button class="text-gray-400 hover:text-gray-600" @onclick="() => CloseEdit()">Close</button>
-                </div>
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div class="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-lg" @onclick:stopPropagation>
+                <h2 class="text-xl font-bold mb-4">@((Selected.Id == 0) ? "New Weapon" : "Edit Weapon")</h2>
                 <EditForm Model="Selected" OnValidSubmit="Save">
-                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-sm text-gray-600">Name</label>
-                            <InputText class="w-full border rounded px-3 py-2" @bind-Value="Selected.Name" />
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="block font-semibold mb-1">Name *</label>
+                            <InputText @bind-Value="Selected.Name" class="w-full px-3 py-2 border rounded" />
+
+                            <label class="block font-semibold mb-1">Code *</label>
+                            <InputText @bind-Value="Selected.Code" class="w-full px-3 py-2 border rounded" />
+
+                            <label class="block font-semibold mb-1">Description</label>
+                            <InputTextArea @bind-Value="Selected.Description" class="w-full px-3 py-2 border rounded" />
                         </div>
-                        <div>
-                            <label class="text-sm text-gray-600">Code</label>
-                            <InputText class="w-full border rounded px-3 py-2" @bind-Value="Selected.Code" />
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="text-sm text-gray-600">Description</label>
-                            <InputTextArea class="w-full border rounded px-3 py-2" @bind-Value="Selected.Description" />
-                        </div>
-                        <div>
-                            <label class="text-sm text-gray-600">Document (multiple allowed)</label>
-                            <InputFile OnChange="HandleDocuments" multiple />
-                            @if (PendingDocuments?.Count > 0)
+                        <div class="space-y-2">
+                            <label class="block font-semibold mb-1">Document</label>
+                            <InputFile OnChange="HandleDocument" />
+                            @if (PendingDocument != null)
                             {
-                                <p class="text-xs text-blue-600 mt-1">@PendingDocuments.Count file(s) ready to upload.</p>
+                                <p class="text-xs text-blue-600 mt-1">1 file ready to upload: @PendingDocument.Name</p>
                             }
-                        </div>
-                        <div>
-                            <label class="text-sm text-gray-600">Photo (multiple allowed)</label>
-                            <InputFile OnChange="HandlePhotos" multiple />
-                            @if (PendingPhotos?.Count > 0)
+
+                            <label class="block font-semibold mb-1">Photo</label>
+                            <InputFile OnChange="HandlePhoto" />
+                            @if (PendingPhoto != null)
                             {
-                                <p class="text-xs text-blue-600 mt-1">@PendingPhotos.Count file(s) selected.</p>
+                                <p class="text-xs text-blue-600 mt-1">1 file selected: @PendingPhoto.Name</p>
                             }
                         </div>
                     </div>
-                    <div class="mt-6 flex justify-end">
-                        <button type="button" class="bg-gray-200 px-4 py-2 rounded mr-2" @onclick="() => CloseEdit()">Cancel</button>
-                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Save</button>
+                    <div class="flex justify-end space-x-2 mt-6">
+                        <button type="button" class="px-4 py-2 bg-gray-300 rounded" @onclick="CloseEdit">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Save</button>
                     </div>
                 </EditForm>
             </div>
@@ -304,6 +292,17 @@
 
     protected override async Task OnInitializedAsync()
     {
+        CanView = await PermissionService.HasPermissionAsync("weapons", "view");
+        CanCreate = await PermissionService.HasPermissionAsync("weapons", "create");
+        CanUpdate = await PermissionService.HasPermissionAsync("weapons", "update");
+        CanDelete = await PermissionService.HasPermissionAsync("weapons", "delete");
+
+        if (!CanView)
+        {
+            ToastService.ShowError("You don't have permission to view weapon data.");
+            return;
+        }
+
         Weapons = await WeaponService.GetAllAsync();
     }
 
@@ -321,6 +320,19 @@
         ShowEditModal = true;
     }
 
+    private IBrowserFile? PendingDocument;
+    private IBrowserFile? PendingPhoto;
+
+    private void HandleDocument(InputFileChangeEventArgs e)
+    {
+        PendingDocument = e.File;
+    }
+
+    private void HandlePhoto(InputFileChangeEventArgs e)
+    {
+        PendingPhoto = e.File;
+    }
+
     private async Task Save()
     {
         if ((Selected.Id == 0 && !CanCreate) || (Selected.Id != 0 && !CanUpdate))
@@ -333,6 +345,30 @@
         if (Selected.Id == 0)
         {
             Selected.CreatedAt = DateTime.UtcNow;
+        }
+
+        // Handle photo upload
+        if (PendingPhoto != null)
+        {
+            using var ms = new MemoryStream();
+            await PendingPhoto.OpenReadStream().CopyToAsync(ms);
+            Selected.PhotoName = PendingPhoto.Name;
+            Selected.PhotoContentType = PendingPhoto.ContentType;
+            Selected.PhotoData = ms.ToArray();
+        }
+
+        // Handle document upload
+        if (PendingDocument != null)
+        {
+            using var ms = new MemoryStream();
+            await PendingDocument.OpenReadStream().CopyToAsync(ms);
+            Selected.DocumentName = PendingDocument.Name;
+            Selected.DocumentContentType = PendingDocument.ContentType;
+            Selected.DocumentData = ms.ToArray();
+        }
+
+        if (Selected.Id == 0)
+        {
             await WeaponService.AddAsync(Selected);
             await ToastService.ShowSuccess("Weapon created.");
         }
@@ -342,30 +378,11 @@
             await ToastService.ShowSuccess("Weapon updated.");
         }
 
-        // If multiple files selected, use first for existing single-file storage
-        if (PendingPhotos?.Count > 0)
-        {
-            var f = PendingPhotos[0];
-            using var ms = new MemoryStream();
-            await f.OpenReadStream().CopyToAsync(ms);
-            Selected.PhotoName = f.Name;
-            Selected.PhotoContentType = f.ContentType;
-            Selected.PhotoData = ms.ToArray();
-        }
-
-        if (PendingDocuments?.Count > 0)
-        {
-            var f = PendingDocuments[0];
-            using var ms = new MemoryStream();
-            await f.OpenReadStream().CopyToAsync(ms);
-            Selected.DocumentName = f.Name;
-            Selected.DocumentContentType = f.ContentType;
-            Selected.DocumentData = ms.ToArray();
-        }
-
         ShowEditModal = false;
         Weapons = await WeaponService.GetAllAsync();
         CurrentPage = 1;
+        PendingDocument = null;
+        PendingPhoto = null;
     }
 
     private async Task Edit(Weapon w)
@@ -376,41 +393,26 @@
             return;
         }
 
-        Selected = w;
+        Selected = new Weapon
+        {
+            Id = w.Id,
+            Name = w.Name,
+            Code = w.Code,
+            Description = w.Description,
+            DocumentName = w.DocumentName,
+            DocumentContentType = w.DocumentContentType,
+            DocumentData = w.DocumentData,
+            PhotoName = w.PhotoName,
+            PhotoContentType = w.PhotoContentType,
+            PhotoData = w.PhotoData,
+            IsAvailable = w.IsAvailable,
+            CreatedBy = w.CreatedBy,
+            CreatedAt = w.CreatedAt,
+            UpdatedAt = w.UpdatedAt
+        };
         PendingPhotos = null;
         PendingDocuments = null;
         ShowEditModal = true;
-    }
-
-    // immediate delete (kept for compatibility but not used in markup)
-    private async Task Delete(int id)
-    {
-        var ok = await WeaponService.DeleteAsync(id);
-        if (ok) await ToastService.ShowSuccess("Deleted"); else await ToastService.ShowWarning("Delete failed");
-        Weapons = await WeaponService.GetAllAsync();
-        CurrentPage = 1;
-    }
-
-    private void ShowDetail(Weapon w)
-    {
-        if (!CanView)
-        {
-            ToastService.ShowError("You don't have permission to view weapon details");
-            return;
-        }
-
-        Selected = w;
-        ShowModal = true;
-    }
-
-    private async Task HandleDocuments(InputFileChangeEventArgs e)
-    {
-        PendingDocuments = e.GetMultipleFiles();
-    }
-
-    private async Task HandlePhotos(InputFileChangeEventArgs e)
-    {
-        PendingPhotos = e.GetMultipleFiles();
     }
 
     private void CloseEdit()
@@ -421,7 +423,6 @@
         PendingPhotos = null;
     }
 
-    // Delete confirmation helpers
     private void ConfirmDelete(int id, string name)
     {
         WeaponIdToDelete = id;
@@ -439,11 +440,11 @@
 
         if (WeaponIdToDelete == 0) return;
         var ok = await WeaponService.DeleteAsync(WeaponIdToDelete);
-        if (ok) 
-            await ToastService.ShowSuccess("Deleted"); 
-        else 
+        if (ok)
+            await ToastService.ShowSuccess("Deleted");
+        else
             await ToastService.ShowWarning("Delete failed");
-        
+
         ShowConfirmModal = false;
         Weapons = await WeaponService.GetAllAsync();
         CurrentPage = 1;

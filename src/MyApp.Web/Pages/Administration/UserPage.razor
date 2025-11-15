@@ -195,6 +195,10 @@
                                 <label class="block text-gray-700 text-sm font-medium mb-1">Username</label>
                                 <InputText class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:border-blue-500" 
                                     @bind-Value="SelectedUser.UserName" placeholder="Username" />
+                                @if (UsernameError != null)
+                                {
+                                    <div class="mt-1 text-xs text-red-600">@UsernameError</div>
+                                }
                             </div>
                             <div>
                                 <label class="block text-gray-700 text-sm font-medium mb-1">Email</label>
@@ -207,8 +211,34 @@
                                 <label class="block text-gray-700 text-sm font-medium mb-1">
                                     Password @(ModalMode == "Edit" ? "(Leave blank to keep current)" : "")
                                 </label>
-                                <InputText type="password" class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:border-blue-500" 
-                                    @bind-Value="Password" placeholder="Password" />
+                                <div class="relative">
+                                    <InputText type="@(ShowPassword ? "text" : "password")"
+                                               class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:border-blue-500 pr-10"
+                                               @bind-Value="Password"
+                                               placeholder="Password" />
+                                    <button type="button"
+                                            class="absolute right-2 top-2 text-gray-500 hover:text-gray-700"
+                                            @onclick="TogglePassword">
+                                        <i class="fas @(ShowPassword ? "fa-eye-slash" : "fa-eye")"></i>
+                                    </button>
+                                </div>
+                                <div class="mt-2 flex items-center gap-2">
+                                    <span class="text-xs text-gray-500">Min. 12 karakter, max. 18, harus ada huruf besar, kecil, angka, dan simbol</span>
+                                    <button type="button" class="ml-2 text-blue-600 text-xs underline" @onclick="SuggestPassword">
+                                        Suggest Password
+                                    </button>
+                                </div>
+                                @if (!string.IsNullOrEmpty(SuggestedPassword))
+                                {
+                                    <div class="mt-1 text-xs text-green-600">
+                                        Suggestion: <span class="font-mono bg-gray-100 px-2 py-1 rounded">@SuggestedPassword</span>
+                                        <button type="button" class="ml-2 text-blue-600 underline" @onclick="UseSuggestedPassword">Use</button>
+                                    </div>
+                                }
+                                @if (PasswordError != null)
+                                {
+                                    <div class="mt-1 text-xs text-red-600">@PasswordError</div>
+                                }
                             </div>
                             <div>
                                 <label class="block text-gray-700 text-sm font-medium mb-1">Role</label>
@@ -278,6 +308,23 @@
     private bool CanCreate = false;
     private bool CanUpdate = false;
     private bool CanDelete = false;
+
+    private bool ShowPassword = false;
+    private string SuggestedPassword = "";
+    private string? PasswordError = null;
+    private string? UsernameError = null;
+
+    private bool IsUsernameValid(string username)
+    {
+        if (string.IsNullOrWhiteSpace(username) || username.Length < 3 || username.Length > 8)
+            return false;
+        if (username.Any(char.IsWhiteSpace))
+            return false;
+        // Only allow lowercase letters and digits
+        if (!username.All(c => char.IsLower(c) || char.IsDigit(c)))
+            return false;
+        return true;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -420,17 +467,77 @@
         }
     }
 
+    private void TogglePassword()
+    {
+        ShowPassword = !ShowPassword;
+    }
+
+    private void SuggestPassword()
+    {
+        SuggestedPassword = GenerateStrongPassword(12, 18);
+    }
+
+    private void UseSuggestedPassword()
+    {
+        Password = SuggestedPassword;
+    }
+
+    private string GenerateStrongPassword(int minLength, int maxLength)
+    {
+        var rnd = new Random();
+        int length = rnd.Next(minLength, maxLength + 1);
+
+        const string upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const string lower = "abcdefghijklmnopqrstuvwxyz";
+        const string digits = "0123456789";
+        const string symbols = "!@#$%^&*()-_=+[]{}|;:,.<>?";
+
+        // Ensure at least one of each
+        var chars = new List<char>
+        {
+            upper[rnd.Next(upper.Length)],
+            lower[rnd.Next(lower.Length)],
+            digits[rnd.Next(digits.Length)],
+            symbols[rnd.Next(symbols.Length)]
+        };
+
+        string allChars = upper + lower + digits + symbols;
+        for (int i = chars.Count; i < length; i++)
+        {
+            chars.Add(allChars[rnd.Next(allChars.Length)]);
+        }
+
+        // Shuffle
+        return new string(chars.OrderBy(_ => rnd.Next()).ToArray());
+    }
+
+    private bool IsPasswordValid(string password)
+    {
+        if (string.IsNullOrWhiteSpace(password) || password.Length < 12 || password.Length > 18)
+            return false;
+        if (password.Any(char.IsWhiteSpace))
+            return false;
+        if (!password.Any(char.IsUpper)) return false;
+        if (!password.Any(char.IsLower)) return false;
+        if (!password.Any(char.IsDigit)) return false;
+        if (!password.Any(c => "!@#$%^&*()-_=+[]{}|;:,.<>?".Contains(c))) return false;
+        return true;
+    }
+
     private async Task SaveUser()
     {
+        PasswordError = null;
+        UsernameError = null;
+
         if ((ModalMode == "Add" && !CanCreate) || (ModalMode == "Edit" && !CanUpdate))
         {
             await ToastService.ShowError("You don't have permission to perform this action");
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(SelectedUser.UserName))
+        if (!IsUsernameValid(SelectedUser.UserName ?? ""))
         {
-            await ToastService.ShowWarning("Username is required.");
+            UsernameError = "Username must be 3-8 lowercase letters, no symbols, whitespace, or special characters.";
             return;
         }
 
@@ -440,27 +547,50 @@
             return;
         }
 
+        // Password validation only on Add or if changed
+        if (ModalMode == "Add" || (!string.IsNullOrWhiteSpace(Password)))
+        {
+            if (!IsPasswordValid(Password))
+            {
+                PasswordError = "Password must be 12-18 characters, contain uppercase, lowercase, digit, and symbol.";
+                return;
+            }
+        }
+
         try
         {
-            if (string.IsNullOrEmpty(SelectedUser.Id.ToString()))
+            if (string.IsNullOrEmpty(SelectedUser.Id.ToString()) || SelectedUser.Id == 0)
             {
                 // Create user
-                await UserService.CreateUserAsync(SelectedUser, Password);
-                // Assign role
-                await UserRoleService.UpdateUserRoleAsync(SelectedUser.Id.ToString(), SelectedRole);
-                await ToastService.ShowSuccess("User added successfully!");
-                await LoadUsers(); // This will refresh the cache
+                var created = await UserService.CreateUserAsync(SelectedUser, Password);
+                if (created)
+                {
+                    var userFromDb = await UserService.GetUserByUsernameAsync(SelectedUser.UserName);
+                    if (userFromDb == null)
+                    {
+                        userFromDb = (await UserService.GetAllUsersAsync())
+                            .FirstOrDefault(u => u.Email == SelectedUser.Email);
+                    }
+                    if (userFromDb != null)
+                    {
+                        await UserRoleService.UpdateUserRoleAsync(userFromDb.Id.ToString(), SelectedRole);
+                    }
+                    await ToastService.ShowSuccess("User added successfully!");
+                    await LoadUsers();
+                }
+                else
+                {
+                    await ToastService.ShowError("Failed to create user.");
+                }
             }
             else
             {
-                // Update user info
                 await UserService.UpdateUserAsync(SelectedUser);
-                
-                // Update the cache for this user
+
                 var roles = await UserRoleService.GetUserRolesAsync(SelectedUser.Id.ToString());
                 UserRolesCache[SelectedUser.Id] = roles;
-                
-                await LoadUsers(); // Or just update the Users list without reloading roles
+
+                await LoadUsers();
                 await ToastService.ShowInfo("User updated successfully!");
             }
             ShowModal = false;

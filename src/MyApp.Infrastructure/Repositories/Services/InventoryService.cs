@@ -103,16 +103,23 @@ public class InventoryRepository : IInventoryRepository
             var bytes = qrCode.GetGraphic(20);
             return $"data:image/png;base64,{Convert.ToBase64String(bytes)}";
         }
-        else
+        else // Barcode128 as PNG
         {
-            var writer = new ZXing.BarcodeWriterSvg
+            var writer = new ZXing.BarcodeWriterPixelData
             {
                 Format = BarcodeFormat.CODE_128,
                 Options = new EncodingOptions { Height = 80, Width = 250, Margin = 2 }
             };
+            var pixelData = writer.Write(value);
+            using var bitmap = new System.Drawing.Bitmap(pixelData.Width, pixelData.Height, System.Drawing.Imaging.PixelFormat.Format32bppRgb);
+            var bitmapData = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, pixelData.Width, pixelData.Height), System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppRgb);
+            System.Runtime.InteropServices.Marshal.Copy(pixelData.Pixels, 0, bitmapData.Scan0, pixelData.Pixels.Length);
+            bitmap.UnlockBits(bitmapData);
 
-            var svg = writer.Write(value);
-            return $"data:image/svg+xml;base64,{Convert.ToBase64String(Encoding.UTF8.GetBytes(svg.Content))}";
+            using var ms = new MemoryStream();
+            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+            var bytes = ms.ToArray();
+            return $"data:image/png;base64,{Convert.ToBase64String(bytes)}";
         }
     }
 }

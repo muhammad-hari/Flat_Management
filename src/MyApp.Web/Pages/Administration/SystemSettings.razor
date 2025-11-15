@@ -1,0 +1,297 @@
+@page "/system-settings"
+@using MyApp.Core.Entities
+@using MyApp.Core.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
+@inject ISystemSettingService SystemSettingService
+@inject IPermissionService PermissionService
+@inject ToastService ToastService
+@inject NavigationManager NavigationManager
+
+<PageTitle>System Settings</PageTitle>
+
+<div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 border-b pb-4">
+        <div>
+            <h2 class="text-3xl font-extrabold text-gray-800 tracking-tight">System Settings</h2>
+            <p class="text-gray-500 mt-1">Configure your system preferences and appearance.</p>
+        </div>
+    </div>
+
+    @if (Loading)
+    {
+        <div class="text-center py-10 text-gray-500">
+            <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+            <p class="text-lg">Loading settings...</p>
+        </div>
+    }
+    else
+    {
+        <EditForm Model="@Settings" OnValidSubmit="SaveSettings" class="space-y-6">
+            <DataAnnotationsValidator />
+
+            <!-- Site Name -->
+            <div class="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="bg-blue-600 text-white p-3 rounded-lg">
+                        <i class="fas fa-globe fa-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">Site Information</h3>
+                        <p class="text-sm text-gray-500">Configure your site name and branding</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-medium mb-2">
+                            <i class="fas fa-signature mr-1"></i> Site Name
+                        </label>
+                        <InputText @bind-Value="SiteName" 
+                            class="w-full border border-gray-300 px-4 py-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
+                            placeholder="Enter site name" 
+                            disabled="@(!CanUpdate || IsSaving)" />
+                        <p class="text-xs text-gray-500 mt-1">This will be displayed in the header and title</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logo Upload -->
+            <div class="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="bg-indigo-600 text-white p-3 rounded-lg">
+                        <i class="fas fa-image fa-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">Site Logo</h3>
+                        <p class="text-sm text-gray-500">Upload your organization logo</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-medium mb-2">
+                            <i class="fas fa-upload mr-1"></i> Upload Logo
+                        </label>
+                        <InputFile OnChange="HandleLogoUpload" 
+                            class="w-full border border-gray-300 px-4 py-3 rounded-lg focus:border-blue-500" 
+                            accept="image/*"
+                            disabled="@(!CanUpdate || IsSaving || IsUploading)" />
+                        <p class="text-xs text-gray-500 mt-1">Recommended: PNG or JPG, max 2MB</p>
+                        
+                        @if (IsUploading)
+                        {
+                            <div class="mt-2 flex items-center gap-2 text-blue-600">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <span class="text-sm">Uploading...</span>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(LogoBase64))
+                    {
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-2">
+                                <i class="fas fa-eye mr-1"></i> Current Logo
+                            </label>
+                            <div class="border border-gray-300 rounded-lg p-4 bg-white flex items-center justify-center" style="height: 120px;">
+                                <img src="@($"data:image/png;base64,{LogoBase64}")" alt="Logo" class="max-h-full max-w-full object-contain" />
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            @if (CanUpdate)
+            {
+                <div class="flex justify-end gap-3 pt-4 border-t">
+                    <button type="button" 
+                        class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-6 py-3 rounded-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        @onclick="LoadSettings"
+                        disabled="@IsSaving">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                    <button type="submit" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled="@IsSaving">
+                        @if (IsSaving)
+                        {
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>Saving...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-save"></i>
+                            <span>Save Settings</span>
+                        }
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <p class="text-yellow-800 flex items-center gap-2">
+                        <i class="fas fa-info-circle"></i>
+                        You don't have permission to modify system settings.
+                    </p>
+                </div>
+            }
+        </EditForm>
+    }
+</div>
+
+@code {
+    private const string DefaultSiteName = "Flat Management System";
+    
+    private Dictionary<string, string> Settings = new();
+    private bool Loading = true;
+    private bool IsSaving = false;
+    private bool IsUploading = false;
+    private string SiteName = DefaultSiteName;
+    private string LogoBase64 = string.Empty;
+
+    private bool CanView = false;
+    private bool CanCreate = false;
+    private bool CanUpdate = false;
+    private bool CanDelete = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CanView = await PermissionService.HasPermissionAsync("system-settings", "view");
+        if (!CanView)
+        {
+            NavigationManager.NavigateTo("/unauthorized");
+            return;
+        }
+
+        CanCreate = await PermissionService.HasPermissionAsync("system-settings", "create");
+        CanUpdate = await PermissionService.HasPermissionAsync("system-settings", "update");
+        CanDelete = await PermissionService.HasPermissionAsync("system-settings", "delete");
+
+        await LoadSettings();
+    }
+
+    private async Task LoadSettings()
+    {
+        Loading = true;
+        try
+        {
+            var allSettings = await SystemSettingService.GetAllSettingsAsync();
+            Settings = allSettings.ToDictionary(s => s.Key, s => s.Value);
+
+            SiteName = Settings.ContainsKey("SiteName") && !string.IsNullOrWhiteSpace(Settings["SiteName"])
+                ? Settings["SiteName"] 
+                : DefaultSiteName;
+                
+            LogoBase64 = Settings.ContainsKey("SiteLogo") && !string.IsNullOrWhiteSpace(Settings["SiteLogo"])
+                ? Settings["SiteLogo"] 
+                : string.Empty;
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowError($"Error loading settings: {ex.Message}");
+            SiteName = DefaultSiteName;
+            LogoBase64 = string.Empty;
+        }
+        finally
+        {
+            Loading = false;
+        }
+    }
+
+    private async Task HandleLogoUpload(InputFileChangeEventArgs e)
+    {
+        if (!CanUpdate || IsUploading || IsSaving)
+        {
+            await ToastService.ShowError("Please wait for the current operation to complete");
+            return;
+        }
+
+        var file = e.File;
+        if (file != null)
+        {
+            // Increase limit to 5MB for high-quality logos
+            const long maxFileSize = 5 * 1024 * 1024; // 5MB
+            
+            if (file.Size > maxFileSize)
+            {
+                await ToastService.ShowError($"File size must be less than {maxFileSize / (1024 * 1024)}MB");
+                return;
+            }
+
+            // Validate file type
+            var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp" };
+            if (!allowedTypes.Contains(file.ContentType.ToLower()))
+            {
+                await ToastService.ShowError("Only image files (JPEG, PNG, GIF, WebP) are allowed");
+                return;
+            }
+
+            IsUploading = true;
+            StateHasChanged();
+
+            try
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: maxFileSize);
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                var bytes = memoryStream.ToArray();
+                LogoBase64 = Convert.ToBase64String(bytes);
+                
+                // Log size for debugging
+                var sizeInKB = bytes.Length / 1024;
+                await ToastService.ShowSuccess($"Logo uploaded successfully ({sizeInKB} KB)! Click 'Save Settings' to apply changes.");
+            }
+            catch (Exception ex)
+            {
+                await ToastService.ShowError($"Error uploading file: {ex.Message}");
+                LogoBase64 = string.Empty;
+            }
+            finally
+            {
+                IsUploading = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task SaveSettings()
+    {
+        if (!CanUpdate || IsSaving)
+        {
+            return;
+        }
+
+        IsSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            // Prepare batch update
+            var settingsToUpdate = new Dictionary<string, string>();
+            
+            // Always update site name
+            settingsToUpdate["SiteName"] = SiteName;
+            
+            // Only update logo if it has value
+            if (!string.IsNullOrEmpty(LogoBase64))
+            {
+                settingsToUpdate["SiteLogo"] = LogoBase64;
+            }
+
+            // Batch update in one transaction
+            await SystemSettingService.UpdateSettingsAsync(settingsToUpdate);
+
+            await ToastService.ShowSuccess("Settings saved successfully!");
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowError($"Error saving settings: {ex.Message}");
+        }
+        finally
+        {
+            IsSaving = false;
+            StateHasChanged();
+        }
+    }
+}

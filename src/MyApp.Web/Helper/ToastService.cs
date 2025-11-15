@@ -3,7 +3,7 @@ public class ToastService
     // Gunakan Func<Task> agar async-safe
     public event Func<ToastInstance, Task>? OnShow;
 
-    public Task ShowError(string message, int duration = 5000)
+    public Task ShowError(string message, int duration = 1000)
     {
         return OnShow?.Invoke(new ToastInstance
         {
@@ -14,7 +14,7 @@ public class ToastService
         }) ?? Task.CompletedTask;
     }
 
-    public Task ShowInfo(string message, int duration = 5000)
+    public Task ShowInfo(string message, int duration = 1000)
     {
         return OnShow?.Invoke(new ToastInstance
         {
@@ -25,7 +25,7 @@ public class ToastService
         }) ?? Task.CompletedTask;
     }
 
-    public Task ShowWarning(string message, int duration = 5000)
+    public Task ShowWarning(string message, int duration = 1000)
     {
         return OnShow?.Invoke(new ToastInstance
         {
@@ -36,7 +36,7 @@ public class ToastService
         }) ?? Task.CompletedTask;
     }
 
-    public Task ShowSuccess(string message, int duration = 5000)
+    public Task ShowSuccess(string message, int duration = 1000)
     {
         return OnShow?.Invoke(new ToastInstance
         {

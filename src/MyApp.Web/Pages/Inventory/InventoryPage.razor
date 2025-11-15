@@ -3,6 +3,8 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using MyApp.Core.Interfaces
 @using MyApp.Web.Helper
+@using ZXing
+@using ZXing.Common
 @inject IJSRuntime JS
 @inject IInventoryRepository InventoryService
 @inject IInventoryTypeRepository InventoryTypesService
@@ -384,12 +386,38 @@
             return;
         }
 
-        if (string.IsNullOrEmpty(inv.GeneratedBarcodeValue)) return;
+        var base64Data = inv.GeneratedBarcodeValue ?? GeneratedBarcodeBase64;
+        if (string.IsNullOrEmpty(base64Data)) return;
 
-        var base64Data = inv.GeneratedBarcodeValue.Split(',')[1];
-        var bytes = Convert.FromBase64String(base64Data);
-        var fileName = $"{inv.Code}_{inv.BarcodeToGenerate}.png";
+        string fileExtension = "png";
+        string prefixPng = "data:image/png;base64,";
+        string prefixSvg = "data:image/svg+xml;base64,";
 
+        if (base64Data.StartsWith(prefixSvg))
+        {
+            base64Data = base64Data.Substring(prefixSvg.Length);
+            fileExtension = "svg";
+        }
+        else if (base64Data.StartsWith(prefixPng))
+        {
+            base64Data = base64Data.Substring(prefixPng.Length);
+            fileExtension = "png";
+        }
+
+        base64Data = base64Data.Replace("\r", "").Replace("\n", "").Trim();
+
+        byte[] bytes;
+        try
+        {
+            bytes = Convert.FromBase64String(base64Data);
+        }
+        catch
+        {
+            await ToastService.ShowError("Barcode data is invalid or corrupt.");
+            return;
+        }
+
+        var fileName = $"{inv.Code}_{inv.BarcodeToGenerate}.{fileExtension}";
         using var streamRef = new DotNetStreamReference(new MemoryStream(bytes));
         await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
     }
@@ -487,7 +515,7 @@
     }
     
     // Refactored to be a pure function that returns the base64 string
-    private string GenerateBarcodeImage(string code, BarcodeType barcodeType)
+  private string GenerateBarcodeImage(string code, BarcodeType barcodeType)
     {
         byte[] bytes;
         if (barcodeType == BarcodeType.QRCode)
@@ -497,7 +525,7 @@
             var qrCode = new QRCoder.PngByteQRCode(qrData);
             bytes = qrCode.GetGraphic(20);
         }
-        else // Barcode128
+        @* else // Barcode128
         {
             var writer = new ZXing.BarcodeWriterPixelData
             {
@@ -513,7 +541,26 @@
             using var ms = new MemoryStream();
             bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
             bytes = ms.ToArray();
+        } *@ 
+        else // Barcode128 as PNG
+        {
+            var writer = new ZXing.BarcodeWriterPixelData
+            {
+                Format = BarcodeFormat.CODE_128,
+                Options = new EncodingOptions { Height = 80, Width = 250, Margin = 2 }
+            };
+            var pixelData = writer.Write(code);
+            using var bitmap = new System.Drawing.Bitmap(pixelData.Width, pixelData.Height, System.Drawing.Imaging.PixelFormat.Format32bppRgb);
+            var bitmapData = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, pixelData.Width, pixelData.Height), System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppRgb);
+            System.Runtime.InteropServices.Marshal.Copy(pixelData.Pixels, 0, bitmapData.Scan0, pixelData.Pixels.Length);
+            bitmap.UnlockBits(bitmapData);
+
+            using var ms = new MemoryStream();
+            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+            bytes = ms.ToArray();
         }
+
         return $"data:image/png;base64,{Convert.ToBase64String(bytes)}";
+
     }
 }
